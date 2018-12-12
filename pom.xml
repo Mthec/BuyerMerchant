@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>mod.wurmunlimited.buyermerchant</groupId>
+    <artifactId>BuyerMerchant</artifactId>
+    <version>0.5</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.name.lowercase>buyermerchant</project.name.lowercase>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <powermock.version>2.0.0-beta.5</powermock.version>
+        <folder.server>E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher</folder.server>
+        <folder.mods>${folder.server}/mods</folder.mods>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.3.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-runner</artifactId>
+            <version>1.1.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <version>2.23.4</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.gotti.wurmunlimited</groupId>
+            <artifactId>server-modlauncher</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/modlauncher.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/javassist.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.wurmonline</groupId>
+            <artifactId>wurmunlimited-server</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/server.jar</systemPath>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>src/</sourceDirectory>
+        <directory>out/${project.name.lowercase}</directory>
+        <testSourceDirectory>test</testSourceDirectory>
+
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.0.0-M1</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <outputDirectory>${folder.mods}/${project.name.lowercase}</outputDirectory>
+                    <finalName>${project.name.lowercase}</finalName>
+                    <excludes>
+                        <exclude>**/com/**</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>copy-class-files-for-javassist</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>out/${project.name.lowercase}/classes/mod/wurmunlimited/${project.name.lowercase}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/creatures</directory>
+                                    <excludes>
+                                        <exclude>**/Trad*</exclude>
+                                    </excludes>
+                                </resource>
+                                <resource>
+                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/items</directory>
+                                    <excludes>
+                                        <exclude>**/Trad*</exclude>
+                                    </excludes>
+                                </resource>
+                                <resource>
+                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/questions</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-to-game-folder</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${folder.mods}</outputDirectory>
+                            <overwrite>true</overwrite>
+
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}</directory>
+                                    <includes>
+                                        <include>${project.name.lowercase}.properties</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+
+</project>
