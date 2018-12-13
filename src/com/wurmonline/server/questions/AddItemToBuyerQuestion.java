@@ -21,6 +21,11 @@ import java.util.logging.Level;
 
 public class AddItemToBuyerQuestion extends QuestionExtension {
     private int stage = 0;
+    private static final String[] questionTitles = new String[] {
+            "Add a new item to the buyers list:",
+            "Select the material for the new entry:",
+            "Select the material for the new entry:",
+            "Set final details for the new entry:"};
     private ItemTemplate itemTemplate;
     private byte material = 0;
     private boolean usingCustomMaterial = false;
@@ -49,11 +54,15 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
 
     // Note - target is the buyer.
     AddItemToBuyerQuestion(Creature aResponder, long aTarget) {
-        super(aResponder, "Add Item To Buyer", "Add a new item to the buyers list:", QuestionTypes.PRICEMANAGE, aTarget);
+        this(aResponder, questionTitles[0], aTarget);
+    }
+
+    private AddItemToBuyerQuestion(Creature aResponder, String title, long aTarget) {
+        super(aResponder, "Add Item To Buyer", title, QuestionTypes.PRICEMANAGE, aTarget);
     }
 
     private AddItemToBuyerQuestion(Creature aResponder, long aTarget, ItemTemplate template, byte material, int stage, String filter, boolean customMaterial, List<String> materialList) {
-        this(aResponder, aTarget);
+        this(aResponder, questionTitles[stage], aTarget);
         this.itemTemplate = template;
         this.material = material;
         this.stage = stage;
