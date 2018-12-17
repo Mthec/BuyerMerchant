@@ -39,7 +39,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         } else {
             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(aCreature.getName() + " says, 'I will not sell anything, but I can offer money for these things.'");
         }
-        if (this.trade.creatureOne.getPower() >= 3) {
+        if (this.trade.creatureOne.getPower() >= 3 && !BuyerTradingWindow.freeMoney) {
             long money = this.shop.getMoney();
             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(aCreature.getName() + " says, 'I have " + (money != 0 ? (new Change(money)).getChangeShortString() : "no money") + ".'");
         }
@@ -247,7 +247,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                     long diff = this.getDiff();
                     if (diff > 0L) {
                         long withBuyersCut = (long)(diff * 1.1f);
-                        if (withBuyersCut > this.shop.getMoney()) {
+                        if (!BuyerTradingWindow.freeMoney && withBuyersCut > this.shop.getMoney()) {
                             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " 'I am low on cash and can not purchase those items.'");
                             this.waiting = true;
                         } else {

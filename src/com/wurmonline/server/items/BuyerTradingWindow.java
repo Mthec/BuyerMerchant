@@ -28,6 +28,8 @@ public class BuyerTradingWindow extends TradingWindow {
     private final Trade trade;
     private static final Logger logger = Logger.getLogger(BuyerTradingWindow.class.getName());
     private static final Map<String, Logger> loggers = new HashMap();
+    public static boolean freeMoney = false;
+    public static boolean destroyBoughtItems = false;
 
     BuyerTradingWindow(Creature aOwner, Creature aWatcher, boolean aOffer, long aWurmId, Trade aTrade) {
         super(aOwner, aWatcher, aOffer, aWurmId, aTrade);
@@ -446,7 +448,9 @@ public class BuyerTradingWindow extends TradingWindow {
 
                         // So if this is the Player's Window aka 4
                         if (!(this.watcher instanceof Player)) {
-                            if (coin) {
+                            if (destroyBoughtItems) {
+                                Items.destroyItem(lIt.getWurmId(), true);
+                            } else if (coin) {
                                 if (shop != null) {
                                     if (shop.isPersonal()) {
                                         getLogger(shop.getWurmId()).log(Level.INFO, this.watcher.getName() + " received " + MaterialUtilities.getMaterialString(lIt.getMaterial()) + " " + lIt.getName() + ", id: " + lIt.getWurmId() + ", QL: " + lIt.getQualityLevel());
@@ -497,7 +501,7 @@ public class BuyerTradingWindow extends TradingWindow {
                 this.windowowner.getCommunicator().sendNormalServerMessage("The trade was completed, not all items were traded.");
             }
 
-            if (shop != null) {
+            if (shop != null && !freeMoney) {
                 int diff = moneyAdded - moneyLost;
                 if (this.windowowner.isNpcTrader()) {
                     if (this.watcher.getWurmId() == shop.getOwnerId()) {

@@ -5,6 +5,7 @@ import com.wurmonline.server.creatures.BuyerHandler;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.TradeHandler;
 import com.wurmonline.server.items.BuyerTrade;
+import com.wurmonline.server.items.BuyerTradingWindow;
 import com.wurmonline.server.items.Trade;
 import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.players.Player;
@@ -38,6 +39,8 @@ public abstract class WurmTradingTest {
         Zones.resetStatic();
         FieldSetter.setField(null, Players.class.getDeclaredField("instance"), null);
         FieldSetter.setField(null, Questions.class.getDeclaredField("questions"), new HashMap<Integer, Question>(10));
+        BuyerTradingWindow.freeMoney = false;
+        BuyerTradingWindow.destroyBoughtItems = false;
         factory = new WurmObjectsFactory();
         player = factory.createNewPlayer();
         player.setName("Player");

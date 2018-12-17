@@ -34,8 +34,11 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     private static final String BUYER_NAME_PREFIX = "Buyer_";
     private int templateId;
     private boolean updateTraders = false;
+    private boolean freeMoney = false;
+    private boolean destroyBoughtItems = false;
     // TODO - What about spells on items? - Probably going to ignore as Traders do, unless it is requested.
     // TODO - What about rarity - do later maybe?
+    // TODO - Not high enough ql message to player.
 
     @Override
     public void onItemTemplatesCreated() {
@@ -72,6 +75,12 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         String val = properties.getProperty("update_traders");
         if (val != null && val.equals("true"))
             updateTraders = true;
+        val = properties.getProperty("free_money");
+        if (val != null && val.equals("true"))
+            freeMoney = true;
+        val = properties.getProperty("destroy_bought_items");
+        if (val != null && val.equals("true"))
+            destroyBoughtItems = true;
     }
 
     @Override
@@ -215,6 +224,8 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
 
     @Override
     public void onServerStarted() {
+            BuyerTradingWindow.freeMoney = freeMoney;
+            BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;
         if (updateTraders) {
             for (Shop shop : Economy.getTraders()) {
                 Creature creature = Creatures.getInstance().getCreatureOrNull(shop.getWurmId());
