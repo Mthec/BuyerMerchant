@@ -191,7 +191,7 @@ public class WurmObjectsFactory {
     public Item createPriceList(String str) {
         Item newItem;
         try {
-            newItem = PriceList.getNewPriceList();
+            newItem = PriceList.getNewBuyList();
             newItem.setInscription(str, "");
         } catch (FailedException | NoSuchTemplateException e) {
             throw new RuntimeException(e);

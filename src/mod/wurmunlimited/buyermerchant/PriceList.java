@@ -15,7 +15,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PriceList implements Iterable<PriceList.Entry> {
+    @Deprecated
     private static final String PRICE_LIST_DESCRIPTION = "Price List";
+    private static final String BUY_LIST_DESCRIPTION = "Buy List";
+    private static final String SELL_LIST_DESCRIPTION = "Sell List";
+    private static final Set<String> descriptions = new HashSet<>(Arrays.asList(
+            PRICE_LIST_DESCRIPTION,
+            BUY_LIST_DESCRIPTION,
+            SELL_LIST_DESCRIPTION
+    ));
     // PapyrusBehaviour line 191 says 500 max chars for paper.
     private static final int MAX_INSCRIPTION_LENGTH = 500;
     private Item priceListPaper;
@@ -114,6 +122,9 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
     public PriceList(Item priceListPaper) {
         assert isPriceList(priceListPaper);
+        // Rename old price lists.
+        if (priceListPaper.getDescription().equals(PRICE_LIST_DESCRIPTION))
+            priceListPaper.setDescription(BUY_LIST_DESCRIPTION);
         this.priceListPaper = priceListPaper;
         prices = new HashMap<>();
         InscriptionData inscription = priceListPaper.getInscription();
@@ -127,12 +138,23 @@ public class PriceList implements Iterable<PriceList.Entry> {
         }
     }
 
-    public static Item getNewPriceList() throws FailedException, NoSuchTemplateException {
+    private static Item getNewPriceList() throws FailedException, NoSuchTemplateException {
         Item priceList = ItemFactory.createItem(ItemList.papyrusSheet, 10, null);
-        priceList.setDescription(PRICE_LIST_DESCRIPTION);
         priceList.setHasNoDecay(true);
 
         priceList.setInscription("", "");
+        return priceList;
+    }
+
+    public static Item getNewBuyList() throws FailedException, NoSuchTemplateException {
+        Item priceList = getNewPriceList();
+        priceList.setDescription(BUY_LIST_DESCRIPTION);
+        return priceList;
+    }
+
+    public static Item getNewSellList() throws FailedException, NoSuchTemplateException {
+        Item priceList = getNewPriceList();
+        priceList.setDescription(SELL_LIST_DESCRIPTION);
         return priceList;
     }
 
@@ -231,6 +253,6 @@ public class PriceList implements Iterable<PriceList.Entry> {
     }
 
     public static boolean isPriceList(Item item) {
-        return item.getDescription().equals(PRICE_LIST_DESCRIPTION) && item.getInscription() != null;
+        return descriptions.contains(item.getDescription()) && item.getInscription() != null;
     }
 }

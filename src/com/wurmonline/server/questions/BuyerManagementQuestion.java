@@ -183,7 +183,7 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
 
                                     Economy.getEconomy().createShop(trader.getWurmId(), responder.getWurmId());
                                     // Create Price List.
-                                    trader.getInventory().insertItem(PriceList.getNewPriceList());
+                                    trader.getInventory().insertItem(PriceList.getNewBuyList());
                                     contract.setData(trader.getWurmId());
                                     logger.info(responder.getName() + " created a trader: " + trader);
                                 } catch (Exception var18) {

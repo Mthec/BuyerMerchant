@@ -36,7 +36,7 @@ public class PriceListTest {
 
     @Test
     void testNewPriceListHasInscription() throws NoSuchTemplateException, FailedException {
-        assertNotNull(PriceList.getNewPriceList().getInscription());
+        assertNotNull(PriceList.getNewBuyList().getInscription());
     }
 
     @Test
@@ -356,5 +356,17 @@ public class PriceListTest {
             item.setMaterial(i);
             assertEquals(price, priceList.getPrice(item));
         }
+    }
+
+    @Test
+    void testOldPriceListsRenamedOnLoad() throws PriceList.NoPriceListOnBuyer {
+        Creature buyer = factory.createNewBuyer(factory.createNewPlayer());
+        Item priceList = buyer.getInventory().getFirstContainedItem();
+        priceList.setDescription("Price List");
+
+        assert PriceList.isPriceList(priceList);
+
+        PriceList.getPriceListFromBuyer(buyer);
+        assertEquals("Buy List", priceList.getDescription());
     }
 }
