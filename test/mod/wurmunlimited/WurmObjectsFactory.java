@@ -243,6 +243,7 @@ public class WurmObjectsFactory {
         try {
             item = ItemsPackageFactory.getTempItem(WurmId.getNextItemId());
             item.setTemplateId(templateId);
+            item.setMaterial(ItemTemplateFactory.getInstance().getTemplate(templateId).getMaterial());
             item.setQualityLevel(1.0f);
             FieldSetter.setField(item, Item.class.getDeclaredField("weight"), ItemTemplateFactory.getInstance().getTemplate(templateId).getWeightGrams());
             item.setPosXYZRotation(1, 1, 1, 90);
@@ -293,6 +294,23 @@ public class WurmObjectsFactory {
         Item item = createNewItem(ItemList.wagonerTent);
         assert item.isNoTrade();
         return item;
+    }
+
+    public Iterable<Item> createManyItems(int templateId, int numberOfItems) {
+        return () -> new Iterator<Item>() {
+            int number = numberOfItems;
+
+            @Override
+            public boolean hasNext() {
+                return number > 0;
+            }
+
+            @Override
+            public Item next() {
+                --number;
+                return createNewItem(templateId);
+            }
+        };
     }
 
     public Iterable<Item> createManyItems(int numberOfItems) {

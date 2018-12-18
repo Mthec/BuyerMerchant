@@ -159,19 +159,21 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                 "()V",
                 () -> this::stopLoggers);
 
-        // TODO - Is this the best way?  Anyway to get other mods from ModLoader?
-        // Compatibility fix with Increase Merchant Max Items mod.
-        try {
-            InputStream file = Files.newInputStream(Paths.get("./mods/increasemerchantitems.properties"));
-            Properties properties = new Properties();
-            properties.load(file);
+        if (!destroyBoughtItems) {
+            // TODO - Is this the best way?  Anyway to get other mods from ModLoader?
+            // Compatibility fix with Increase Merchant Max Items mod.
+            try {
+                InputStream file = Files.newInputStream(Paths.get("./mods/increasemerchantitems.properties"));
+                Properties properties = new Properties();
+                properties.load(file);
 
-            Class<?> BuyerHandler = Class.forName("com.wurmonline.server.creatures.BuyerHandler");
-            BuyerHandler.getDeclaredField("maxPersonalItems").set(null, Integer.parseInt(properties.getProperty("MaxItems")));
-            logger.info("increasemerchantsitems value loaded.");
-        } catch (IOException ignored) {
-        } catch (IllegalAccessException | ClassNotFoundException | NoSuchFieldException e) {
-            throw new RuntimeException(e);
+                Class<?> BuyerHandler = Class.forName("com.wurmonline.server.creatures.BuyerHandler");
+                BuyerHandler.getDeclaredField("maxPersonalItems").set(null, Integer.parseInt(properties.getProperty("MaxItems")));
+                logger.info("increasemerchantsitems value loaded.");
+            } catch (IOException ignored) {
+            } catch (IllegalAccessException | ClassNotFoundException | NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -224,8 +226,10 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
 
     @Override
     public void onServerStarted() {
-            BuyerTradingWindow.freeMoney = freeMoney;
-            BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;
+        BuyerTradingWindow.freeMoney = freeMoney;
+        BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;
+        if (destroyBoughtItems)
+            BuyerHandler.maxPersonalItems = Integer.MAX_VALUE;
         if (updateTraders) {
             for (Shop shop : Economy.getTraders()) {
                 Creature creature = Creatures.getInstance().getCreatureOrNull(shop.getWurmId());

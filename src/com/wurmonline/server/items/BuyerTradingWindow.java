@@ -346,6 +346,7 @@ public class BuyerTradingWindow extends TradingWindow {
                         }
                     }
 
+                    // TODO - Anyway to get traded items to remove from nums?
                     if (this.watcher.getPower() <= 0 && nums + inventory.getNumItemsNotCoins() > 99) {
                         this.watcher.getCommunicator().sendAlertServerMessage("You may not carry that many items in your inventory.");
                         this.windowowner.getCommunicator().sendAlertServerMessage(this.watcher.getName() + " may not carry that many items in " + this.watcher.getHisHerItsString() + " inventory.");

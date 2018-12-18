@@ -72,4 +72,8 @@ public class ItemFactory {
 
         return name;
     }
+
+    public static void clearData(long num) {
+
+    }
 }
