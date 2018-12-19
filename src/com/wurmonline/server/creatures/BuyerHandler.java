@@ -39,9 +39,13 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         } else {
             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(aCreature.getName() + " says, 'I will not sell anything, but I can offer money for these things.'");
         }
-        if (this.trade.creatureOne.getPower() >= 3 && !BuyerTradingWindow.freeMoney) {
-            long money = this.shop.getMoney();
-            this.trade.creatureOne.getCommunicator().sendSafeServerMessage(aCreature.getName() + " says, 'I have " + (money != 0 ? (new Change(money)).getChangeShortString() : "no money") + ".'");
+        if (this.trade.creatureOne.getPower() >= 3) {
+            if (BuyerTradingWindow.freeMoney) {
+                this.trade.creatureOne.getCommunicator().sendSafeServerMessage(aCreature.getName() + " says, 'I do not require any money.'");
+            } else {
+                long money = this.shop.getMoney();
+                this.trade.creatureOne.getCommunicator().sendSafeServerMessage(aCreature.getName() + " says, 'I have " + (money != 0 ? (new Change(money)).getChangeShortString() : "no money") + ".'");
+            }
         }
         priceList = PriceList.getPriceListFromBuyer(this.creature);
     }
