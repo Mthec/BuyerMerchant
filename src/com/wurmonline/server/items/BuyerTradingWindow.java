@@ -449,9 +449,7 @@ public class BuyerTradingWindow extends TradingWindow {
 
                         // So if this is the Player's Window aka 4
                         if (!(this.watcher instanceof Player)) {
-                            if (destroyBoughtItems) {
-                                Items.destroyItem(lIt.getWurmId(), true);
-                            } else if (coin) {
+                            if (coin) {
                                 if (shop != null) {
                                     if (shop.isPersonal()) {
                                         getLogger(shop.getWurmId()).log(Level.INFO, this.watcher.getName() + " received " + MaterialUtilities.getMaterialString(lIt.getMaterial()) + " " + lIt.getName() + ", id: " + lIt.getWurmId() + ", QL: " + lIt.getQualityLevel());
@@ -465,15 +463,22 @@ public class BuyerTradingWindow extends TradingWindow {
                                 } else {
                                     logger.log(Level.WARNING, this.windowowner.getName() + ", id=" + this.windowowner.getWurmId() + " failed to locate TraderMoney.");
                                 }
-                            } else {
+                            } else if (PriceList.isPriceList(lIt)) {
                                 // Override price list with new one provided by owner.
-                                if (PriceList.isPriceList(lIt)) {
-                                    for (Item priceList : this.watcher.getInventory().getItems())
-                                        if (PriceList.isPriceList(priceList)) {
-                                            Items.destroyItem(priceList.getWurmId());
-                                            break;
-                                        }
+                                for (Item priceList : this.watcher.getInventory().getItems()) {
+                                    if (PriceList.isPriceList(priceList)) {
+                                        Items.destroyItem(priceList.getWurmId());
+                                        break;
+                                    }
                                 }
+                                inventory.insertItem(lIt);
+
+                                if (shop != null) {
+                                    getLogger(shop.getWurmId()).log(Level.INFO, this.watcher.getName() + " updated Price List - " + lIt.getName() + ", id: " + lIt.getWurmId());
+                                }
+                            } else if (destroyBoughtItems) {
+                                Items.destroyItem(lIt.getWurmId(), true);
+                            } else {
                                 inventory.insertItem(lIt);
 
                                 if (shop != null) {
