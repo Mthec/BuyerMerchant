@@ -24,7 +24,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
     private BuyerTrade trade;
     private boolean balanced = false;
     private boolean waiting = false;
-    public static int maxPersonalItems = TradeHandler.getMaxNumPersonalItems();
+    public static int maxPersonalItems = 51;
     private final Shop shop;
     private final boolean ownerTrade;
     private PriceList priceList;
@@ -58,7 +58,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         priceList = null;
     }
 
-    // What does it even do?  Think it may just be for logging.
+    // What does it even do?  Think it may just be for logging.  Does also initiate tradeChanged().
     @Override
     void addToInventory(Item item, long inventoryWindow) {
         if (this.trade != null) {
@@ -158,7 +158,6 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         }
     }
 
-    // Needed for compatibility with IncreaseMerchantsItems
     public static int getMaxNumPersonalItems() {
         return maxPersonalItems;
     }
@@ -183,8 +182,11 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         } else {
             int size = 0;
 
+            // This is correct for buyer as TradeHandler gets current total from window 1.
             for (Item item : this.creature.getInventory().getItems()) {
-                if (!item.isCoin() && !PriceList.isPriceList(item)) {
+                // Removed PriceList check to save doing it on every item.
+                // Also with the max_items option it already accounts for it.
+                if (!item.isCoin()) {
                     ++size;
                 }
             }

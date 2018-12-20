@@ -3,10 +3,7 @@ package mod.wurmunlimited;
 import com.wurmonline.math.TilePos;
 import com.wurmonline.server.*;
 import com.wurmonline.server.creatures.*;
-import com.wurmonline.server.economy.Change;
-import com.wurmonline.server.economy.Economy;
-import com.wurmonline.server.economy.FakeShop;
-import com.wurmonline.server.economy.MonetaryConstants;
+import com.wurmonline.server.economy.*;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.players.FakePlayerInfo;
 import com.wurmonline.server.players.Player;
@@ -93,6 +90,16 @@ public class WurmObjectsFactory {
                 total -= 100;
             }
 
+            while (total > 20) {
+                set.add(createNewItem(ItemList.coinIronTwenty));
+                total -= 20;
+            }
+
+            while (total > 5) {
+                set.add(createNewItem(ItemList.coinIronFive));
+                total -= 5;
+            }
+
             while (total > 0) {
                 set.add(createNewIronCoin());
                 total -= 1;
@@ -138,6 +145,7 @@ public class WurmObjectsFactory {
     public Player createNewPlayer() {
         try {
             Player player = Player.doNewPlayer(CreatureTemplateIds.HUMAN_CID);
+            player.setName("Player_" + creatures.size());
             player.setWurmId(WurmId.getNextPlayerId(), 1, 1, 1, 1);
             ServerPackageFactory.addPlayer(player);
             creatures.put(player.getWurmId(), player);
@@ -155,7 +163,6 @@ public class WurmObjectsFactory {
         Creature buyer;
         try {
             buyer = Creature.doNew(CreatureTemplateIds.SALESMAN_CID, 1, 1, 1, 1, "Buyer_" + (creatures.size() + 1), (byte)0);
-            buyer.getSkills().learn(102, 1.0f);
             creatures.put(buyer.getWurmId(), buyer);
             buyer.createPossessions();
             attachFakeCommunicator(buyer);
@@ -172,13 +179,28 @@ public class WurmObjectsFactory {
         Creature trader;
         try {
             trader = Creature.doNew(CreatureTemplateIds.SALESMAN_CID, 1, 1, 1, 1, "Trader_" + (creatures.size() + 1), (byte)0);
-            trader.getSkills().learn(102, 1.0f);
             creatures.put(trader.getWurmId(), trader);
             trader.createPossessions();
             attachFakeCommunicator(trader);
 
             shops.put(trader, FakeShop.createFakeTraderShop(trader.getWurmId()));
             return trader;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Creature createNewMerchant(Creature owner) {
+        Creature merchant;
+        try {
+            merchant = Creature.doNew(CreatureTemplateIds.SALESMAN_CID, 1, 1, 1, 1, "Merchant_" + (creatures.size() + 1), (byte)0);
+            creatures.put(merchant.getWurmId(), merchant);
+            merchant.createPossessions();
+            attachFakeCommunicator(merchant);
+
+            shops.put(merchant, FakeShop.createFakeTraderShop(merchant.getWurmId()));
+            shops.get(merchant).setOwner(owner.getWurmId());
+            return merchant;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -273,6 +295,10 @@ public class WurmObjectsFactory {
         return createNewItem(ItemList.coinIron);
     }
 
+    /**
+        @deprecated Use Economy.getInstance().getCoinsFor() instead.
+     */
+    @Deprecated
     public Iterable<Item> createManyCopperCoins(int numberOfItems) {
         return () -> new Iterator<Item>() {
             int number = numberOfItems;

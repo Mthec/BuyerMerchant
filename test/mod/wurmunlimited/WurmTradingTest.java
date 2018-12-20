@@ -41,7 +41,8 @@ public abstract class WurmTradingTest {
         FieldSetter.setField(null, Questions.class.getDeclaredField("questions"), new HashMap<Integer, Question>(10));
         BuyerTradingWindow.freeMoney = false;
         BuyerTradingWindow.destroyBoughtItems = false;
-        BuyerHandler.maxPersonalItems = 50;
+        BuyerHandler.maxPersonalItems = 51;
+        FieldSetter.setField(null, TradeHandler.class.getDeclaredField("maxPersonalItems"), 50);
         factory = new WurmObjectsFactory();
         player = factory.createNewPlayer();
         player.setName("Player");

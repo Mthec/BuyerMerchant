@@ -180,8 +180,8 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testWillExceedMaxItems() {
-        factory.createManyItems(BuyerHandler.getMaxNumPersonalItems() - 1).forEach(buyer.getInventory()::insertItem);
+    void testWillNotExceedMaxItems() {
+        factory.createManyItems(BuyerHandler.getMaxNumPersonalItems() - 2).forEach(buyer.getInventory()::insertItem);
         Item item = factory.createNewItem();
         player.getInventory().insertItem(item);
         player.getInventory().insertItem(factory.createNewItem());

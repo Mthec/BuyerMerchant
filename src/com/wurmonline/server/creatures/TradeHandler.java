@@ -492,6 +492,7 @@ public class TradeHandler implements MiscConstants, ItemTypes, MonetaryConstants
 
                     for(x = 0; x < offItems.length; ++x) {
                         if (offItems[x].getTemplateId() != 272 && offItems[x].getTemplateId() != 781 && !offItems[x].isArtifact() && !offItems[x].isRoyal() && (!offItems[x].isVillageDeed() && !offItems[x].isHomesteadDeed() || !offItems[x].hasData()) && (offItems[x].getTemplateId() != 300 || offItems[x].getData2() == -1)) {
+                            // Bug? - will add till 51 instead of 50.
                             if (size > maxPersonalItems) {
                                 if (offItems[x].isCoin()) {
                                     currWin.removeItem(offItems[x]);

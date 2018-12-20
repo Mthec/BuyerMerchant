@@ -16,12 +16,9 @@ import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.ItemTemplateBuilder;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -36,6 +33,9 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     private boolean updateTraders = false;
     private boolean freeMoney = false;
     private boolean destroyBoughtItems = false;
+    private int defaultMaxItems = 50;
+    private int maxItems = defaultMaxItems;
+    private boolean applyMaxToMerchants = false;
     // TODO - What about spells on items? - Probably going to ignore as Traders do, unless it is requested.
     // TODO - What about rarity - do later maybe?
     // TODO - Not high enough ql message to player.
@@ -81,6 +81,18 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         val = properties.getProperty("destroy_bought_items");
         if (val != null && val.equals("true"))
             destroyBoughtItems = true;
+        val = properties.getProperty("max_items");
+        if (val != null && val.length() > 0) {
+            try {
+                maxItems = Integer.parseInt(val);
+            } catch (NumberFormatException e) {
+                logger.warning("Invalid max_items option, falling back to default.");
+                maxItems = defaultMaxItems;
+            }
+        }
+        val = properties.getProperty("apply_max_to_merchants");
+        if (val != null && val.equals("true"))
+            applyMaxToMerchants = true;
     }
 
     @Override
@@ -158,23 +170,6 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                 "stopLoggers",
                 "()V",
                 () -> this::stopLoggers);
-
-        if (!destroyBoughtItems) {
-            // TODO - Is this the best way?  Anyway to get other mods from ModLoader?
-            // Compatibility fix with Increase Merchant Max Items mod.
-            try {
-                InputStream file = Files.newInputStream(Paths.get("./mods/increasemerchantitems.properties"));
-                Properties properties = new Properties();
-                properties.load(file);
-
-                Class<?> BuyerHandler = Class.forName("com.wurmonline.server.creatures.BuyerHandler");
-                BuyerHandler.getDeclaredField("maxPersonalItems").set(null, Integer.parseInt(properties.getProperty("MaxItems")));
-                logger.info("increasemerchantsitems value loaded.");
-            } catch (IOException ignored) {
-            } catch (IllegalAccessException | ClassNotFoundException | NoSuchFieldException e) {
-                throw new RuntimeException(e);
-            }
-        }
     }
 
     @Override
@@ -230,6 +225,22 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;
         if (destroyBoughtItems)
             BuyerHandler.maxPersonalItems = Integer.MAX_VALUE;
+        else if (maxItems != defaultMaxItems) {
+            // Plus one for PriceList.
+            BuyerHandler.maxPersonalItems = maxItems + 1;
+            boolean merchantsSet = false;
+            if (applyMaxToMerchants) {
+                try {
+                    Field maxPersonalItems = TradeHandler.class.getDeclaredField("maxPersonalItems");
+                    maxPersonalItems.setAccessible(true);
+                    maxPersonalItems.set(null, maxItems);
+                    merchantsSet = true;
+                } catch (NoSuchFieldException | IllegalAccessException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            logger.info("Buyer " + (merchantsSet ? "and merchant " : "") + "max items set to " + maxItems);
+        }
         if (updateTraders) {
             for (Shop shop : Economy.getTraders()) {
                 Creature creature = Creatures.getInstance().getCreatureOrNull(shop.getWurmId());
