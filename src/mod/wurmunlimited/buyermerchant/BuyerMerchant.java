@@ -227,7 +227,10 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             BuyerHandler.maxPersonalItems = Integer.MAX_VALUE;
         else if (maxItems != defaultMaxItems) {
             // Plus one for PriceList.
-            BuyerHandler.maxPersonalItems = maxItems + 1;
+            if (maxItems != Integer.MAX_VALUE)
+                BuyerHandler.maxPersonalItems = maxItems + 1;
+            else
+                BuyerHandler.maxPersonalItems = Integer.MAX_VALUE;
             boolean merchantsSet = false;
             if (applyMaxToMerchants) {
                 try {

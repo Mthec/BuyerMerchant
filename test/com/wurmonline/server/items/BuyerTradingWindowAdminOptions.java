@@ -519,4 +519,12 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         assertEquals(TradeHandler.getMaxNumPersonalItems() + 1, merchant.getInventory().getItemCount());
         assertEquals(numberOfItems + extraItems - merchant.getInventory().getItemCount(), owner.getInventory().getItemCount());
     }
+
+    @Test
+    void testIntegerOverflowProtection() throws NoSuchFieldException {
+        BuyerMerchant buyerMerchant = new BuyerMerchant();
+        FieldSetter.setField(buyerMerchant, BuyerMerchant.class.getDeclaredField("maxItems"), Integer.MAX_VALUE);
+        assertDoesNotThrow(buyerMerchant::onServerStarted);
+        assertEquals(Integer.MAX_VALUE, BuyerHandler.maxPersonalItems);
+    }
 }
