@@ -14,31 +14,28 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Stream;
 
-import static mod.wurmunlimited.Assert.containsCoinsOfValue;
-import static mod.wurmunlimited.Assert.receivedMessageContaining;
+import static mod.wurmunlimited.Assert.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
     private BuyerHandler handler;
-    private TradingWindow buyerWindow;
     private TradingWindow buyerOffer;
-    private TradingWindow playerWindow;
+    private TradingWindow buyerToTrade;
     private TradingWindow playerOffer;
+    private TradingWindow playerToTrade;
 
     private void createHandler() {
         makeBuyerTrade();
         handler = (BuyerHandler)buyer.getTradeHandler();
-        buyerWindow = trade.getTradingWindow(1);
-        buyerOffer = trade.getTradingWindow(3);
-        playerWindow = trade.getTradingWindow(2);
-        playerOffer = trade.getTradingWindow(4);
+        buyerOffer = trade.getTradingWindow(1);
+        buyerToTrade = trade.getTradingWindow(3);
+        playerOffer = trade.getTradingWindow(2);
+        playerToTrade = trade.getTradingWindow(4);
     }
 
     private void addOneCopperItemToPriceList(Item item) {
@@ -124,11 +121,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         createHandler();
         int items = 5;
         factory.createManyCopperCoins(items).forEach(player.getInventory()::insertItem);
-        player.getInventory().getItems().forEach(playerWindow::addItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
         handler.balance();
 
-        assertEquals(items, playerWindow.getItems().length);
-        assertEquals(0, playerOffer.getItems().length);
+        assertEquals(items, playerOffer.getItems().length);
+        assertEquals(0, playerToTrade.getItems().length);
     }
 
     @Test
@@ -141,10 +138,10 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         createHandler();
 
-        player.getInventory().getItems().forEach(playerWindow::addItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
         handler.balance();
 
-        assertEquals(0, playerWindow.getItems().length);
+        assertEquals(0, playerOffer.getItems().length);
         assertEquals(items, trade.getCreatureTwoRequestWindow().getAllItems().length);
     }
 
@@ -153,11 +150,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         createHandler();
         int items = 5;
         factory.createManyItems(items).forEach(player.getInventory()::insertItem);
-        player.getInventory().getItems().forEach(playerWindow::addItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
         handler.balance();
 
-        assertEquals(items, playerWindow.getItems().length);
-        assertEquals(0, buyerOffer.getAllItems().length);
+        assertEquals(items, playerOffer.getItems().length);
+        assertEquals(0, buyerToTrade.getAllItems().length);
     }
 
     // Balance
@@ -171,12 +168,12 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         createHandler();
         handler.addItemsToTrade();
-        player.getInventory().getItems().forEach(playerWindow::addItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
         handler.balance();
 
         assertThat(player, receivedMessageContaining("cannot add more items"));
-        assertEquals(1, playerWindow.getItems().length);
-        assertEquals(0, playerOffer.getItems().length);
+        assertEquals(1, playerOffer.getItems().length);
+        assertEquals(0, playerToTrade.getItems().length);
     }
 
     @Test
@@ -192,12 +189,12 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         handler.balance();
         assertFalse(receivedMessageContaining("cannot add more items").matches(player));
 
-        player.getInventory().getItems().forEach(playerWindow::addItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
         handler.tradeChanged();
         handler.balance();
         assertThat(player, receivedMessageContaining("cannot add more items"));
-        assertEquals(1, playerWindow.getItems().length);
         assertEquals(1, playerOffer.getItems().length);
+        assertEquals(1, playerToTrade.getItems().length);
     }
 
     @Test
@@ -209,7 +206,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         createHandler();
         handler.addItemsToTrade();
-        playerWindow.addItem(item);
+        playerOffer.addItem(item);
         handler.balance();
 
         assertThat(player, receivedMessageContaining("don't accept damaged"));
@@ -224,7 +221,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         createHandler();
         handler.addItemsToTrade();
-        playerWindow.addItem(item);
+        playerOffer.addItem(item);
         handler.balance();
 
         assertThat(player, receivedMessageContaining("don't accept locked"));
@@ -241,7 +238,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         createHandler();
         handler.addItemsToTrade();
-        playerWindow.addItem(hollow);
+        playerOffer.addItem(hollow);
         handler.balance();
 
         assertThat(player, receivedMessageContaining("Please empty"));
@@ -251,12 +248,12 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     void testOldCoinsRemovedFromBuyerOffer() {
         createHandler();
         int items = 5;
-        factory.createManyCopperCoins(items).forEach(buyerOffer::addItem);
+        factory.createManyCopperCoins(items).forEach(buyerToTrade::addItem);
 
         handler.balance();
 
+        assertEquals(0, buyerToTrade.getAllItems().length);
         assertEquals(0, buyerOffer.getAllItems().length);
-        assertEquals(0, buyerWindow.getAllItems().length);
     }
 
     @Test
@@ -268,7 +265,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         createHandler();
         handler.addItemsToTrade();
-        player.getInventory().getItems().forEach(playerWindow::addItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
         handler.balance();
 
         assertThat(player, receivedMessageContaining("low on cash"));
@@ -283,17 +280,17 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         createHandler();
         handler.addItemsToTrade();
-        player.getInventory().getItems().forEach(playerWindow::addItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
         handler.balance();
 
         assertTrue(buyerIsSatisfied());
-        assertEquals(1, buyerWindow.getItems().length);
-        Stream.of(buyerOffer.getItems()).forEach(i -> assertTrue(i.isCoin()));
-        assertEquals(MonetaryConstants.COIN_COPPER, Stream.of(buyerOffer.getItems()).mapToInt(i -> Economy.getValueFor(i.getTemplateId())).sum());
+        assertEquals(1, buyerOffer.getItems().length);
+        Stream.of(buyerToTrade.getItems()).forEach(i -> assertTrue(i.isCoin()));
+        assertEquals(MonetaryConstants.COIN_COPPER, Stream.of(buyerToTrade.getItems()).mapToInt(i -> Economy.getValueFor(i.getTemplateId())).sum());
 
-        assertEquals(0, playerWindow.getItems().length);
-        assertEquals(1, playerOffer.getItems().length);
-        assertEquals(player.getInventory().getItems().iterator().next(), playerOffer.getItems()[0]);
+        assertEquals(0, playerOffer.getItems().length);
+        assertEquals(1, playerToTrade.getItems().length);
+        assertEquals(player.getInventory().getItems().iterator().next(), playerToTrade.getItems()[0]);
     }
 
     @Test
@@ -307,7 +304,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         createHandler();
         handler.addItemsToTrade();
-        player.getInventory().getItems().forEach(playerOffer::addItem);
+        player.getInventory().getItems().forEach(playerToTrade::addItem);
         handler.balance();
         assert buyerIsSatisfied();
 
@@ -347,7 +344,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         // Skip -1 as that value is used in PriceList as an invalid price string.
         for (int i = -2; i > -100; --i) {
-            priceList.iterator().next().updateItemQLAndPrice(1.0f, i);
+            priceList.iterator().next().updateItemDetails(1.0f, i, 1);
             priceList.savePriceList();
             createHandler();
             assertEquals(0, handler.getTraderBuyPriceForItem(item));
@@ -407,5 +404,281 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         assertEquals(1, trade.getTradingWindow(1).getItems().length);
         assertNotEquals(factory.getIsWoodId(), trade.getTradingWindow(1).getItems()[0].getTemplateId());
+    }
+
+    @Test
+    void testFilledReedPen() {
+        Item reedPen = factory.createNewItem(ItemTemplateFactory.getInstance().getTemplate("reed pen").getTemplateId());
+        // Black ink.
+        factory.fillItemWith(reedPen, 753);
+        addOneCopperItemToPriceList(reedPen);
+
+        createHandler();
+        playerOffer.addItem(reedPen);
+        handler.balance();
+
+        assertThat(player, receivedMessageContaining("Please empty"));
+        assertEquals(1, playerOffer.getItems().length);
+        assertEquals(0, playerToTrade.getItems().length);
+    }
+
+    @Test
+    void testMinimumPurchaseItemsAreLabelledSo() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, 1);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, 100);
+        priceList.savePriceList();
+
+        createHandler();
+        handler.addItemsToTrade();
+
+        assertEquals(2, trade.getTradingWindow(1).getItems().length);
+        List<Item> items = Arrays.asList(trade.getTradingWindow(1).getItems());
+        items.sort(Comparator.comparing(Item::getName));
+        assertTrue(items.get(0).getName().endsWith("any"));
+        assertTrue(items.get(1).getName().endsWith("any - minimum " + 100));
+    }
+
+    @Test
+    void testMinimumPurchaseReached() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+        int minimumPurchase = 20;
+        int numberOfItems = 20;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.savePriceList();
+
+        createHandler();
+        // TODO - Change later when fixed pricing.
+        factory.getShop(buyer).setMoney((long)(10 * numberOfItems * 1.1f));
+        List<Item> items = new ArrayList<>();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).iterator().forEachRemaining(items::add);
+        items.forEach(player.getInventory()::insertItem);
+        items.forEach(playerOffer::addItem);
+        handler.balance();
+
+        assertEquals(numberOfItems, playerToTrade.getItems().length);
+        assertEquals(0, playerOffer.getItems().length);
+        assertFalse(receivedMessageContaining("do not have enough space").matches(player));
+
+        setSatisfied(player);
+        assertThat(player, receivedMessageContaining("completed successfully"));
+    }
+
+    @Test
+    void testMinimumPurchaseNotReached() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+        int minimumPurchase = 20;
+        int numberOfItems = minimumPurchase - 1;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.savePriceList();
+
+        createHandler();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).forEach(playerOffer::addItem);
+        handler.balance();
+
+        assertEquals(numberOfItems, playerOffer.getItems().length);
+        assertEquals(0, playerToTrade.getItems().length);
+        assertThat(player, receivedMessageContaining("will need " + (minimumPurchase - numberOfItems) + " more"));
+    }
+
+    @Test
+    void testMinimumPurchaseExceeded() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+        int minimumPurchase = 20;
+        int numberOfItems = minimumPurchase + 1;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.savePriceList();
+
+        createHandler();
+        factory.getShop(buyer).setMoney((long)(10 * numberOfItems * 1.1f));
+        List<Item> items = new ArrayList<>();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).iterator().forEachRemaining(items::add);
+        items.forEach(player.getInventory()::insertItem);
+        items.forEach(playerOffer::addItem);
+        handler.balance();
+
+        assertEquals(numberOfItems, playerToTrade.getItems().length);
+        assertEquals(0, playerOffer.getItems().length);
+
+        setSatisfied(player);
+        assertThat(player, receivedMessageContaining("completed successfully"));
+    }
+
+    @Test
+    void testMinimumPurchaseExceedsSpaceButPurchasesSome() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+        int minimumPurchase = 20;
+        int numberOfItems = minimumPurchase * 2;
+        BuyerHandler.maxPersonalItems = (int)(minimumPurchase * 1.5f);
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.savePriceList();
+
+        createHandler();
+        long initialFunds = (long)(10 * numberOfItems * 1.1f);
+        factory.getShop(buyer).setMoney(initialFunds);
+        List<Item> items = new ArrayList<>();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).iterator().forEachRemaining(items::add);
+        items.forEach(player.getInventory()::insertItem);
+        items.forEach(playerOffer::addItem);
+        handler.balance();
+
+        assertEquals(BuyerHandler.maxPersonalItems - 1, playerToTrade.getItems().length);
+        assertEquals(numberOfItems - BuyerHandler.maxPersonalItems + 1, playerOffer.getItems().length);
+
+        setSatisfied(player);
+        assertThat(player, receivedMessageContaining("to accept all of the " + ItemTemplateFactory.getInstance().getTemplate(factory.getIsWoodId()).getPlural()));
+        assertThat(player, receivedMessageContaining("completed successfully"));
+
+        assertEquals(BuyerHandler.maxPersonalItems, buyer.getInventory().getItemCount());
+        assertEquals(initialFunds - (10 * (BuyerHandler.maxPersonalItems - 1) * 1.1f), factory.getShop(buyer).getMoney());
+        assertEquals(numberOfItems - BuyerHandler.maxPersonalItems + 1, player.getInventory().getNumItemsNotCoins());
+    }
+
+    @Test
+    void testOverMaximumAddedSeparately() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+        int minimumPurchase = 20;
+        int numberOfItems = minimumPurchase * 2;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.savePriceList();
+
+        createHandler();
+        long initialFunds = (long)(10 * numberOfItems * 1.1f);
+        factory.getShop(buyer).setMoney(initialFunds);
+        List<Item> items = new ArrayList<>();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).iterator().forEachRemaining(items::add);
+        items.forEach(player.getInventory()::insertItem);
+        List<Item> items1 = items.subList(0, 21);
+        List<Item> items2 = items.subList(21, items.size());
+        items1.forEach(playerOffer::addItem);
+        handler.balance();
+        items2.forEach(playerOffer::addItem);
+        handler.addToInventory(items2.get(0), playerOffer.getWurmId());
+        handler.balance();
+
+        assertEquals(numberOfItems, playerToTrade.getItems().length);
+        assertEquals(0, playerOffer.getItems().length);
+
+        setSatisfied(player);
+        assertFalse(receivedMessageContaining("will need").matches(player));
+        assertThat(player, receivedMessageContaining("completed successfully"));
+
+        assertEquals(numberOfItems + 1, buyer.getInventory().getItemCount());
+        assertEquals(0, factory.getShop(buyer).getMoney());
+        assertEquals(0, player.getInventory().getNumItemsNotCoins());
+        assertThat(player, hasCoinsOfValue((long)(10 * numberOfItems)));
+    }
+
+    @Test
+    void testSomeMinimumPurchaseItemsRemovedFromTrade() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, IllegalAccessException, NoSuchFieldException {
+        int minimumPurchase = 20;
+        int numberOfItems = minimumPurchase * 2;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.savePriceList();
+
+        createHandler();
+        long initialFunds = (long)(10 * numberOfItems * 1.1f);
+        factory.getShop(buyer).setMoney(initialFunds);
+        List<Item> items = new ArrayList<>();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).iterator().forEachRemaining(items::add);
+        items.forEach(player.getInventory()::insertItem);
+        List<Item> items1 = items.subList(0, 21);
+        List<Item> items2 = items.subList(21, items.size());
+        assert items1.size() >= minimumPurchase;
+        assert items2.size() < minimumPurchase;
+        items1.forEach(playerOffer::addItem);
+        handler.balance();
+        Field creatureTwoSatisfied = BuyerTrade.class.getDeclaredField("creatureTwoSatisfied");
+        creatureTwoSatisfied.setAccessible(true);
+        assertTrue(creatureTwoSatisfied.getBoolean(trade));
+
+        items1.forEach(playerToTrade::removeItem);
+        items2.forEach(playerOffer::addItem);
+        handler.addToInventory(items2.get(0), playerOffer.getWurmId());
+        handler.balance();
+
+        assertEquals(0, playerToTrade.getItems().length);
+        assertEquals(items2.size(), playerOffer.getItems().length);
+        assertTrue(Arrays.stream(playerOffer.getItems()).noneMatch(items1::contains));
+
+        setSatisfied(player);
+        assertThat(player, receivedMessageContaining("will need"));
+
+        assertEquals(1, buyer.getInventory().getItemCount());
+        assertEquals(initialFunds, factory.getShop(buyer).getMoney());
+        assertEquals(items.size(), player.getInventory().getNumItemsNotCoins());
+        assertThat(player, hasCoinsOfValue(0L));
+    }
+
+    @Test
+    void testMultipleMinimumPurchasesAtDifferentQLs() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+        int minimumPurchase = 10;
+        int numberOfItems = minimumPurchase * 3;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase * 2);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 25.0f, 20, minimumPurchase);
+        priceList.savePriceList();
+
+        createHandler();
+        long initialFunds = (long)(10 * (minimumPurchase * 2) * 1.1f) + (long)(20 * minimumPurchase * 1.1f);
+        factory.getShop(buyer).setMoney(initialFunds);
+        List<Item> items = new ArrayList<>();
+        factory.createManyItems(factory.getIsWoodId(), minimumPurchase * 2).iterator().forEachRemaining(items::add);
+        factory.createManyItems(factory.getIsWoodId(), minimumPurchase).iterator().forEachRemaining(item -> {
+            item.setQualityLevel(26);
+            items.add(item);
+        });
+        items.forEach(player.getInventory()::insertItem);
+        items.forEach(playerOffer::addItem);
+        handler.balance();
+
+        assertEquals(numberOfItems, playerToTrade.getItems().length);
+        assertEquals(0, playerOffer.getItems().length);
+
+        setSatisfied(player);
+        assertFalse(receivedMessageContaining("will need").matches(player));
+        assertThat(player, receivedMessageContaining("completed successfully"));
+
+        assertEquals(numberOfItems + 1, buyer.getInventory().getItemCount());
+        assertEquals(0, factory.getShop(buyer).getMoney());
+        assertEquals(0, player.getInventory().getNumItemsNotCoins());
+        assertThat(player, hasCoinsOfValue((long)(10 * minimumPurchase * 2) + (long)(20 * minimumPurchase)));
+    }
+
+    @Test
+    void testNoMessageSentAfterAllMinimumPurchaseEntryItemsRemoved() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, NoSuchFieldException, IllegalAccessException {
+        int minimumPurchase = 20;
+        int numberOfItems = minimumPurchase * 2;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.savePriceList();
+
+        createHandler();
+        long initialFunds = (long)(10 * numberOfItems * 1.1f);
+        factory.getShop(buyer).setMoney(initialFunds);
+        List<Item> items = new ArrayList<>();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).iterator().forEachRemaining(items::add);
+        items.forEach(player.getInventory()::insertItem);
+        items.forEach(playerOffer::addItem);
+        handler.balance();
+        Field creatureTwoSatisfied = BuyerTrade.class.getDeclaredField("creatureTwoSatisfied");
+        creatureTwoSatisfied.setAccessible(true);
+        assertTrue(creatureTwoSatisfied.getBoolean(trade));
+
+        items.forEach(playerToTrade::removeItem);
+        handler.addToInventory(items.get(0), playerOffer.getWurmId());
+        handler.balance();
+
+        assertEquals(0, playerToTrade.getItems().length);
+        assertEquals(0, playerOffer.getItems().length);
+
+        setSatisfied(player);
+        assertFalse(receivedMessageContaining("will need").matches(player));
+
+        assertEquals(1, buyer.getInventory().getItemCount());
+        assertEquals(initialFunds, factory.getShop(buyer).getMoney());
+        assertEquals(items.size(), player.getInventory().getNumItemsNotCoins());
+        assertThat(player, hasCoinsOfValue(0L));
     }
 }

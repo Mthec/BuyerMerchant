@@ -15,6 +15,7 @@ import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +29,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
     private final Shop shop;
     private final boolean ownerTrade;
     private PriceList priceList;
+    private Map<PriceList.Entry, HashSet<Item>> minimumRequired = new HashMap<>();
 
     public BuyerHandler(Creature aCreature, Trade _trade) throws PriceList.NoPriceListOnBuyer {
         this.creature = aCreature;
@@ -109,16 +111,6 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         }
     }
 
-    private int getMarkedPrice(Item item) {
-        int price = 0;
-
-        if (item.getDamage() == 0) {
-            price = priceList.getPrice(item);
-        }
-
-        return price;
-    }
-
     @Override
     public int getTraderSellPriceForItem(Item item, TradingWindow window) {
         // Do nothing.  Should only ever use BuyPrice below.
@@ -127,19 +119,28 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
 
     @Override
     public int getTraderBuyPriceForItem(Item item) {
-        if (item.isFullprice()) {
-            return item.getValue();
-        } else {
-            float weightRatio = ((float)item.getWeightGrams()) / ((float)item.getTemplate().getWeightGrams());
-            int markedPrice = getMarkedPrice(item);
+        PriceList.Entry entry = priceList.getEntryFor(item);
+        if (entry == null)
+            return 0;
+        return getTraderBuyPriceForItem(entry, item);
+    }
 
-            if (markedPrice == -1)
-                return markedPrice;
+    private int getTraderBuyPriceForItem(PriceList.Entry entry, Item item) {
+        int markedPrice = 0;
 
-            int price = (int)(markedPrice * weightRatio);
-
-            return Math.max(0, price);
+        if (item.getDamage() != 0) {
+            return markedPrice;
         }
+
+        markedPrice = entry.getPrice();
+
+        // Could be 0 or unauthorised.
+        if (markedPrice < 1)
+            return markedPrice;
+
+        float weightRatio = ((float)item.getWeightGrams()) / ((float)item.getTemplate().getWeightGrams());
+
+        return Math.max(0, (int)(markedPrice * weightRatio));
     }
 
     private long getDiff() {
@@ -165,6 +166,24 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
     private void suckInterestingItems() {
         TradingWindow offeredWindow = this.trade.getTradingWindow(2L);
         TradingWindow targetWindow = this.trade.getTradingWindow(4L);
+
+        // Reset minimumRequired items for easier adding of new items that match the Entry.
+        if (!minimumRequired.isEmpty()) {
+            Set<Item> items = new HashSet<>(Arrays.asList(targetWindow.getItems()));
+
+            for (Map.Entry<PriceList.Entry, HashSet<Item>> entries : minimumRequired.entrySet()) {
+                HashSet<Item> list = entries.getValue();
+                for (Item item : list.toArray(new Item[0])) {
+                    if (items.contains(item)) {
+                        targetWindow.removeItem(item);
+                        offeredWindow.addItem(item);
+                    } else {
+                        list.remove(item);
+                    }
+                }
+            }
+        }
+
         Item[] offeredItems = offeredWindow.getItems();
         Item[] alreadyAcceptedItems = targetWindow.getItems();
         if (this.ownerTrade) {
@@ -192,46 +211,124 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
             }
 
             size += alreadyAcceptedItems.length;
-            if (size > maxPersonalItems) {
+            if (size >= maxPersonalItems) {
                 this.trade.creatureOne.getCommunicator().sendNormalServerMessage(this.creature.getName() + " says, 'I cannot add more items to my stock right now.'");
             } else {
+                boolean anyNotAuthorised = false;
+                boolean anyDamaged = false;
+                boolean anyLocked = false;
+                boolean personalItemsFull = false;
                 targetWindow.startReceivingItems();
 
                 for (Item offeredItem : offeredItems) {
                     if (size < maxPersonalItems) {
-                        int price = getTraderBuyPriceForItem(offeredItem);
-
                         if (offeredItem.getDamage() > 0) {
-                            this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept damaged items.'");
+                            anyDamaged = true;
                         } else if (offeredItem.isLockable() && offeredItem.isLocked()) {
-                            this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept locked items any more. Sorry for the inconvenience.'");
+                            anyLocked = true;
                         } else if ((offeredItem.isHollow() && !offeredItem.isEmpty(true)) || offeredItem.isSealedByPlayer()) {
                             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'Please empty the " + offeredItem.getName() + " first.'");
                         }
-                        else if (!offeredItem.isCoin() && price != PriceList.unauthorised) {
-                            if (price == 0) {
-                                this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I will not pay you anything, but will accept the " + offeredItem.getName() + " as a donation.");
-                            }
-                            Item parent = offeredItem;
+                        else if (!offeredItem.isCoin()) {
+                            PriceList.Entry entry = priceList.getEntryFor(offeredItem);
+                            if (entry != null) {
+                                int price = getTraderBuyPriceForItem(entry, offeredItem);
+                                if (price != PriceList.unauthorised) {
+                                    if (entry.getMinimumPurchase() != 1) {
+                                        if (!minimumRequired.containsKey(entry))
+                                            minimumRequired.put(entry, new HashSet<>());
+                                        minimumRequired.get(entry).add(offeredItem);
+                                    } else {
+                                        if (price == 0) {
+                                            this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I will not pay you anything, but will accept the " + offeredItem.getName() + " as a donation.'");
+                                        }
+                                        Item parent = offeredItem;
 
-                            try {
-                                parent = offeredItem.getParent();
-                            } catch (NoSuchItemException ignored) {
-                            }
+                                        try {
+                                            parent = offeredItem.getParent();
+                                        } catch (NoSuchItemException ignored) {
+                                        }
 
-                            if (offeredItem == parent || parent.isViewableBy(this.creature)) {
-                                offeredWindow.removeItem(offeredItem);
-                                targetWindow.addItem(offeredItem);
-                                ++size;
+                                        if (offeredItem == parent || parent.isViewableBy(this.creature)) {
+                                            offeredWindow.removeItem(offeredItem);
+                                            targetWindow.addItem(offeredItem);
+                                            ++size;
+                                        }
+                                    }
+
+                                } else
+                                    anyNotAuthorised = true;
+
                             }
-                        } else
-                            this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I am not authorised to buy this item.'");
+                        }
                     } else {
-                        this.trade.creatureOne.getCommunicator().sendNormalServerMessage(this.creature.getName() + " says, 'I cannot add more items to my stock right now.'");
+                        personalItemsFull = true;
+                        break;
+                    }
+                }
+
+                if (!minimumRequired.isEmpty()) {
+                    Iterator<Map.Entry<PriceList.Entry, HashSet<Item>>> allEntries = minimumRequired.entrySet().iterator();
+                    while (allEntries.hasNext()) {
+                        Map.Entry<PriceList.Entry, HashSet<Item>> entries = allEntries.next();
+                        PriceList.Entry entry = entries.getKey();
+                        HashSet<Item> minimumRequiredItems = entries.getValue();
+
+                        if (minimumRequiredItems.isEmpty()) {
+                            allEntries.remove();
+                            continue;
+                        }
+
+                        if (minimumRequiredItems.size() >= entry.getMinimumPurchase()) {
+                            if (size + entry.getMinimumPurchase() <= maxPersonalItems) {
+                                if (size + minimumRequiredItems.size() > maxPersonalItems)
+                                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I do not have enough space to accept all of the " + entry.getItem().getTemplate().getPlural() + ".'");
+
+                                int price = getTraderBuyPriceForItem(entry, minimumRequiredItems.iterator().next());
+                                if (price == 0) {
+                                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I will not pay you anything, but will accept the " + minimumRequiredItems.iterator().next().getTemplate().getPlural() + " as a donation.'");
+                                }
+
+                                // Don't know why this wouldn't be true, because of container test above.
+                                if (minimumRequiredItems.stream().allMatch(item -> {
+                                    Item parent = item;
+                                    try {
+                                        parent = item.getParent();
+                                    } catch (NoSuchItemException ignored) {
+                                    }
+
+                                    return item == parent || parent.isViewableBy(this.creature);
+                                })) {
+                                    for (Item offeredItem : minimumRequiredItems) {
+                                        if (size < maxPersonalItems) {
+                                            offeredWindow.removeItem(offeredItem);
+                                            targetWindow.addItem(offeredItem);
+                                            ++size;
+                                        }
+                                    }
+                                }
+                            } else {
+                                personalItemsFull = true;
+                                break;
+                            }
+                        } else {
+                            int numberRequired = entry.getMinimumPurchase() - minimumRequiredItems.size();
+                            ItemTemplate template = entry.getItem().getTemplate();
+                            this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I will need " + numberRequired + " more " + (numberRequired == 1 ? template.getName() : template.getPlural()) + " in order to accept them.'");
+                        }
                     }
                 }
 
                 targetWindow.stopReceivingItems();
+
+                if (anyDamaged)
+                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept damaged items.'");
+                if (anyLocked)
+                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept locked items any more. Sorry for the inconvenience.'");
+                if (anyNotAuthorised)
+                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I am not authorised to buy this item.'");
+                if (personalItemsFull)
+                    this.trade.creatureOne.getCommunicator().sendNormalServerMessage(this.creature.getName() + " says, 'I cannot add more items to my stock right now.'");
             }
         }
     }

@@ -164,7 +164,7 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
                 PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
                 // Any material is 0.  Client will not label 0 material (unknown).
                 PriceList.Entry newItem = priceList.addItem(itemTemplate.getTemplateId(), material);
-                SetBuyerPricesQuestion.setItemQLAndPrice(newItem, -1, this.getAnswer(), responder);
+                SetBuyerPricesQuestion.setItemDetails(newItem, -1, this.getAnswer(), responder);
                 priceList.savePriceList();
                 responder.getCommunicator().sendNormalServerMessage(buyer.getName() + " adds the item to their list.");
             } catch (PriceList.NoPriceListOnBuyer noPriceListOnBuyer) {
@@ -361,7 +361,8 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
     private void sendQLPriceQuestion() {
         StringBuilder buf = new StringBuilder(this.getBmlHeader());
         DecimalFormat df = new DecimalFormat("#.##");
-        buf.append("table{rows=\"1\"; cols=\"8\";label{text=\"Item type\"};label{text=\"Material\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}");
+        buf.append("text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}");
+        buf.append("table{rows=\"1\"; cols=\"9\";label{text=\"Item type\"};label{text=\"Material\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"};label{text=\"Minimum Purchase\"}");
 
         // New item row
         buf.append("harray{label{text=\"" + itemTemplate.getName() + "\"}};");
@@ -372,10 +373,11 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
         buf.append("harray{input{maxchars=\"2\"; id=\"s\";text=\"0\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"2\"; id=\"c\";text=\"0\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"2\"; id=\"i\";text=\"0\"};label{text=\" \"}}");
+        buf.append("harray{input{maxchars=\"3\"; id=\"p\";text=\"1\"};label{text=\" \"}}");
 
         buf.append("}");
         buf.append("text{text=\"\"}");
         buf.append("harray {button{text=\"Add Item\";id=\"submit\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Back\";id=\"back\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Cancel\";id=\"cancel\"};}}}null;null;};");
-        this.getResponder().getCommunicator().sendBml(400, 300, true, true, buf.toString(), 200, 200, 200, this.title);
+        this.getResponder().getCommunicator().sendBml(425, 300, true, true, buf.toString(), 200, 200, 200, this.title);
     }
 }

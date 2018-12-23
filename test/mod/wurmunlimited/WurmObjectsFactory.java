@@ -364,6 +364,20 @@ public class WurmObjectsFactory {
         return item;
     }
 
+    public void fillItemWith(Item item, int fluidId) {
+        ItemTemplate fluid;
+        try {
+             fluid = ItemTemplateFactory.getInstance().getTemplate(fluidId);
+        } catch (NoSuchTemplateException e) {
+            throw new RuntimeException(e);
+        }
+        if (fluid != null && fluid.isLiquid()) {
+            Item newFluid = createNewItem(fluidId);
+            newFluid.setWeight(item.getFreeVolume(), true);
+            item.insertItem(newFluid);
+        }
+    }
+
     public Item getItem(long id) {
         return items.get(id);
     }

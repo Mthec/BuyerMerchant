@@ -13,14 +13,20 @@ import com.wurmonline.server.questions.Question;
 import com.wurmonline.server.questions.Questions;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.buyermerchant.PriceList;
+import org.junit.BeforeClass;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.internal.util.reflection.FieldSetter;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.mockito.Mockito.mock;
 
 public abstract class WurmTradingTest {
 

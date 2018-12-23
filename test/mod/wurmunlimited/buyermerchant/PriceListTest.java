@@ -5,19 +5,22 @@ import com.wurmonline.server.FailedException;
 import com.wurmonline.server.Items;
 import com.wurmonline.server.NoSuchItemException;
 import com.wurmonline.server.creatures.Creature;
-import com.wurmonline.server.items.Item;
-import com.wurmonline.server.items.ItemsPackageFactory;
-import com.wurmonline.server.items.NoSuchTemplateException;
-import com.wurmonline.server.items.TempItem;
+import com.wurmonline.server.items.*;
 import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.WurmObjectsFactory;
+import mod.wurmunlimited.WurmTradingTest;
+import org.junit.BeforeClass;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 public class PriceListTest {
 
@@ -58,7 +61,7 @@ public class PriceListTest {
     @Test
     void testLoadPriceListItem() {
         PriceList priceList = new PriceList(createPriceList(one));
-        assertEquals(priceList.new Entry(1, (byte)1, 1.0f, 10).toString(), priceList.iterator().next().toString());
+        assertEquals(priceList.new Entry(1, (byte)1, 1.0f, 10, 1).toString(), priceList.iterator().next().toString());
     }
 
     @Test
@@ -102,12 +105,12 @@ public class PriceListTest {
         String str = stringBuilder.toString();
         assert str.length() <= 500;
         PriceList priceList = new PriceList(createPriceList(str));
-        assertThrows(PriceList.PriceListFullException.class, () -> priceList.addItem(1, (byte)1, 1.0f, 10));
+        assertThrows(PriceList.PriceListFullException.class, () -> priceList.addItem(1, (byte)2, 1.0f, 10));
     }
 
     @Test
     void testPriceTestIterator() {
-        List<String> allItems = Arrays.asList(one, two, one + 100, two + 200);
+        List<String> allItems = Arrays.asList(one, two, one + "," + 100, two + "," + 200);
         Collections.sort(allItems);
         PriceList priceList = new PriceList(createPriceList(Joiner.on("\n").join(allItems)));
         List<String> newItems = new ArrayList<>(4);
@@ -121,15 +124,15 @@ public class PriceListTest {
     void testUpdate () throws PriceList.PriceListFullException {
         PriceList priceList = new PriceList(createPriceList(one));
         String oldString = priceList.toString();
-        priceList.iterator().next().updateItem(2, (byte)2, 2, 10000000);
+        priceList.iterator().next().updateItem(2, (byte)2, 2, 10000000, 1);
         assertEquals(oldString, priceList.toString());
     }
 
     @Test
-    void testUpdateItemQLAndPrice () throws PriceList.PriceListFullException {
+    void testUpdateDetails () throws PriceList.PriceListFullException {
         PriceList priceList = new PriceList(createPriceList(one));
         String oldString = priceList.toString();
-        priceList.iterator().next().updateItemQLAndPrice(2, 10000000);
+        priceList.iterator().next().updateItemDetails(2, 10000000, 1);
         assertEquals(oldString, priceList.toString());
     }
 
@@ -141,7 +144,7 @@ public class PriceListTest {
         String str = stringBuilder.toString();
         assert str.length() <= 500;
         PriceList priceList = new PriceList(createPriceList(str));
-        assertThrows(PriceList.PriceListFullException.class, () -> priceList.iterator().next().updateItem(2, (byte)2, 2, 10000000));
+        assertThrows(PriceList.PriceListFullException.class, () -> priceList.iterator().next().updateItem(2, (byte)2, 2, 10000000, 1));
     }
 
     @Test
@@ -213,9 +216,9 @@ public class PriceListTest {
         PriceList.Entry item = priceList.iterator().next();
         float ql = item.minQL;
 
-        item.updateItem(item.template, item.material, 101, item.price);
+        item.updateItem(item.template, item.material, 101, item.price, 1);
         assertEquals(ql, item.minQL);
-        item.updateItem(item.template, item.material, -0.1f, item.price);
+        item.updateItem(item.template, item.material, -0.1f, item.price, 1);
         assertEquals(ql, item.minQL);
     }
 
@@ -368,5 +371,172 @@ public class PriceListTest {
 
         PriceList.getPriceListFromBuyer(buyer);
         assertEquals("Buy List", priceList.getDescription());
+    }
+
+    @Test
+    void testMinimumPurchaseOption() {
+        PriceList priceList = new PriceList(createPriceList(Joiner.on("\n").join(one, two + ",100")));
+
+        PriceList.Entry first;
+        PriceList.Entry second;
+        List<PriceList.Entry> entries = new ArrayList<>(2);
+        priceList.iterator().forEachRemaining(entries::add);
+        if (entries.get(0).template == 1) {
+            first = entries.get(0);
+            second = entries.get(1);
+        } else {
+            first = entries.get(1);
+            second = entries.get(0);
+        }
+
+        assertEquals(1, first.minimumPurchase);
+        assertEquals(100, second.minimumPurchase);
+    }
+
+    @Test
+    void testMinimumPurchaseItemStrings() {
+        int hatchetId = 7;
+        String str = ",0,1.0,1";
+        PriceList priceList = new PriceList(createPriceList(Joiner.on("\n").join(hatchetId + str, factory.getIsWoodId() + str + ",100")));
+
+        Item first;
+        Item second;
+        List<PriceList.Entry> entries = new ArrayList<>(2);
+        priceList.iterator().forEachRemaining(entries::add);
+        if (entries.get(0).template == hatchetId) {
+            first = entries.get(0).getItem();
+            second = entries.get(1).getItem();
+        } else {
+            first = entries.get(1).getItem();
+            second = entries.get(0).getItem();
+        }
+
+        assertEquals("hatchet, any", first.getName());
+        assertEquals("log, any - minimum 100", second.getName());
+    }
+
+    @Test
+    void testGetMinimumRequirement() {
+        PriceList priceList = new PriceList(createPriceList(Joiner.on("\n").join(one, two + ",100")));
+
+        PriceList.Entry first;
+        PriceList.Entry second;
+        List<PriceList.Entry> entries = new ArrayList<>(2);
+        priceList.iterator().forEachRemaining(entries::add);
+        if (entries.get(0).template == 1) {
+            first = entries.get(0);
+            second = entries.get(1);
+        } else {
+            first = entries.get(1);
+            second = entries.get(0);
+        }
+
+        assertEquals(1, first.getMinimumPurchase());
+        assertEquals(100, second.getMinimumPurchase());
+    }
+
+    @Test
+    void testMinimumRequirementAddItem() {
+        PriceList priceList = new PriceList(createPriceList(""));
+
+        assertDoesNotThrow(() -> priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, 1.0f, 1, 100));
+        assertDoesNotThrow(priceList::savePriceList);
+
+        assertEquals(100, priceList.iterator().next().minimumPurchase);
+    }
+
+    @Test
+    void testIncorrectPriceListInscriptionRemovesEntry() throws NoSuchFieldException, IllegalAccessException {
+        // Good values.
+        String template = "1";
+        String material = "0";
+        String ql = "1.0";
+        String price = "1";
+        String[] badValues = new String[] {
+                "-2", "abc", "1.0"
+        };
+
+        Field logger = PriceList.class.getDeclaredField("logger");
+        logger.setAccessible(true);
+        Logger mockLogger = mock(Logger.class);
+        logger.set(null, mockLogger);
+
+        int categories = 4 + 1;
+        for (int i = 0; i < categories; ++i) {
+            for (String badValue : badValues) {
+                StringBuilder builder = new StringBuilder();
+                switch (i) {
+                    case 0:
+                        builder.append(badValue).append(",").append(material).append(",").append(ql).append(",").append(price).append("\n");
+                        break;
+                    case 1:
+                        builder.append(template).append(",").append(badValue).append(",").append(ql).append(",").append(price).append("\n");
+                        break;
+                    case 2:
+                        if (badValue.equals("1.0"))
+                            continue;
+                        builder.append(template).append(",").append(material).append(",").append(badValue).append(",").append(price).append("\n");
+                        break;
+                    case 3:
+                        builder.append(template).append(",").append(material).append(",").append(ql).append(",").append(badValue).append("\n");
+                        break;
+                    case 4:
+                        builder.append(template).append(",").append(material).append(",").append(ql).append(",").append(price).append(",").append(badValue).append("\n");
+                        break;
+                }
+
+                String str = builder.toString();
+                PriceList priceList = new PriceList(createPriceList(str));
+                assertEquals(0, priceList.size(), "Bad Price List Entry ignored - " + str);
+                verify(mockLogger).warning("Bad Price List Entry - " + str.trim() + " - Removing.");
+            }
+        }
+    }
+
+    @Test
+    void testMinusOneWorksForPrice() throws NoSuchFieldException, IllegalAccessException {
+        // Good values.
+        String template = "1";
+        String material = "0";
+        String ql = "1.0";
+        String price = "-1";
+
+        Field logger = PriceList.class.getDeclaredField("logger");
+        logger.setAccessible(true);
+        Logger mockLogger = mock(Logger.class);
+        logger.set(null, mockLogger);
+
+
+
+        String str = template + "," + material + "," + ql + "," + price + "\n";
+        PriceList priceList = new PriceList(createPriceList(str));
+        assertEquals(1, priceList.size(), "Good Price List Entry ignored - " + str);
+        verify(mockLogger, never()).warning("Bad Price List Entry - " + str.trim() + " - Removing.");
+    }
+
+    @Test
+    void testDuplicatePriceListEntryUpdatesInstead() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+        PriceList priceList = new PriceList(createPriceList(""));
+
+        priceList.addItem(1, (byte)1, 1.0f, 1);
+        assertEquals(1, priceList.iterator().next().getPrice());
+
+        priceList.addItem(1, (byte)1, 1.0f, 1);
+        priceList.addItem(1, (byte)1, 1.0f, 2);
+        assertEquals(1, priceList.size());
+        assertEquals(2, priceList.iterator().next().getPrice());
+    }
+
+    @Test
+    void testDuplicatePriceListEntryUpdatesItemToo() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+        PriceList priceList = new PriceList(createPriceList(""));
+
+        priceList.addItem(1, (byte)1, 1.0f, 1);
+        assertEquals(1, priceList.getItems().iterator().next().getPrice());
+
+        priceList.addItem(1, (byte)1, 1.0f, 1);
+        priceList.addItem(1, (byte)1, 1.0f, 2);
+        assertEquals(1, priceList.size());
+        assertEquals(2, priceList.getItems().iterator().next().getPrice());
     }
 }

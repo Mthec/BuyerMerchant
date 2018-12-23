@@ -29,7 +29,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
     private PriceList priceList;
 
     SetBuyerPricesQuestion(Creature aResponder, long aTarget) {
-        super(aResponder, "Price management.", "Set prices for items", 23, aTarget);
+        super(aResponder, "Price management", "Set prices for items", 23, aTarget);
     }
 
     public void answer(Properties answers) {
@@ -59,7 +59,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                         if (wasSelected(bid + "remove"))
                             priceList.removeItem(item);
                         else
-                            setItemQLAndPrice(item, bid, props, responder);
+                            setItemDetails(item, bid, props, responder);
                     }
                     priceList.savePriceList();
                     responder.getCommunicator().sendNormalServerMessage("The prices are updated.");
@@ -75,10 +75,11 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
         }
     }
 
-    static void setItemQLAndPrice(PriceList.Entry item, int id, Properties answers, Creature responder) throws PriceList.PriceListFullException {
+    static void setItemDetails(PriceList.Entry item, int id, Properties answers, Creature responder) throws PriceList.PriceListFullException {
         int price = 0;
         boolean badPrice = false;
         float ql = -1;
+        int minimumPurchase = -1;
         String stringId;
         if (id == -1)
             stringId = "";
@@ -141,11 +142,22 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
             badPrice = true;
             responder.getCommunicator().sendNormalServerMessage("Failed to set a negative price for " + item.getName() + ". It will remain on the list but will not be authorised until the price is changed.");
         }
-
         if (badPrice) {
             price = PriceList.unauthorised;
         }
-        item.updateItemQLAndPrice(ql, price);
+
+        val = answers.getProperty(stringId + "p");
+        if (val != null && val.length() > 0) {
+            try {
+                minimumPurchase = Integer.parseInt(val);
+                if (minimumPurchase < 1)
+                    throw new NumberFormatException("Minimum purchase cannot be less than 1.");
+            } catch (NumberFormatException var21) {
+                responder.getCommunicator().sendNormalServerMessage("Failed to set the minimum purchase amount for " + item.getName() + ".");
+                minimumPurchase = -1;
+            }
+        }
+        item.updateItemDetails(ql, price, minimumPurchase);
     }
 
     public void sendQuestion() {
@@ -161,9 +173,10 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
 
                     StringBuilder buf = new StringBuilder(this.getBmlHeader());
                     DecimalFormat df = new DecimalFormat("#.##");
+                    // TODO - Destroy items inventory message.
                     buf.append("text{text=\"" + trader.getName() + " has inventory space for " + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + " more items.\"}");
                     buf.append("text{type=\"bold\";text=\"Prices for " + trader.getName() + "\"}text{text=''}");
-                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"8\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Remove?\"}");
+                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"9\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Min. Amount\"};label{text=\"Remove?\"}");
 
                     for(PriceList.Entry item : priceList) {
                         ++idx;
@@ -175,6 +188,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "s\";text=\"" + change.getSilverCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "c\";text=\"" + change.getCopperCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "i\";text=\"" + change.getIronCoins() + "\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "p\";text=\"" + item.getMinimumPurchase() + "\"};label{text=\" \"}};");
                         buf.append("harray{checkbox{id=\"" + idx + "remove\"};label{text=\" \"}};");
                         this.itemMap.put(item, idx);
                     }
@@ -182,7 +196,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     buf.append("}");
                     buf.append("text{text=\"\"}");
                     buf.append("harray {button{text='Save Prices';id='submit'};label{text=\" \";id=\"spacedlxg\"};button{text='Add New';id='new'}}}}null;null;}");
-                    this.getResponder().getCommunicator().sendBml(500, 300, true, true, buf.toString(), 200, 200, 200, this.title);
+                    this.getResponder().getCommunicator().sendBml(525, 300, true, true, buf.toString(), 200, 200, 200, this.title);
                 } else {
                     this.getResponder().getCommunicator().sendNormalServerMessage("You don't own that shop.");
                 }

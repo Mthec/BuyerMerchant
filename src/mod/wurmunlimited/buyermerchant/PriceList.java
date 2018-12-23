@@ -8,6 +8,8 @@ import com.wurmonline.server.items.*;
 import com.wurmonline.shared.exceptions.WurmServerException;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -34,7 +36,8 @@ public class PriceList implements Iterable<PriceList.Entry> {
     public static final String noSpaceOnPriceListPlayerMessage = "The buyer has run out of space on his price list and cannot record the changes.  Try removing some items from the list.";
     public static final String couldNotCreateItemPlayerMessage = "The buyer looks at you confused, as if not understanding what your saying.";
     public static int unauthorised = -1;
-    private static final Logger logger = Logger.getLogger(PriceList.class.getName());
+    // Causes testIncorrectPriceListInscriptionRemovesEntry to fail if final.
+    private static Logger logger = Logger.getLogger(PriceList.class.getName());
 
     public class Entry {
         int template;
@@ -42,24 +45,42 @@ public class PriceList implements Iterable<PriceList.Entry> {
         byte material;
         float minQL;
         int price;
+        int minimumPurchase;
 
-        Entry(String entry) {
+        Entry(String entry) throws NumberFormatException {
             String[] entries = entry.split(",");
             template = Integer.parseInt(entries[0]);
+            if (template < 1)
+                throw new NumberFormatException("Template id was " + entries[0]);
             material = Byte.parseByte(entries[1]);
+            if (material < (byte)0)
+                throw new NumberFormatException("Material id was " + entries[1]);
             minQL = Float.parseFloat(entries[2]);
+            if (minQL < 0)
+                throw new NumberFormatException("minQl was " + entries[2]);
+            // -1 for bad price format in menu.  Saves having to go all the way through again.
             price = Integer.parseInt(entries[3]);
+            if (price < -1)
+                throw new NumberFormatException("Price was " + entries[3]);
+            if (entries.length == 5) {
+                minimumPurchase = Integer.parseInt(entries[4]);
+                if (minimumPurchase < 0)
+                    throw new NumberFormatException("minQl was " + entries[4]);
+            }
+            if (minimumPurchase == 0)
+                minimumPurchase = 1;
         }
 
-        Entry(int template, byte material, float minQL, int price) {
-            update(template, material, minQL, price);
+        Entry(int template, byte material, float minQL, int price, int minimumPurchase) {
+            update(template, material, minQL, price, minimumPurchase);
         }
 
-        private void update(int template, byte material, float minQL, int price) {
+        private void update(int template, byte material, float minQL, int price, int minimumPurchase) {
             this.template = template;
             this.material = material;
             this.minQL = minQL;
             this.price = price;
+            this.minimumPurchase = minimumPurchase;
         }
 
         public Item getItem() {
@@ -79,21 +100,25 @@ public class PriceList implements Iterable<PriceList.Entry> {
         }
 
         public String toString() {
+            if (minimumPurchase != 1)
+                return Joiner.on(",").join(template, material, minQL, price, minimumPurchase);
             return Joiner.on(",").join(template, material, minQL, price);
         }
 
-        public void updateItemQLAndPrice(float minQL, int price) throws PriceListFullException {
-            updateItem(template, material, minQL, price);
+        public void updateItemDetails(float minQL, int price, int minimumPurchase) throws PriceListFullException {
+            updateItem(template, material, minQL, price, minimumPurchase);
         }
 
-        public void updateItem(int template, byte material, float minQL, int price) throws PriceListFullException {
+        public void updateItem(int template, byte material, float minQL, int price, int minimumPurchase) throws PriceListFullException {
             if (minQL < 0 || minQL > 100)
                 minQL = this.minQL;
             int oldLength = toString().length();
-            int newLength = new Entry(template, material, minQL, price).toString().length();
+            int newLength = new Entry(template, material, minQL, price, minimumPurchase).toString().length();
             if (currentInscriptionLength + (newLength - oldLength) > MAX_INSCRIPTION_LENGTH)
                 throw new PriceListFullException("Not enough space for that update.");
-            update(template, material, minQL, price);
+            if (minimumPurchase == -1)
+                minimumPurchase = this.minimumPurchase;
+            update(template, material, minQL, price, minimumPurchase);
             currentInscriptionLength += newLength - oldLength;
         }
 
@@ -103,6 +128,29 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
         public float getQualityLevel() {
             return minQL;
+        }
+
+        public int getMinimumPurchase() {
+            return minimumPurchase;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o)
+                return true;
+            if (o == null || getClass() != o.getClass())
+                return false;
+            Entry entry = (Entry)o;
+            return template == entry.template &&
+                           material == entry.material &&
+                           Float.compare(entry.minQL, minQL) == 0 &&
+                           minimumPurchase == entry.minimumPurchase;
+        }
+
+        @Override
+        public int hashCode() {
+            //noinspection ObjectInstantiationInEqualsHashCode
+            return Objects.hash(template, material, minQL, minimumPurchase);
         }
     }
 
@@ -131,10 +179,29 @@ public class PriceList implements Iterable<PriceList.Entry> {
         if (inscription != null) {
             String inscriptionString = inscription.getInscription();
             currentInscriptionLength = inscriptionString.length();
-            if (currentInscriptionLength > 0)
-                for (String entry : inscriptionString.split("\n")){
-                    prices.put(new Entry(entry), null);
+            if (currentInscriptionLength > 0) {
+                boolean error = false;
+                for (String entry : inscriptionString.split("\n")) {
+                    Entry newEntry = null;
+                    try {
+                        newEntry = new Entry(entry);
+                    } catch (NumberFormatException e) {
+                        error = true;
+                        logger.warning("Bad Price List Entry - " + entry + " - Removing.");
+                        e.printStackTrace();
+                    }
+                    if (newEntry != null)
+                        prices.put(newEntry, null);
                 }
+
+                if (error) {
+                    try {
+                        savePriceList();
+                    } catch (PriceListFullException e) {
+                        logger.warning("PriceListFull for some reason.  This should never occur.");
+                    }
+                }
+            }
         }
     }
 
@@ -194,15 +261,23 @@ public class PriceList implements Iterable<PriceList.Entry> {
         return new HashSet<>(prices.values());
     }
 
-    public int getPrice(Item item) {
+    private Optional<Entry> getEntry(Item item) {
         return prices.keySet().stream()
-                .filter(priceItem -> item.getTemplateId() == priceItem.template && (priceItem.material == (byte)0 || item.getMaterial() == priceItem.material) && item.getQualityLevel() >= priceItem.minQL).max((o1, o2) -> Float.compare(o1.minQL, o2.minQL))
-                .map(priceItem -> priceItem.price).orElse(-1);
+       .filter(priceItem -> item.getTemplateId() == priceItem.template && (priceItem.material == (byte)0 || item.getMaterial() == priceItem.material) && item.getQualityLevel() >= priceItem.minQL).max((o1, o2) -> Float.compare(o1.minQL, o2.minQL));
+    }
+
+    @Nullable
+    public Entry getEntryFor(Item item) {
+        return getEntry(item).orElse(null);
+    }
+
+    public int getPrice(Item item) {
+        return getEntry(item).map(priceItem -> priceItem.price).orElse(-1);
     }
 
     private TempItem createItem(Entry item) throws IOException, NoSuchTemplateException {
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(item.template);
-        TempItem newItem = new TempItem(ItemFactory.generateName(template, item.material) + (item.material == (byte)0 ? ", any" : ""), template, item.minQL, "PriceList");
+        TempItem newItem = new TempItem(ItemFactory.generateName(template, item.material) + (item.material == (byte)0 ? ", any" : "") + (item.minimumPurchase != 1 ? " - minimum " + item.minimumPurchase : ""), template, item.minQL, "PriceList");
         newItem.setMaterial(item.material);
         newItem.setPrice(item.price);
         newItem.setOwnerId(priceListPaper.getOwnerId());
@@ -225,7 +300,22 @@ public class PriceList implements Iterable<PriceList.Entry> {
     }
 
     public Entry addItem(int templateId, byte material, float minQL, int price) throws PriceListFullException, IOException, NoSuchTemplateException {
-        Entry item = new Entry(templateId, material, minQL, price);
+        return addItem(templateId, material, minQL, price, 1);
+    }
+
+    public Entry addItem(int templateId, byte material, float minQL, int price, int minimumPurchase) throws PriceListFullException, IOException, NoSuchTemplateException {
+        Entry item = new Entry(templateId, material, minQL, price, minimumPurchase);
+        if (prices.containsKey(item)) {
+            Entry alreadyListed = prices.keySet().stream().filter(entry -> entry.equals(item)).findAny().orElse(null);
+            if (alreadyListed != null) {
+                alreadyListed.price = price;
+                TempItem maybeItem = prices.get(alreadyListed);
+                if (maybeItem != null)
+                    maybeItem.setPrice(price);
+                return alreadyListed;
+            }
+        }
+
         if (currentInscriptionLength + item.toString().length() > MAX_INSCRIPTION_LENGTH)
             throw new PriceListFullException("PriceList has too many items to inscribe.");
         if (createdItems)
