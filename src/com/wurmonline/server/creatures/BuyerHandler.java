@@ -326,7 +326,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                 if (anyLocked)
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept locked items any more. Sorry for the inconvenience.'");
                 if (anyNotAuthorised)
-                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I am not authorised to buy this item.'");
+                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I am not authorised to buy " + (offeredWindow.getItems().length != 1 ? "these items" : "this item") + ".'");
                 if (personalItemsFull)
                     this.trade.creatureOne.getCommunicator().sendNormalServerMessage(this.creature.getName() + " says, 'I cannot add more items to my stock right now.'");
             }
