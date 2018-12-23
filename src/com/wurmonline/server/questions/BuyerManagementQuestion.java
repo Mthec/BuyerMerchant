@@ -396,7 +396,10 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
                 buf.append("label{text=\"" + (new Change(shop.getMoneyEarnedMonth())).getChangeShortString() + "\"}");
                 buf.append("label{text=\"" + (new Change(shop.getMoneyEarnedLife())).getChangeShortString() + "\"}");
                 buf.append("label{text=\"" + shop.getSellRatio() + "\"}");
-                buf.append("label{text=\"" + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + "\"}}");
+                if (BuyerTradingWindow.destroyBoughtItems)
+                    buf.append("label{text=\"N/A\"}}");
+                else
+                    buf.append("label{text=\"" + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + "\"}}");
                 buf.append("text{type=\"bold\";text=\"Dismissing\"};text{text=\"if you dismiss a buyer they will take all items with them!\"}");
                 buf.append("harray{label{text=\"Dismiss\"};checkbox{id=\"" + traderId + "dismiss\";selected=\"false\";text=\" \"}}");
 

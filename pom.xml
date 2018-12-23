@@ -6,7 +6,7 @@
 
     <groupId>mod.wurmunlimited.buyermerchant</groupId>
     <artifactId>BuyerMerchant</artifactId>
-    <version>0.5.2-beta</version>
+    <version>0.5.5-beta</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

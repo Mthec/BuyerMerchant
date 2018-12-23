@@ -448,7 +448,6 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         priceList.savePriceList();
 
         createHandler();
-        // TODO - Change later when fixed pricing.
         factory.getShop(buyer).setMoney((long)(10 * numberOfItems * 1.1f));
         List<Item> items = new ArrayList<>();
         factory.createManyItems(factory.getIsWoodId(), numberOfItems).iterator().forEachRemaining(items::add);

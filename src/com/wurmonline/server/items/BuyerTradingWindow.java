@@ -447,7 +447,7 @@ public class BuyerTradingWindow extends TradingWindow {
                             }
                         }
 
-                        // So if this is the Player's Window aka 4
+                        // This is the Player's Window aka 4
                         if (!(this.watcher instanceof Player)) {
                             if (coin) {
                                 if (shop != null) {

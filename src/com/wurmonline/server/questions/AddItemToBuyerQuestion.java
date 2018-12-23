@@ -378,6 +378,6 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
         buf.append("}");
         buf.append("text{text=\"\"}");
         buf.append("harray {button{text=\"Add Item\";id=\"submit\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Back\";id=\"back\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Cancel\";id=\"cancel\"};}}}null;null;};");
-        this.getResponder().getCommunicator().sendBml(425, 300, true, true, buf.toString(), 200, 200, 200, this.title);
+        this.getResponder().getCommunicator().sendBml(450, 300, true, true, buf.toString(), 200, 200, 200, this.title);
     }
 }

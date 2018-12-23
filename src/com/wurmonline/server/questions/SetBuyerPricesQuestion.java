@@ -15,6 +15,7 @@ import com.wurmonline.server.economy.Change;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
+import com.wurmonline.server.items.BuyerTradingWindow;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.text.DecimalFormat;
@@ -173,8 +174,8 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
 
                     StringBuilder buf = new StringBuilder(this.getBmlHeader());
                     DecimalFormat df = new DecimalFormat("#.##");
-                    // TODO - Destroy items inventory message.
-                    buf.append("text{text=\"" + trader.getName() + " has inventory space for " + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + " more items.\"}");
+                    if (!BuyerTradingWindow.destroyBoughtItems)
+                        buf.append("text{text=\"" + trader.getName() + " has inventory space for " + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + " more items.\"}");
                     buf.append("text{type=\"bold\";text=\"Prices for " + trader.getName() + "\"}text{text=''}");
                     buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"9\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Min. Amount\"};label{text=\"Remove?\"}");
 
