@@ -299,6 +299,44 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
+    void testOwnerTradedMoneyAddsToShopWhenFreeMoneyTrue() {
+        BuyerTradingWindow.freeMoney = true;
+
+        Item coin = factory.createNewCopperCoin();
+        owner.getInventory().insertItem(coin);
+        assert factory.getShop(buyer).getMoney() == 0;
+
+        makeOwnerBuyerTrade();
+        trade.getTradingWindow(2).addItem(coin);
+
+        balance();
+        setSatisfied(owner);
+
+        assertEquals(MonetaryConstants.COIN_COPPER, factory.getShop(buyer).getMoney());
+        assertTrue(buyer.getInventory().getItems().contains(coin));
+        assertFalse(owner.getInventory().getItems().contains(coin));
+    }
+
+    @Test
+    void testOwnerCanStillRemoveCoinsWhenFreeMoneyTrue() {
+        BuyerTradingWindow.freeMoney = true;
+
+        Item coin = factory.createNewCopperCoin();
+        buyer.getInventory().insertItem(coin);
+        factory.getShop(buyer).setMoney(MonetaryConstants.COIN_COPPER);
+
+        makeOwnerBuyerTrade();
+        trade.getCreatureOneRequestWindow().addItem(coin);
+
+        balance();
+        setSatisfied(owner);
+
+        assertEquals(0, factory.getShop(buyer).getMoney());
+        assertFalse(buyer.getInventory().getItems().contains(coin));
+        assertThat(owner, hasCoinsOfValue((long)MonetaryConstants.COIN_COPPER));
+    }
+
+    @Test
     void testMaxItemsSet() {
         Properties config = new Properties();
         config.setProperty("max_items", "100");

@@ -266,7 +266,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     Object TraderBookBehaviourAction(Object o, Method method, Object[] args, short action, Item target, Creature performer)
             throws InvocationTargetException, IllegalAccessException {
 
-        if (action == 85) {
+        if (action == Actions.MANAGE_TRADERS) {
             if (target.getTemplateId() == templateId) {
                 if (target.getData() == -1L && !Methods.isActionAllowed(performer, action)) {
                     return true;

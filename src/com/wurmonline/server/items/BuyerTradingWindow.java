@@ -507,7 +507,7 @@ public class BuyerTradingWindow extends TradingWindow {
                 this.windowowner.getCommunicator().sendNormalServerMessage("The trade was completed, not all items were traded.");
             }
 
-            if (shop != null && !freeMoney) {
+            if (shop != null) {
                 int diff = moneyAdded - moneyLost;
                 if (this.windowowner.isNpcTrader()) {
                     if (this.watcher.getWurmId() == shop.getOwnerId()) {
@@ -516,7 +516,7 @@ public class BuyerTradingWindow extends TradingWindow {
                             shop.setMoney(shop.getMoney() + (long)diff);
                             logger.info(this.watcher.getName() + " - My shop is now at " + shop.getMoney());
                         }
-                    } else {
+                    } else if (!freeMoney) {
                         long totalPrice = (long) (moneyLost * 1.1F);
                         long kadd = totalPrice - moneyLost;
                         if (totalPrice != 0) {
