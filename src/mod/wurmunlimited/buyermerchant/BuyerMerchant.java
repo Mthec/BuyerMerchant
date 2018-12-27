@@ -6,6 +6,7 @@ import com.wurmonline.server.creatures.*;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
+import com.wurmonline.server.players.Player;
 import com.wurmonline.server.questions.BuyerManagementQuestion;
 import com.wurmonline.shared.constants.IconConstants;
 import com.wurmonline.shared.constants.ItemMaterials;
@@ -36,6 +37,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     private int defaultMaxItems = 50;
     private int maxItems = defaultMaxItems;
     private boolean applyMaxToMerchants = false;
+    private int maximumPowerTurn = 1;
     // TODO - What about spells on items? - Probably going to ignore as Traders do, unless it is requested.
     // TODO - What about rarity - do later maybe?
     // TODO - Not high enough ql message to player.
@@ -93,6 +95,17 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         val = properties.getProperty("apply_max_to_merchants");
         if (val != null && val.equals("true"))
             applyMaxToMerchants = true;
+        val = properties.getProperty("turn_to_player_max_power");
+        if (val != null && val.length() > 0) {
+            try {
+                maximumPowerTurn = Integer.parseInt(val);
+                if (maximumPowerTurn < 0)
+                    throw new NumberFormatException();
+            } catch (NumberFormatException e) {
+                logger.warning("Invalid turn_to_player_power option, falling back to default.");
+                maximumPowerTurn = 1;
+            }
+        }
     }
 
     @Override
@@ -134,6 +147,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                 "(Lcom/wurmonline/server/creatures/Creature;)V",
                 () -> this::createShop);
 
+        // Turn towards player option.
         // Differentiate between TradeManagementQuestion and Buyer version.
         // Hide price list when threatened.
         manager.registerHook("com.wurmonline.server.behaviours.CreatureBehaviour",
@@ -285,6 +299,15 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         Creature performer = (Creature) args[0];
         Creature opponent = (Creature) args[1];
 
+        if (!(opponent instanceof Player) && performer.getPower() <= maximumPowerTurn) {
+            opponent.turnTowardsCreature(performer);
+
+            try {
+                opponent.getStatus().savePosition(opponent.getWurmId(), false, opponent.getStatus().getZoneId(), true);
+            } catch (IOException ignored) {
+            }
+        }
+
         if (isBuyer(opponent)) {
             Class<?> BuyerTradeClass = Class.forName("com.wurmonline.server.items.BuyerTrade");
             Object trade;
@@ -366,37 +389,39 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             Creature performer = (Creature) args[1];
             short action = (short) args[3];
 
-
-            if (action == Actions.MANAGE) {
-                Method mayDismiss = CreatureBehaviour.class.getDeclaredMethod("mayDismissMerchant", Creature.class, Creature.class);
-                mayDismiss.setAccessible(true);
-                if (target.isNpcTrader() && (boolean) mayDismiss.invoke(o, performer, target)) {
-                    // TODO - Why does this work but BuyerTrade and BuyerHandler don't?
-                    BuyerManagementQuestion tmq = new BuyerManagementQuestion(performer, target);
-                    tmq.sendQuestion();
-                    return true;
-                }
-            } else if (action == Actions.THREATEN) {
-                float counter = (float) args[4];
-                if (counter * 10.0F > (float) act.getTimeLeft()) {
-                    // TODO - Would this cause issues if the server goes down during a swap?
-                    Item priceList = null;
-                    for (Item item : target.getInventory().getItems()) {
-                        if (PriceList.isPriceList(item)) {
-                            priceList = item;
-                            Method removeItem = Item.class.getDeclaredMethod("removeItem", Item.class);
-                            removeItem.setAccessible(true);
-                            removeItem.invoke(target.getInventory(), item);
-                            break;
-                        }
+            switch (action) {
+                case Actions.MANAGE:
+                    Method mayDismiss = CreatureBehaviour.class.getDeclaredMethod("mayDismissMerchant", Creature.class, Creature.class);
+                    mayDismiss.setAccessible(true);
+                    if (target.isNpcTrader() && (boolean)mayDismiss.invoke(o, performer, target)) {
+                        // TODO - Why does this work but BuyerTrade and BuyerHandler don't?
+                        BuyerManagementQuestion tmq = new BuyerManagementQuestion(performer, target);
+                        tmq.sendQuestion();
+                        return true;
                     }
-                    boolean toReturn = (boolean) method.invoke(o, args);
+                    break;
+                case Actions.THREATEN:
+                    float counter = (float)args[4];
+                    if (counter * 10.0F > (float)act.getTimeLeft()) {
+                        // TODO - Would this cause issues if the server goes down during a swap?
+                        Item priceList = null;
+                        for (Item item : target.getInventory().getItems()) {
+                            if (PriceList.isPriceList(item)) {
+                                priceList = item;
+                                Method removeItem = Item.class.getDeclaredMethod("removeItem", Item.class);
+                                removeItem.setAccessible(true);
+                                removeItem.invoke(target.getInventory(), item);
+                                break;
+                            }
+                        }
+                        boolean toReturn = (boolean)method.invoke(o, args);
 
-                    if (priceList != null)
-                        target.getInventory().insertItem(priceList);
+                        if (priceList != null)
+                            target.getInventory().insertItem(priceList);
 
-                    return toReturn;
-                }
+                        return toReturn;
+                    }
+                    break;
             }
         }
         return method.invoke(o, args);

@@ -25,6 +25,7 @@ import org.mockito.stubbing.Answer;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Properties;
 
 import static mod.wurmunlimited.Assert.receivedMessageContaining;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -653,5 +654,70 @@ class BuyerMerchantTest extends WurmTradingTest {
 
         handler.invoke(null, method, null);
         verify(method, times(1)).invoke(null, (Object[])null);
+    }
+
+    @Test
+    void turnToPlayerMaxPower() throws Throwable {
+        Properties properties = new Properties();
+        properties.setProperty("turn_to_player_max_power", "1");
+        buyerMerchant.configure(properties);
+
+        InvocationHandler handler = (o, method, args) -> buyerMerchant.initiateTrade(o, method, args);
+        Object[] args1 = new Object[]{player, buyer};
+        assert Math.abs(buyer.getStatus().getRotation() - 180.0f) < 0.001f;
+
+        handler.invoke(null, method, args1);
+        assertNotEquals(180.0f, buyer.getStatus().getRotation());
+    }
+
+    @Test
+    void turnToPlayerMaxPowerLowerThanPlayerPower() throws Throwable {
+        player.setPower((byte)5);
+        Properties properties = new Properties();
+        properties.setProperty("turn_to_player_max_power", "1");
+        buyerMerchant.configure(properties);
+
+        InvocationHandler handler = (o, method, args) -> buyerMerchant.initiateTrade(o, method, args);
+        Object[] args1 = new Object[]{player, buyer};
+        assert Math.abs(buyer.getStatus().getRotation() - 180.0f) < 0.001f;
+
+        handler.invoke(null, method, args1);
+        assertEquals(180.0f, buyer.getStatus().getRotation());
+    }
+
+    @Test
+    void turnToPlayerMaxPowerAtMaxPower() throws Throwable {
+        player.setPower((byte)5);
+        Properties properties = new Properties();
+        properties.setProperty("turn_to_player_max_power", "5");
+        buyerMerchant.configure(properties);
+
+        InvocationHandler handler = (o, method, args) -> buyerMerchant.initiateTrade(o, method, args);
+        Object[] args1 = new Object[]{player, buyer};
+        assert Math.abs(buyer.getStatus().getRotation() - 180.0f) < 0.001f;
+
+        handler.invoke(null, method, args1);
+        assertNotEquals(180.0f, buyer.getStatus().getRotation());
+    }
+
+    @Test
+    void turnToPlayerMaxPowerMerchantsAndTraders() throws Throwable {
+        Creature merchant = factory.createNewMerchant(owner);
+        Creature trader = factory.createNewTrader();
+        player.setPower((byte)5);
+        Properties properties = new Properties();
+        properties.setProperty("turn_to_player_max_power", "5");
+        buyerMerchant.configure(properties);
+
+        InvocationHandler handler = (o, method, args) -> buyerMerchant.initiateTrade(o, method, args);
+        Object[] args1 = new Object[]{player, merchant};
+        assert Math.abs(merchant.getStatus().getRotation() - 180.0f) < 0.001f;
+        Object[] args2 = new Object[]{player, trader};
+        assert Math.abs(trader.getStatus().getRotation() - 180.0f) < 0.001f;
+
+        handler.invoke(null, method, args1);
+        assertNotEquals(180.0f, merchant.getStatus().getRotation());
+        handler.invoke(null, method, args2);
+        assertNotEquals(180.0f, trader.getStatus().getRotation());
     }
 }

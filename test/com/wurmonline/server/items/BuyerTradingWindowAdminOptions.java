@@ -565,4 +565,6 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         assertDoesNotThrow(buyerMerchant::onServerStarted);
         assertEquals(Integer.MAX_VALUE, BuyerHandler.maxPersonalItems);
     }
+
+    // For turn_to_player_max_power see BuyerMerchantTest.
 }

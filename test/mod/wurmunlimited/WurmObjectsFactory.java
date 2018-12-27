@@ -149,7 +149,7 @@ public class WurmObjectsFactory {
             player.setWurmId(WurmId.getNextPlayerId(), 1, 1, 1, 1);
             ServerPackageFactory.addPlayer(player);
             creatures.put(player.getWurmId(), player);
-            FieldSetter.setField(player, Creature.class.getDeclaredField("status"), new FakeCreatureStatus(player));
+            FieldSetter.setField(player, Creature.class.getDeclaredField("status"), new FakeCreatureStatus(player, 1, 1, 0.0f, 1));
             FieldSetter.setField(player, Player.class.getDeclaredField("saveFile"), new FakePlayerInfo(player.getName()));
             player.createPossessions();
             attachFakeCommunicator(player);
@@ -162,7 +162,7 @@ public class WurmObjectsFactory {
     public Creature createNewBuyer(Creature owner) {
         Creature buyer;
         try {
-            buyer = Creature.doNew(CreatureTemplateIds.SALESMAN_CID, 1, 1, 1, 1, "Buyer_" + (creatures.size() + 1), (byte)0);
+            buyer = Creature.doNew(CreatureTemplateIds.SALESMAN_CID, 1, 5, 180.0f, 1, "Buyer_" + (creatures.size() + 1), (byte)0);
             creatures.put(buyer.getWurmId(), buyer);
             buyer.createPossessions();
             attachFakeCommunicator(buyer);
@@ -178,7 +178,7 @@ public class WurmObjectsFactory {
     public Creature createNewTrader() {
         Creature trader;
         try {
-            trader = Creature.doNew(CreatureTemplateIds.SALESMAN_CID, 1, 1, 1, 1, "Trader_" + (creatures.size() + 1), (byte)0);
+            trader = Creature.doNew(CreatureTemplateIds.SALESMAN_CID, 1, 5, 180.0f, 1, "Trader_" + (creatures.size() + 1), (byte)0);
             creatures.put(trader.getWurmId(), trader);
             trader.createPossessions();
             attachFakeCommunicator(trader);
@@ -193,7 +193,7 @@ public class WurmObjectsFactory {
     public Creature createNewMerchant(Creature owner) {
         Creature merchant;
         try {
-            merchant = Creature.doNew(CreatureTemplateIds.SALESMAN_CID, 1, 1, 1, 1, "Merchant_" + (creatures.size() + 1), (byte)0);
+            merchant = Creature.doNew(CreatureTemplateIds.SALESMAN_CID, 1, 5, 180.0f, 1, "Merchant_" + (creatures.size() + 1), (byte)0);
             creatures.put(merchant.getWurmId(), merchant);
             merchant.createPossessions();
             attachFakeCommunicator(merchant);

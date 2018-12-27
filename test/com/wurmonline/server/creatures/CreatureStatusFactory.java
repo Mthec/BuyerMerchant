@@ -11,7 +11,7 @@ final class CreatureStatusFactory {
 
     static CreatureStatus createCreatureStatus(Creature creature, float posx, float posy, float rot, int layer) throws Exception {
         CreatureStatus toReturn = null;
-        toReturn = new FakeCreatureStatus(creature);
+        toReturn = new FakeCreatureStatus(creature, posx, posy, rot, layer);
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest("Created new CreatureStatus: " + toReturn);
         }

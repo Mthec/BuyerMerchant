@@ -6,8 +6,8 @@ import java.io.IOException;
 
 public class FakeCreatureStatus extends CreatureStatus {
 
-    public FakeCreatureStatus(Creature creature) {
-        setPosition(new CreaturePos(creature.getWurmId(), 1, 1, 1, 1, 1, 1, -10, false));
+    public FakeCreatureStatus(Creature creature, float x, float y, float rot, int layer) {
+        setPosition(new CreaturePos(creature.getWurmId(), x, y, 1, rot, 1, layer, -10, false));
         this.template = creature.getTemplate();
         statusHolder = creature;
         try {
