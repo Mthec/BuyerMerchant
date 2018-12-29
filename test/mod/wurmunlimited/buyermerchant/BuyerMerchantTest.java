@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.stubbing.Answer;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -354,15 +355,31 @@ class BuyerMerchantTest extends WurmTradingTest {
 
     @Test
     void createShop() throws Throwable {
-        ItemsPackageFactory.removeItem(buyer, buyer.getInventory().getFirstContainedItem());
-        factory.getShop(buyer).setToNotPersonalTrader();
+        Creature trader = factory.createNewTrader();
         InvocationHandler handler = (o, method, args) -> buyerMerchant.createShop(o, method, args);
 
-        Object[] args1 = new Object[] {buyer};
+        Object[] args1 = new Object[] {trader};
         handler.invoke(null, method, args1);
 
-        assertEquals(1, buyer.getInventory().getItemCount());
-        assertEquals(factory.createBuyerContract().getTemplateId(), buyer.getInventory().getFirstContainedItem().getTemplateId());
+        assertEquals(1, trader.getInventory().getItemCount());
+        assertEquals(factory.createBuyerContract().getTemplateId(), trader.getInventory().getFirstContainedItem().getTemplateId());
+
+        verify(method, times(1)).invoke(null, args1);
+    }
+
+    @Test
+    void createShopNoContractsOnTraders() throws Throwable {
+        Properties properties = new Properties();
+        properties.setProperty("contracts_on_traders", "false");
+        buyerMerchant.configure(properties);
+
+        Creature trader = factory.createNewTrader();
+        InvocationHandler handler = (o, method, args) -> buyerMerchant.createShop(o, method, args);
+
+        Object[] args1 = new Object[] {trader};
+        handler.invoke(null, method, args1);
+
+        assertEquals(0, trader.getInventory().getItemCount());
 
         verify(method, times(1)).invoke(null, args1);
     }
@@ -719,5 +736,57 @@ class BuyerMerchantTest extends WurmTradingTest {
         assertNotEquals(180.0f, merchant.getStatus().getRotation());
         handler.invoke(null, method, args2);
         assertNotEquals(180.0f, trader.getStatus().getRotation());
+    }
+
+    @Test
+    void testUpdateTradersContractsOnTrader() throws IllegalAccessException, NoSuchFieldException {
+        Field contractsOnTraders = BuyerMerchant.class.getDeclaredField("contractsOnTraders");
+        contractsOnTraders.setAccessible(true);
+        assert contractsOnTraders.getBoolean(buyerMerchant);
+
+        Properties properties = new Properties();
+        properties.setProperty("update_traders", "true");
+        buyerMerchant.configure(properties);
+
+        Creature trader = factory.createNewTrader();
+        assert trader.getInventory().getItemCount() == 0;
+
+        buyerMerchant.onServerStarted();
+
+        assertEquals(1, trader.getInventory().getItemCount());
+        assertEquals(factory.createBuyerContract().getTemplateId(), trader.getInventory().getFirstContainedItem().getTemplateId());
+    }
+
+    @Test
+    void testUpdateTradersNoContractsOnTrader() {
+        Properties properties = new Properties();
+        properties.setProperty("update_traders", "true");
+        properties.setProperty("contracts_on_traders", "false");
+        buyerMerchant.configure(properties);
+
+        Creature trader = factory.createNewTrader();
+        trader.getInventory().insertItem(factory.createBuyerContract());
+        assert trader.getInventory().getItemCount() == 1;
+
+        buyerMerchant.onServerStarted();
+
+        assertEquals(0, trader.getInventory().getItemCount());
+    }
+
+    @Test
+    void testUpdateTradersOnlyOneContract() {
+        Properties properties = new Properties();
+        properties.setProperty("update_traders", "true");
+        buyerMerchant.configure(properties);
+
+        Creature trader = factory.createNewTrader();
+        Item contract = factory.createBuyerContract();
+        trader.getInventory().insertItem(contract);
+        assert trader.getInventory().getItemCount() == 1;
+
+        buyerMerchant.onServerStarted();
+
+        assertEquals(1, trader.getInventory().getItemCount());
+        assertSame(contract, trader.getInventory().getFirstContainedItem());
     }
 }

@@ -9,6 +9,7 @@ import com.wurmonline.server.players.FakePlayerInfo;
 import com.wurmonline.server.players.Player;
 import mod.wurmunlimited.buyermerchant.BuyerMerchant;
 import mod.wurmunlimited.buyermerchant.PriceList;
+import org.jetbrains.annotations.NotNull;
 import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.stubbing.Answer;
 
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -108,6 +110,18 @@ public class WurmObjectsFactory {
             return set.toArray(new Item[0]);
         });
         when(economy.getChangeFor(anyLong())).thenAnswer(i -> new Change(i.getArgument(0)));
+        Field economyShops = Economy.class.getDeclaredField("shops");
+        economyShops.setAccessible(true);
+        Field modifiers = Field.class.getDeclaredField("modifiers");
+        modifiers.setAccessible(true);
+        modifiers.setInt(economyShops, economyShops.getModifiers() & ~Modifier.FINAL);
+        economyShops.set(null, new HashMap<Long, Shop>() {
+            @NotNull
+            @Override
+            public Collection<Shop> values() {
+                return new ArrayList<>(shops.values());
+            }
+        });
 
         current = this;
     }

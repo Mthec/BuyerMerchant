@@ -32,6 +32,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     private static final String BUYER_NAME_PREFIX = "Buyer_";
     private int templateId;
     private boolean updateTraders = false;
+    private boolean contractsOnTraders = true;
     private boolean freeMoney = false;
     private boolean destroyBoughtItems = false;
     private int defaultMaxItems = 50;
@@ -77,6 +78,9 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         String val = properties.getProperty("update_traders");
         if (val != null && val.equals("true"))
             updateTraders = true;
+        val = properties.getProperty("contracts_on_traders");
+        if (val != null && val.equals("false"))
+            contractsOnTraders = false;
         val = properties.getProperty("free_money");
         if (val != null && val.equals("true"))
             freeMoney = true;
@@ -259,14 +263,26 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             logger.info("Buyer " + (merchantsSet ? "and merchant " : "") + "max items set to " + maxItems);
         }
         if (updateTraders) {
-            for (Shop shop : Economy.getTraders()) {
-                Creature creature = Creatures.getInstance().getCreatureOrNull(shop.getWurmId());
-                if (!shop.isPersonal() && creature != null && creature.getInventory().getItems().stream().noneMatch(i -> i.getTemplateId() == templateId)) {
-                    try {
-                        creature.getInventory().insertItem(Creature.createItem(templateId, (float) (10 + Server.rand.nextInt(80))));
-                        shop.setMerchantData(shop.getNumberOfItems() + 1);
-                    } catch (Exception e) {
-                        logger.log(Level.INFO, "Failed to create merchant inventory items for shop, creature: " + creature.getName(), e);
+            if (contractsOnTraders) {
+                for (Shop shop : Economy.getTraders()) {
+                    Creature creature = Creatures.getInstance().getCreatureOrNull(shop.getWurmId());
+                    if (!shop.isPersonal() && creature != null && creature.getInventory().getItems().stream().noneMatch(i -> i.getTemplateId() == templateId)) {
+                        try {
+                            creature.getInventory().insertItem(Creature.createItem(templateId, (float) (10 + Server.rand.nextInt(80))));
+                            shop.setMerchantData(shop.getNumberOfItems() + 1);
+                        } catch (Exception e) {
+                            logger.log(Level.INFO, "Failed to create merchant inventory items for shop, creature: " + creature.getName(), e);
+                        }
+                    }
+                }
+            } else {
+                for (Shop shop : Economy.getTraders()) {
+                    Creature creature = Creatures.getInstance().getCreatureOrNull(shop.getWurmId());
+                    if (!shop.isPersonal() && creature != null) {
+                        creature.getInventory().getItems().stream().filter(i -> i.getTemplateId() == templateId).collect(Collectors.toList()).forEach(item -> {
+                            Items.destroyItem(item.getWurmId());
+                            shop.setMerchantData(shop.getNumberOfItems() - 1);
+                        });
                     }
                 }
             }
@@ -373,10 +389,12 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     }
 
     Object createShop(Object o, Method method, Object[] args) throws Exception { // Plus InvocationTargetException, IllegalAccessException
-        Creature toReturn = (Creature) args[0];
+        if (contractsOnTraders) {
+            Creature toReturn = (Creature)args[0];
 
-        Item inventory = toReturn.getInventory();
-        inventory.insertItem(Creature.createItem(templateId, (float) (10 + Server.rand.nextInt(80))));
+            Item inventory = toReturn.getInventory();
+            inventory.insertItem(Creature.createItem(templateId, (float)(10 + Server.rand.nextInt(80))));
+        }
 
         return method.invoke(o, args);
     }

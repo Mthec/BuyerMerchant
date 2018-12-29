@@ -26,6 +26,14 @@ public class Creatures {
         return creature;
     }
 
+    public Creature getCreatureOrNull(long wurmId) {
+        try {
+            return WurmObjectsFactory.getCurrent().getCreature(wurmId);
+        } catch (NoSuchCreatureException e) {
+            return null;
+        }
+    }
+
     public void sendToWorld(Creature creature) {
 
     }
