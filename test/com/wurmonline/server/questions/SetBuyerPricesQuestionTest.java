@@ -380,4 +380,53 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         assertTrue(com.lastBmlContent.contains("24kg"));
         assertTrue(com.lastBmlContent.contains("0.01kg"));
     }
+
+    @Test
+    void testPriceListSortingBml() throws PriceList.PriceListFullException, PriceList.NoPriceListOnBuyer {
+        addItemToPriceList(ItemList.coinCopper,1.0f,10);
+        addItemToPriceList(ItemList.backPack,1.0f,10);
+        addItemToPriceList(ItemList.log,12.0f,10);
+        addItemToPriceList(ItemList.log,35.0f,10);
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        Pattern originalPattern = Pattern.compile("^[\\w]+coin[\\w]+backpack[\\w]+log[\\w]+12[\\w]+log[\\w]+35[\\w]+$");
+        Pattern sortedPattern = Pattern.compile("^[\\w]+backpack[\\w]+coin[\\w]+log[\\w]+35[\\w]+log[\\w]+12[\\w]+$");
+        Pattern removeSpecialCharacters = Pattern.compile("([^\\w]+)");
+
+        new SetBuyerPricesQuestion(owner, buyer.getWurmId()).sendQuestion();
+        String bml1 = removeSpecialCharacters.matcher(factory.getCommunicator(owner).lastBmlContent).replaceAll("");
+        assertTrue(originalPattern.matcher(bml1).find());
+        assertFalse(sortedPattern.matcher(bml1).find());
+
+        priceList.sortAndSave();
+
+        new SetBuyerPricesQuestion(owner, buyer.getWurmId()).sendQuestion();
+        String bml2 = removeSpecialCharacters.matcher(factory.getCommunicator(owner).lastBmlContent).replaceAll("");
+        assertTrue(sortedPattern.matcher(bml2).find());
+    }
+
+    @Test
+    void testPriceListSortingButtonClicked() {
+        addItemToPriceList(ItemList.coinCopper,1.0f,10);
+        addItemToPriceList(ItemList.backPack,1.0f,10);
+        addItemToPriceList(ItemList.log,12.0f,10);
+        addItemToPriceList(ItemList.log,35.0f,10);
+
+        Pattern originalPattern = Pattern.compile("^[\\w]+coin[\\w]+backpack[\\w]+log[\\w]+12[\\w]+log[\\w]+35[\\w]+$");
+        Pattern sortedPattern = Pattern.compile("^[\\w]+backpack[\\w]+coin[\\w]+log[\\w]+35[\\w]+log[\\w]+12[\\w]+$");
+        Pattern removeSpecialCharacters = Pattern.compile("([^\\w]+)");
+
+        SetBuyerPricesQuestion question = new SetBuyerPricesQuestion(owner, buyer.getWurmId());
+        question.sendQuestion();
+        String bml1 = removeSpecialCharacters.matcher(factory.getCommunicator(owner).lastBmlContent).replaceAll("");
+        assertTrue(originalPattern.matcher(bml1).find());
+        assertFalse(sortedPattern.matcher(bml1).find());
+
+        Properties properties = new Properties();
+        properties.setProperty("sort", "true");
+        question.answer(properties);
+
+        String bml2 = removeSpecialCharacters.matcher(factory.getCommunicator(owner).lastBmlContent).replaceAll("");
+        assertTrue(sortedPattern.matcher(bml2).find());
+    }
 }

@@ -47,6 +47,16 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
             new AddItemToBuyerQuestion(this.getResponder(), this.target).sendQuestion();
             return;
         }
+        if (wasSelected("sort")) {
+            try {
+                priceList.sortAndSave();
+            } catch (PriceList.PriceListFullException e) {
+                responder.getCommunicator().sendNormalServerMessage(PriceList.noSpaceOnPriceListPlayerMessage);
+                logger.warning("Price List was not sorted correctly.");
+                e.printStackTrace();
+            }
+            new SetBuyerPricesQuestion(getResponder(), getTarget()).sendQuestion();
+        }
 
         try {
             Creature trader = Server.getInstance().getCreature(target);
@@ -55,7 +65,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                 if (shop == null) {
                     responder.getCommunicator().sendNormalServerMessage("No shop registered for that creature.");
                 } else if (shop.getOwnerId() == responder.getWurmId()) {
-                    for (PriceList.Entry item : priceList.stream().collect(Collectors.toList())) {
+                    for (PriceList.Entry item : priceList.asArray()) {
                         int bid = itemMap.get(item);
                         if (wasSelected(bid + "remove"))
                             priceList.removeItem(item);
@@ -196,7 +206,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
 
                     buf.append("}");
                     buf.append("text{text=\"\"}");
-                    buf.append("harray {button{text='Save Prices';id='submit'};label{text=\" \";id=\"spacedlxg\"};button{text='Add New';id='new'}}}}null;null;}");
+                    buf.append("harray {button{text='Save Prices';id='submit'};label{text=\" \";id=\"spacedlxg\"};button{text='Add New';id='new'}label{text=\" \";id=\"spacedlxg\"};button{text='Sort';id='sort'}}}}null;null;}");
                     this.getResponder().getCommunicator().sendBml(525, 300, true, true, buf.toString(), 200, 200, 200, this.title);
                 } else {
                     this.getResponder().getCommunicator().sendNormalServerMessage("You don't own that shop.");

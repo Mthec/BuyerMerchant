@@ -29,7 +29,8 @@ public class PriceList implements Iterable<PriceList.Entry> {
     // PapyrusBehaviour line 191 says 500 max chars for paper.
     private static final int MAX_INSCRIPTION_LENGTH = 500;
     private Item priceListPaper;
-    private Map<Entry, TempItem> prices;
+    private Map<Entry, TempItem> prices = new HashMap<>();
+    private List<Entry> pricesOrder = new ArrayList<>();
     private boolean createdItems = false;
     private int currentInscriptionLength;
     public static final String noPriceListFoundPlayerMessage = "The buyer fumbles in his pockets but fails to find his price list.";
@@ -39,14 +40,14 @@ public class PriceList implements Iterable<PriceList.Entry> {
     // Causes testIncorrectPriceListInscriptionRemovesEntry to fail if final.
     private static Logger logger = Logger.getLogger(PriceList.class.getName());
 
-    public class Entry {
+    public class Entry implements Comparable<Entry> {
+
         int template;
         // Using 0 as substitute for Any.
         byte material;
         float minQL;
         int price;
         int minimumPurchase;
-
         Entry(String entry) throws NumberFormatException {
             String[] entries = entry.split(",");
             template = Integer.parseInt(entries[0]);
@@ -152,29 +153,41 @@ public class PriceList implements Iterable<PriceList.Entry> {
             //noinspection ObjectInstantiationInEqualsHashCode
             return Objects.hash(template, material, minQL, minimumPurchase);
         }
-    }
 
+        /**
+         * @param e Another entry.
+         * @return Compared on template name, then minQL descending order.
+         */
+        @Override
+        public int compareTo(@NotNull Entry e) {
+            ItemTemplateFactory factory = ItemTemplateFactory.getInstance();
+            int compare = factory.getTemplateName(template).compareTo(factory.getTemplateName(e.template));
+            if (compare == 0) {
+                compare = Float.compare(e.minQL, minQL);
+            }
+            return compare;
+        }
+    }
     public static class PriceListFullException extends WurmServerException {
 
         PriceListFullException(String message) {
             super(message);
         }
-    }
 
+    }
     public static class NoPriceListOnBuyer extends IOException {
 
         NoPriceListOnBuyer(long buyerId) {
             super("Could not find price list on buyer. WurmId - " + buyerId);
         }
-    }
 
+    }
     public PriceList(Item priceListPaper) {
         assert isPriceList(priceListPaper);
         // Rename old price lists.
         if (priceListPaper.getDescription().equals(PRICE_LIST_DESCRIPTION))
             priceListPaper.setDescription(BUY_LIST_DESCRIPTION);
         this.priceListPaper = priceListPaper;
-        prices = new HashMap<>();
         InscriptionData inscription = priceListPaper.getInscription();
         if (inscription != null) {
             String inscriptionString = inscription.getInscription();
@@ -190,8 +203,10 @@ public class PriceList implements Iterable<PriceList.Entry> {
                         logger.warning("Bad Price List Entry - " + entry + " - Removing.");
                         e.printStackTrace();
                     }
-                    if (newEntry != null)
+                    if (newEntry != null) {
                         prices.put(newEntry, null);
+                        pricesOrder.add(newEntry);
+                    }
                 }
 
                 if (error) {
@@ -236,7 +251,11 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
     @NotNull
     public Iterator<Entry> iterator() {
-        return prices.keySet().iterator();
+        return pricesOrder.iterator();
+    }
+
+    public Entry[] asArray() {
+        return pricesOrder.toArray(new Entry[0]);
     }
 
     public Stream<Entry> stream() { return prices.keySet().stream(); }
@@ -295,10 +314,10 @@ public class PriceList implements Iterable<PriceList.Entry> {
     }
 
     // TODO - Remove IOException and just make getItems check for nulls?
+
     public Entry addItem(int templateId, byte material) throws PriceListFullException, IOException, NoSuchTemplateException {
         return addItem(templateId, material, 1.0f, 1);
     }
-
     public Entry addItem(int templateId, byte material, float minQL, int price) throws PriceListFullException, IOException, NoSuchTemplateException {
         return addItem(templateId, material, minQL, price, 1);
     }
@@ -322,6 +341,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
             prices.put(item, createItem(item));
         else
             prices.put(item, null);
+        pricesOrder.add(item);
         return item;
     }
 
@@ -332,15 +352,21 @@ public class PriceList implements Iterable<PriceList.Entry> {
                 Items.destroyItem(temp.getWurmId());
             currentInscriptionLength -= item.toString().length();
             prices.remove(item);
+            pricesOrder.remove(item);
         }
     }
 
     public void savePriceList() throws PriceListFullException {
-        String str = prices.keySet().stream().map(Entry::toString).collect(Collectors.joining("\n"));
+        String str = pricesOrder.stream().map(Entry::toString).collect(Collectors.joining("\n"));
         if (str.length() > MAX_INSCRIPTION_LENGTH)
             throw new PriceListFullException("PriceList data too long to inscribe.");
         priceListPaper.setInscription(str, "");
         currentInscriptionLength = str.length();
+    }
+
+    public void sortAndSave() throws PriceListFullException {
+        pricesOrder.sort(Entry::compareTo);
+        savePriceList();
     }
 
     public static boolean isPriceList(Item item) {

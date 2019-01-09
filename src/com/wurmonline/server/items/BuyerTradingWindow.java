@@ -436,6 +436,10 @@ public class BuyerTradingWindow extends TradingWindow {
                         if (this.watcher.isLogged()) {
                             this.watcher.getLogger().log(Level.INFO, this.windowowner.getName() + " buying " + lIt.getName() + " with id " + lIt.getWurmId() + " from " + this.watcher.getName());
                         }
+                    } else if (!(this.watcher instanceof Player)) {
+                        if (this.windowowner.isLogged()) {
+                            this.windowowner.getLogger().log(Level.INFO, this.windowowner.getName() + " trading " + lIt.getName() + " with id " + lIt.getWurmId() + " to " + this.watcher.getName());
+                        }
                     }
                     if (ok) {
                         try {

@@ -539,4 +539,28 @@ public class PriceListTest {
         assertEquals(1, priceList.size());
         assertEquals(2, priceList.getItems().iterator().next().getPrice());
     }
+
+    @Test
+    void testPriceListSorting() throws PriceList.PriceListFullException {
+        String list =  ItemList.icecream + ",1,1.0,10\n" +
+                       ItemList.hatchet + ",1,25.0,10\n" +
+                       ItemList.hatchet + ",1,55.0,10\n" +
+                       ItemList.acorn + ",1,1.0,10\n";
+        PriceList priceList = new PriceList(createPriceList(list));
+        PriceList.Entry[] unsortedArray = priceList.asArray();
+        assertEquals(ItemList.icecream, unsortedArray[0].template);
+        assertEquals(ItemList.hatchet, unsortedArray[1].template);
+        assertEquals(ItemList.hatchet, unsortedArray[2].template);
+        assertEquals(55.0f, unsortedArray[2].minQL);
+        assertEquals(ItemList.acorn, unsortedArray[3].template);
+
+        priceList.sortAndSave();
+
+        assertArrayEquals(new PriceList.Entry[] {
+                unsortedArray[3],
+                unsortedArray[2],
+                unsortedArray[1],
+                unsortedArray[0]
+        }, priceList.asArray());
+    }
 }
