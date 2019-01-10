@@ -130,12 +130,16 @@ public class PriceList implements Iterable<PriceList.Entry> {
             lastInscriptionLength += newLength - oldLength;
         }
 
-        public int getPrice() {
-            return price;
+        public int getTemplateId() {
+            return template;
         }
 
         public float getQualityLevel() {
             return minQL;
+        }
+
+        public int getPrice() {
+            return price;
         }
 
         public int getMinimumPurchase() {

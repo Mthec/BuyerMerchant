@@ -16,6 +16,7 @@ import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.BuyerTradingWindow;
+import com.wurmonline.server.items.ItemTemplateFactory;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.text.DecimalFormat;
@@ -192,7 +193,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     for(PriceList.Entry item : priceList) {
                         ++idx;
                         Change change = Economy.getEconomy().getChangeFor((long)item.getPrice());
-                        buf.append(itemNameWithColorByRarity(item.getItem()));
+                        buf.append(itemNameWithColorByRarity(item.getItem()).replaceFirst(" - minimum [\\d]+", ""));
                         buf.append("harray{label{text=\"" + df.format(item.getItem().getWeightGrams() / 1000.0f) + "kg\"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "q\";text=\"" + df.format((double)item.getQualityLevel()) + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "g\";text=\"" + change.getGoldCoins() + "\"};label{text=\" \"}};");
