@@ -3,24 +3,29 @@ package mod.wurmunlimited.buyermerchant;
 import com.google.common.base.Joiner;
 import com.wurmonline.server.FailedException;
 import com.wurmonline.server.Items;
+import com.wurmonline.server.NoSuchItemException;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.*;
 import com.wurmonline.shared.exceptions.WurmServerException;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.groupingBy;
 
 public class PriceList implements Iterable<PriceList.Entry> {
     @Deprecated
     private static final String PRICE_LIST_DESCRIPTION = "Price List";
     private static final String BUY_LIST_DESCRIPTION = "Buy List";
     private static final String SELL_LIST_DESCRIPTION = "Sell List";
+    private static final String BUY_LIST_PAGE_PREFIX = "Buy List Page ";
+    private static final String SELL_LIST_PAGE_PREFIX = "Sell List Page ";
     private static final Set<String> descriptions = new HashSet<>(Arrays.asList(
             PRICE_LIST_DESCRIPTION,
             BUY_LIST_DESCRIPTION,
@@ -28,20 +33,22 @@ public class PriceList implements Iterable<PriceList.Entry> {
     ));
     // PapyrusBehaviour line 191 says 500 max chars for paper.
     private static final int MAX_INSCRIPTION_LENGTH = 500;
-    private Item priceListPaper;
+    private static final int MAX_PAGES_IN_BOOK = 10;
+    private Item priceListItem;
+    private int pageCount;
     private Map<Entry, TempItem> prices = new HashMap<>();
     private List<Entry> pricesOrder = new ArrayList<>();
     private boolean createdItems = false;
-    private int currentInscriptionLength;
+    private int lastInscriptionLength;
     public static final String noPriceListFoundPlayerMessage = "The buyer fumbles in his pockets but fails to find his price list.";
     public static final String noSpaceOnPriceListPlayerMessage = "The buyer has run out of space on his price list and cannot record the changes.  Try removing some items from the list.";
     public static final String couldNotCreateItemPlayerMessage = "The buyer looks at you confused, as if not understanding what your saying.";
     public static int unauthorised = -1;
+    private static final Pattern pageName = Pattern.compile("(Buy|Sell) List Page (\\d+)");
     // Causes testIncorrectPriceListInscriptionRemovesEntry to fail if final.
     private static Logger logger = Logger.getLogger(PriceList.class.getName());
 
     public class Entry implements Comparable<Entry> {
-
         int template;
         // Using 0 as substitute for Any.
         byte material;
@@ -115,12 +122,12 @@ public class PriceList implements Iterable<PriceList.Entry> {
                 minQL = this.minQL;
             int oldLength = toString().length();
             int newLength = new Entry(template, material, minQL, price, minimumPurchase).toString().length();
-            if (currentInscriptionLength + (newLength - oldLength) > MAX_INSCRIPTION_LENGTH)
+            if (lastInscriptionLength + (newLength - oldLength) > MAX_INSCRIPTION_LENGTH)
                 throw new PriceListFullException("Not enough space for that update.");
             if (minimumPurchase == -1)
                 minimumPurchase = this.minimumPurchase;
             update(template, material, minQL, price, minimumPurchase);
-            currentInscriptionLength += newLength - oldLength;
+            lastInscriptionLength += newLength - oldLength;
         }
 
         public int getPrice() {
@@ -168,6 +175,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
             return compare;
         }
     }
+
     public static class PriceListFullException extends WurmServerException {
 
         PriceListFullException(String message) {
@@ -175,6 +183,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
         }
 
     }
+
     public static class NoPriceListOnBuyer extends IOException {
 
         NoPriceListOnBuyer(long buyerId) {
@@ -182,49 +191,78 @@ public class PriceList implements Iterable<PriceList.Entry> {
         }
 
     }
-    public PriceList(Item priceListPaper) {
-        assert isPriceList(priceListPaper);
-        // Rename old price lists.
-        if (priceListPaper.getDescription().equals(PRICE_LIST_DESCRIPTION))
-            priceListPaper.setDescription(BUY_LIST_DESCRIPTION);
-        this.priceListPaper = priceListPaper;
-        InscriptionData inscription = priceListPaper.getInscription();
-        if (inscription != null) {
-            String inscriptionString = inscription.getInscription();
-            currentInscriptionLength = inscriptionString.length();
-            if (currentInscriptionLength > 0) {
-                boolean error = false;
-                for (String entry : inscriptionString.split("\n")) {
-                    Entry newEntry = null;
-                    try {
-                        newEntry = new Entry(entry);
-                    } catch (NumberFormatException e) {
-                        error = true;
-                        logger.warning("Bad Price List Entry - " + entry + " - Removing.");
-                        e.printStackTrace();
-                    }
-                    if (newEntry != null) {
-                        prices.put(newEntry, null);
-                        pricesOrder.add(newEntry);
-                    }
-                }
 
-                if (error) {
-                    try {
-                        savePriceList();
-                    } catch (PriceListFullException e) {
-                        logger.warning("PriceListFull for some reason.  This should never occur.");
+    PriceList(Item priceList) {
+        if (isOldPriceList(priceList)) {
+            try {
+                priceList = replaceOldPriceList(priceList);
+            } catch (NoSuchTemplateException | FailedException | NoSuchItemException e) {
+                logger.warning("Old Price List not replaced.  Reason follows:");
+                e.printStackTrace();
+            }
+        }
+
+        assert isPriceList(priceList);
+        this.priceListItem = priceList;
+        // Rename old price lists.
+        if (priceList.getDescription().equals(PRICE_LIST_DESCRIPTION))
+            priceList.setDescription(BUY_LIST_DESCRIPTION);
+
+        List<Item> pages = new ArrayList<>(priceList.getItems());
+
+        if (pages.size() == 0)
+            return;
+
+        pageCount = pages.size();
+        pages.sort((item1, item2) -> {
+            Matcher page1 = pageName.matcher(item1.getName());
+            Matcher page2 = pageName.matcher(item1.getName());
+            if (!page1.find() || !page2.find())
+                logger.warning("Bad page in price list - either " + item1.getName() + " or " + item2.getName());
+
+            if (!page1.group(1).equals(page2.group(1)))
+                return page1.group(1).compareTo(page2.group(1));
+
+            return page1.group(2).compareTo(page2.group(2));
+        });
+
+        boolean error = false;
+        for (Item page : pages) {
+            InscriptionData inscription = page.getInscription();
+            if (inscription != null) {
+                String inscriptionString = inscription.getInscription();
+                lastInscriptionLength = inscriptionString.length();
+                if (lastInscriptionLength > 0) {
+                    for (String entry : inscriptionString.split("\n")) {
+                        Entry newEntry = null;
+                        try {
+                            newEntry = new Entry(entry);
+                        } catch (NumberFormatException e) {
+                            error = true;
+                            logger.warning("Bad Price List Entry - " + entry + " - Removing.");
+                            e.printStackTrace();
+                        }
+                        if (newEntry != null) {
+                            prices.put(newEntry, null);
+                            pricesOrder.add(newEntry);
+                        }
                     }
                 }
+            }
+        }
+
+        if (error) {
+            try {
+                savePriceList();
+            } catch (PriceListFullException e) {
+                logger.warning("PriceListFull for some reason.  This should never occur.");
             }
         }
     }
 
     private static Item getNewPriceList() throws FailedException, NoSuchTemplateException {
-        Item priceList = ItemFactory.createItem(ItemList.papyrusSheet, 10, null);
+        Item priceList = ItemFactory.createItem(ItemList.book, 10, null);
         priceList.setHasNoDecay(true);
-
-        priceList.setInscription("", "");
         return priceList;
     }
 
@@ -240,9 +278,24 @@ public class PriceList implements Iterable<PriceList.Entry> {
         return priceList;
     }
 
+    private void createPage() {
+        try {
+            Item newPage = ItemFactory.createItem(ItemList.papyrusSheet, 10, null);
+            priceListItem.insertItem(newPage);
+            pageCount += 1;
+            if (priceListItem.getDescription().equals(BUY_LIST_DESCRIPTION))
+                newPage.setDescription(BUY_LIST_PAGE_PREFIX + pageCount);
+            else
+                newPage.setDescription(SELL_LIST_PAGE_PREFIX + pageCount);
+        } catch (FailedException | NoSuchTemplateException e) {
+            logger.warning("Could not create new Price List page for some reason.");
+            e.printStackTrace();
+        }
+    }
+
     public static PriceList getPriceListFromBuyer(Creature creature) throws NoPriceListOnBuyer {
         for (Item item : creature.getInventory().getItems()) {
-            if (isPriceList(item)) {
+            if (isPriceList(item) || isOldPriceList(item)) {
                 return new PriceList(item);
             }
         }
@@ -299,7 +352,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
         TempItem newItem = new TempItem(ItemFactory.generateName(template, item.material) + (item.material == (byte)0 ? ", any" : "") + (item.minimumPurchase != 1 ? " - minimum " + item.minimumPurchase : ""), template, item.minQL, "PriceList");
         newItem.setMaterial(item.material);
         newItem.setPrice(item.price);
-        newItem.setOwnerId(priceListPaper.getOwnerId());
+        newItem.setOwnerId(priceListItem.getOwnerId());
         return newItem;
     }
 
@@ -335,8 +388,17 @@ public class PriceList implements Iterable<PriceList.Entry> {
             }
         }
 
-        if (currentInscriptionLength + item.toString().length() > MAX_INSCRIPTION_LENGTH)
-            throw new PriceListFullException("PriceList has too many items to inscribe.");
+        int newLength = item.toString().length();
+        if (lastInscriptionLength + newLength > MAX_INSCRIPTION_LENGTH) {
+            if (pageCount < MAX_PAGES_IN_BOOK) {
+                pageCount += 1;
+                lastInscriptionLength = 0;
+            }
+            else {
+                throw new PriceListFullException("PriceList has too many items to inscribe.");
+            }
+        }
+        lastInscriptionLength += newLength;
         if (createdItems)
             prices.put(item, createItem(item));
         else
@@ -350,18 +412,42 @@ public class PriceList implements Iterable<PriceList.Entry> {
             TempItem temp = prices.get(item);
             if (temp != null)
                 Items.destroyItem(temp.getWurmId());
-            currentInscriptionLength -= item.toString().length();
+            lastInscriptionLength -= item.toString().length();
             prices.remove(item);
             pricesOrder.remove(item);
         }
     }
 
     public void savePriceList() throws PriceListFullException {
-        String str = pricesOrder.stream().map(Entry::toString).collect(Collectors.joining("\n"));
-        if (str.length() > MAX_INSCRIPTION_LENGTH)
+        List<String> lines = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        for (Entry entry : pricesOrder) {
+            String str = entry.toString();
+            if (sb.length() + str.length() > MAX_INSCRIPTION_LENGTH) {
+                lines.add(sb.toString());
+                sb = new StringBuilder();
+            }
+            sb.append(str).append("\n");
+        }
+        lines.add(sb.toString());
+
+        int numberOfPages = lines.size();
+        if (numberOfPages > MAX_PAGES_IN_BOOK)
             throw new PriceListFullException("PriceList data too long to inscribe.");
-        priceListPaper.setInscription(str, "");
-        currentInscriptionLength = str.length();
+
+        while(numberOfPages > priceListItem.getItems().size())
+            createPage();
+
+        Iterator<Item> pages = priceListItem.getItems().iterator();
+        for (String line : lines) {
+            pages.next().setInscription(line, "");
+        }
+
+        List<Item> toRemove = new ArrayList<>();
+        pages.forEachRemaining(toRemove::add);
+        toRemove.forEach(item -> Items.destroyItem(item.getWurmId()));
+        lastInscriptionLength = lines.get(numberOfPages - 1).length();
+        pageCount = lines.size();
     }
 
     public void sortAndSave() throws PriceListFullException {
@@ -370,6 +456,22 @@ public class PriceList implements Iterable<PriceList.Entry> {
     }
 
     public static boolean isPriceList(Item item) {
-        return descriptions.contains(item.getDescription()) && item.getInscription() != null;
+        return descriptions.contains(item.getDescription()) && item.getTemplateId() == ItemList.book;
+    }
+
+    static boolean isOldPriceList(Item item) {
+        return descriptions.contains(item.getDescription()) && item.getInscription() != null
+           && item.getTemplateId() == ItemList.papyrusSheet && (item.getParentOrNull() == null || item.getParentOrNull().getTemplateId() != ItemList.book);
+    }
+
+    static Item replaceOldPriceList(Item item) throws NoSuchTemplateException, FailedException, NoSuchItemException {
+        if (!isOldPriceList(item))
+            return item;
+
+        Item newPriceList = getNewBuyList();
+        item.getParent().insertItem(newPriceList);
+        newPriceList.insertItem(item);
+        item.setDescription(BUY_LIST_PAGE_PREFIX + 1);
+        return newPriceList;
     }
 }

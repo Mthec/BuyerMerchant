@@ -228,7 +228,12 @@ public class WurmObjectsFactory {
         Item newItem;
         try {
             newItem = PriceList.getNewBuyList();
-            newItem.setInscription(str, "");
+            if (!str.isEmpty()) {
+                Item newPage = createNewItem(ItemList.papyrusSheet);
+                newItem.insertItem(newPage);
+                newPage.setName("Buy List Page 1");
+                newPage.setInscription(str, "");
+            }
         } catch (FailedException | NoSuchTemplateException e) {
             throw new RuntimeException(e);
         }

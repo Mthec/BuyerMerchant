@@ -45,4 +45,8 @@ public class Creatures {
     public void permanentlyDelete(Creature creature) {
         WurmObjectsFactory.getCurrent().removeCreature(creature);
     }
+
+    public int getNumberOfCreatures() {
+        return WurmObjectsFactory.getCurrent().getAllCreatures().size();
+    }
 }

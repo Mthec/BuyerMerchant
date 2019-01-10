@@ -227,14 +227,14 @@ class BuyerTradingWindowTest extends WurmTradingTest {
         owner.setTrade(trade);
         buyer.setTrade(trade);
 
-        Item oldPriceList = buyer.getInventory().getItems().iterator().next();
-        Item newPriceList = factory.createPriceList(PriceListTest.two);
-        owner.getInventory().insertItem(newPriceList);
-
-        PriceList old = new PriceList(oldPriceList);
+        Item oldPriceList = buyer.getInventory().getFirstContainedItem();
+        PriceList old = PriceList.getPriceListFromBuyer(buyer);
         // PriceListTest.one - "1,1,1.0,10"
         old.addItem(1, (byte)1, 1.0f, 10);
         old.savePriceList();
+
+        Item newPriceList = factory.createPriceList(PriceListTest.two);
+        owner.getInventory().insertItem(newPriceList);
 
         trade.getCreatureTwoRequestWindow().addItem(newPriceList);
 

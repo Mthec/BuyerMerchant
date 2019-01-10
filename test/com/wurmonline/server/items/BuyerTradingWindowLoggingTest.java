@@ -11,9 +11,10 @@ import static org.mockito.Mockito.*;
 
 class BuyerTradingWindowLoggingTest extends WurmTradingTest {
 
-    private Logger logger;
+    private static Logger logger;
 
-    private void attachSpyLogger() {
+    // attachSpyLogger
+    static {
         try {
             logger = spy(Logger.getLogger(BuyerTradingWindow.class.getName()));
             Field windowLogger = BuyerTradingWindow.class.getDeclaredField("logger");
@@ -29,8 +30,8 @@ class BuyerTradingWindowLoggingTest extends WurmTradingTest {
 
     @Test
     void testPayingOutToOwner() {
+        reset(logger);
         makeOwnerBuyerTrade();
-        attachSpyLogger();
         Item coin = factory.createNewCopperCoin();
         buyer.getInventory().insertItem(coin);
         factory.getShop(buyer).setMoney(100);
@@ -43,8 +44,8 @@ class BuyerTradingWindowLoggingTest extends WurmTradingTest {
 
     @Test
     void testOwnerPayingIn() {
+        reset(logger);
         makeOwnerBuyerTrade();
-        attachSpyLogger();
         Item coin = factory.createNewCopperCoin();
         owner.getInventory().insertItem(coin);
         trade.getCreatureTwoRequestWindow().addItem(coin);
@@ -56,8 +57,8 @@ class BuyerTradingWindowLoggingTest extends WurmTradingTest {
 
     @Test
     void testPayingOutToPlayer() {
+        reset(logger);
         makeBuyerTrade();
-        attachSpyLogger();
         Item coin = factory.createNewCopperCoin();
         buyer.getInventory().insertItem(coin);
         factory.getShop(buyer).setMoney(110);

@@ -417,7 +417,7 @@ class BuyerTradeTest extends WurmTradingTest {
     @Test
     void testReplacePriceList() {
         Item oldPriceList = buyer.getInventory().getFirstContainedItem();
-        assert Objects.requireNonNull(oldPriceList.getInscription()).getInscription().isEmpty();
+        assert (PriceList.isPriceList(oldPriceList));
 
         Item newPriceList = factory.createPriceList(PriceListTest.one + "\n" + PriceListTest.two);
         owner.getInventory().insertItem(newPriceList);

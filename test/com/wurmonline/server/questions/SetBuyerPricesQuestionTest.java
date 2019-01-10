@@ -62,11 +62,13 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPrice() throws PriceList.PriceListFullException {
+    void setItemQLAndPrice() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
         float ql = 50;
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
-        PriceList priceList = new PriceList(PriceListTest.createPriceList(PriceListTest.one));
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(1,(byte)1,1.0f,1);
+        priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
 
         SetBuyerPricesQuestion.setItemDetails(item, -1, answers, factory.createNewCreature());
@@ -75,12 +77,14 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPriceWithId() throws PriceList.PriceListFullException {
+    void setItemQLAndPriceWithId() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
         int id = 12;
         float ql = 50;
         int price = 123456789;
         Properties answers = generateProperties(id, ql, price, 1);
-        PriceList priceList = new PriceList(PriceListTest.createPriceList(PriceListTest.one));
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(1,(byte)1,1.0f,1);
+        priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
 
         SetBuyerPricesQuestion.setItemDetails(item, 12, answers, factory.createNewCreature());
@@ -89,11 +93,13 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPriceNegativeQL() throws PriceList.PriceListFullException {
+    void setItemQLAndPriceNegativeQL() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
         float ql = -100;
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
-        PriceList priceList = new PriceList(PriceListTest.createPriceList(PriceListTest.one));
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(1,(byte)1,1.0f,1);
+        priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
         item.updateItem(7, (byte)0, 1, 1, 1);
 
@@ -102,11 +108,13 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPriceOver100QL() throws PriceList.PriceListFullException {
+    void setItemQLAndPriceOver100QL() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
         float ql = 101;
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
-        PriceList priceList = new PriceList(PriceListTest.createPriceList(PriceListTest.one));
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(1,(byte)1,1.0f,1);
+        priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
         item.updateItem(7, (byte)0, 1, 1, 1);
 
@@ -226,20 +234,19 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         FakeCommunicator ownerCom = factory.getCommunicator(owner);
         askQuestion();
         int empty = factory.getCommunicator(owner).lastBmlContent.length();
-        Item priceList = buyer.getInventory().getItems().toArray(new Item[0])[0];
-        PriceList list = new PriceList(priceList);
+        PriceList list = PriceList.getPriceListFromBuyer(buyer);
         list.addItem(1, (byte)0);
         list.savePriceList();
         askQuestion();
         int length1 = ownerCom.lastBmlContent.length();
 
-        list = new PriceList(priceList);
+        list = PriceList.getPriceListFromBuyer(buyer);
         list.addItem(1, (byte)0);
         list.savePriceList();
         askQuestion();
         int length2 = ownerCom.lastBmlContent.length();
 
-        list = new PriceList(priceList);
+        list = PriceList.getPriceListFromBuyer(buyer);
         list.addItem(1, (byte)0);
         list.savePriceList();
         askQuestion();

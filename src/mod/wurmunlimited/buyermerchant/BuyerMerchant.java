@@ -491,7 +491,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         Creature buyer = (Creature) o;
         if (isBuyer(buyer)) {
             for (Item item : buyer.getInventory().getItems()) {
-                if (PriceList.isPriceList(item)) {
+                if (PriceList.isPriceList(item) || PriceList.isOldPriceList(item)) {
                     item.setHasNoDecay(false);
                     break;
                 }
