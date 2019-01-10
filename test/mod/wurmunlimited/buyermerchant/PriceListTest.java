@@ -632,6 +632,20 @@ public class PriceListTest {
         assertTrue(PriceList.isPriceList(newPriceList));
     }
 
+    // Think this may only apply to my old buyer created in early testing.
+    @Test
+    void testIsVeryOldPriceList() throws NoSuchTemplateException, FailedException {
+        Item oldPriceList = createOldPriceList();
+        oldPriceList.setTemplateId(ItemList.paperSheet);
+
+        Item newPriceList = PriceList.getNewBuyList();
+
+        assertTrue(PriceList.isOldPriceList(oldPriceList));
+        assertFalse(PriceList.isOldPriceList(newPriceList));
+        assertFalse(PriceList.isPriceList(oldPriceList));
+        assertTrue(PriceList.isPriceList(newPriceList));
+    }
+
     @Test
     void testCreatePageBuyList() throws NoSuchTemplateException, FailedException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         Item priceListItem = PriceList.getNewBuyList();

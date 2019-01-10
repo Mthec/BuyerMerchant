@@ -461,7 +461,8 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
     static boolean isOldPriceList(Item item) {
         return descriptions.contains(item.getDescription()) && item.getInscription() != null
-           && item.getTemplateId() == ItemList.papyrusSheet && (item.getParentOrNull() == null || item.getParentOrNull().getTemplateId() != ItemList.book);
+           && (item.getTemplateId() == ItemList.papyrusSheet || item.getTemplateId() == ItemList.paperSheet)
+           && (item.getParentOrNull() == null || item.getParentOrNull().getTemplateId() != ItemList.book);
     }
 
     static Item replaceOldPriceList(Item item) throws NoSuchTemplateException, FailedException, NoSuchItemException {
