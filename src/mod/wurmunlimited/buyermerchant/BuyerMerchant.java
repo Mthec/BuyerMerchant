@@ -218,21 +218,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             // Remove final from TradingWindow.stopLoggers.
             CtMethod stopLoggers = tradingWindow.getDeclaredMethod("stopLoggers");
             stopLoggers.setModifiers(Modifier.clear(stopLoggers.getModifiers(), Modifier.FINAL));
-
-            // Then load subclasses.
-            // TODO - Why do I need to load PriceList?  Because it needs to be on the same loader as the rest of the Buyer code?
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$Entry.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$NoPriceListOnBuyer.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$PriceListFullException.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerHandler.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTradingWindow.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTrade.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("QuestionExtension.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerManagementQuestion.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetBuyerPricesQuestion.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerQuestion.class"));
-        } catch (NotFoundException | IOException | CannotCompileException e) {
+        } catch (NotFoundException | CannotCompileException e) {
             throw new RuntimeException(e);
         }
     }
@@ -311,7 +297,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         return method.invoke(o, args);
     }
 
-    Object initiateTrade(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException {
+    Object initiateTrade(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
         Creature performer = (Creature) args[0];
         Creature opponent = (Creature) args[1];
 
@@ -325,18 +311,19 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         }
 
         if (isBuyer(opponent)) {
-            Class<?> BuyerTradeClass = Class.forName("com.wurmonline.server.items.BuyerTrade");
-            Object trade;
+            BuyerTrade trade;
+
             try {
-                trade = BuyerTradeClass.getConstructor(Creature.class, Creature.class).newInstance(performer, opponent);
-            } catch (InvocationTargetException e) {
-                logger.warning(e.getCause().getMessage());
+                trade = new BuyerTrade(performer, opponent);
+            } catch (PriceList.NoPriceListOnBuyer e) {
+                logger.warning(opponent.getName() + " has no price list.  This should not ever happen.");
+                e.printStackTrace();
                 performer.getCommunicator().sendNormalServerMessage(opponent.getName() + " has misplaced their price list and cannot trade.");
                 return null;
             }
 
-            performer.setTrade((Trade) trade);
-            opponent.setTrade((Trade) trade);
+            performer.setTrade(trade);
+            opponent.setTrade(trade);
             opponent.getCommunicator().sendStartTrading(performer);
             performer.getCommunicator().sendStartTrading(opponent);
             opponent.addItemsToTrade();
@@ -346,7 +333,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         }
     }
 
-    Object getTradeHandler(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InstantiationException, NoSuchFieldException {
+    Object getTradeHandler(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException, NoSuchFieldException {
         Creature creature = (Creature) o;
         if (!isBuyer(creature))
             return method.invoke(o, args);
@@ -355,8 +342,12 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         TradeHandler handler = (TradeHandler) tradeHandler.get(creature);
 
         if (handler == null) {
-            Class<?> BuyerHandler = Class.forName("com.wurmonline.server.creatures.BuyerHandler");
-            handler = (TradeHandler) BuyerHandler.getConstructor(Creature.class, Trade.class).newInstance(creature, creature.getTrade());
+            try {
+                handler = new BuyerHandler(creature, creature.getTrade());
+            } catch (PriceList.NoPriceListOnBuyer e) {
+                logger.warning(creature.getName() + " has no price list.  This should not ever happen.");
+                e.printStackTrace();
+            }
             tradeHandler.set(creature, handler);
         }
 
@@ -412,7 +403,6 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                     Method mayDismiss = CreatureBehaviour.class.getDeclaredMethod("mayDismissMerchant", Creature.class, Creature.class);
                     mayDismiss.setAccessible(true);
                     if (target.isNpcTrader() && (boolean)mayDismiss.invoke(o, performer, target)) {
-                        // TODO - Why does this work but BuyerTrade and BuyerHandler don't?
                         BuyerManagementQuestion tmq = new BuyerManagementQuestion(performer, target);
                         tmq.sendQuestion();
                         return true;
@@ -510,9 +500,8 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         return method.invoke(o, args);
     }
 
-    Object stopLoggers(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException {
-        Class<?> BuyerTradingWindow = Class.forName("com.wurmonline.server.items.BuyerTradingWindow");
-        BuyerTradingWindow.getMethod("stopLoggers").invoke(null);
+    Object stopLoggers(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
+        BuyerTradingWindow.stopLoggers();
         return method.invoke(o, args);
     }
 }
