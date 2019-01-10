@@ -586,6 +586,30 @@ public class PriceListTest {
         }, priceList.asArray());
     }
 
+    @Test
+    void testPriceListSortingByFullName() throws PriceList.PriceListFullException {
+        String list =  ItemList.anvilSmall + ",1,1.0,10\n" +
+                               ItemList.hatchet + ",1,25.0,10\n" +
+                               ItemList.hatchet + ",1,55.0,10\n" +
+                               ItemList.maulSmall + ",1,1.0,10\n";
+        PriceList priceList = new PriceList(createPriceList(list));
+        PriceList.Entry[] unsortedArray = priceList.asArray();
+        assertEquals(ItemList.anvilSmall, unsortedArray[0].template);
+        assertEquals(ItemList.hatchet, unsortedArray[1].template);
+        assertEquals(ItemList.hatchet, unsortedArray[2].template);
+        assertEquals(55.0f, unsortedArray[2].minQL);
+        assertEquals(ItemList.maulSmall, unsortedArray[3].template);
+
+        priceList.sortAndSave();
+
+        assertArrayEquals(new PriceList.Entry[] {
+                unsortedArray[2],
+                unsortedArray[1],
+                unsortedArray[0],
+                unsortedArray[3]
+        }, priceList.asArray());
+    }
+
     private Item createOldPriceList() {
         Item oldPriceList = factory.createNewItem(ItemList.papyrusSheet);
         oldPriceList.setDescription("Buy List");

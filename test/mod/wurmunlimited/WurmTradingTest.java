@@ -13,20 +13,20 @@ import com.wurmonline.server.questions.Question;
 import com.wurmonline.server.questions.Questions;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.buyermerchant.PriceList;
-import org.junit.BeforeClass;
+import org.junit.AfterClass;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.internal.util.reflection.FieldSetter;
 
-import java.lang.reflect.Field;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static org.mockito.Mockito.mock;
 
 public abstract class WurmTradingTest {
 
@@ -55,6 +55,18 @@ public abstract class WurmTradingTest {
         owner = factory.createNewPlayer();
         owner.setName("Owner");
         buyer = factory.createNewBuyer(owner);
+    }
+
+    @AfterEach
+    void deleteTraderLogs() {
+        File folder = new File(".");
+        File[] files = folder.listFiles((file, name) -> name.matches("trader[\\d]+\\.log"));
+
+        if (files != null) {
+            for (File file : files) {
+                file.deleteOnExit();
+            }
+        }
     }
 
     protected void makeBuyerTrade() {

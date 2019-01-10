@@ -166,16 +166,23 @@ public class PriceList implements Iterable<PriceList.Entry> {
         }
 
         /**
-         * @param e Another entry.
+         * @param other Another entry.
          * @return Compared on template name, then minQL descending order.
          */
         @Override
-        public int compareTo(@NotNull Entry e) {
+        public int compareTo(@NotNull Entry other) {
             ItemTemplateFactory factory = ItemTemplateFactory.getInstance();
-            int compare = factory.getTemplateName(template).compareTo(factory.getTemplateName(e.template));
-            if (compare == 0) {
-                compare = Float.compare(e.minQL, minQL);
+            int compare = 0;
+            try {
+                compare = getName().compareTo(ItemFactory.generateName(factory.getTemplate(other.template), other.material));
+                if (compare == 0) {
+                    compare = Float.compare(other.minQL, minQL);
+                }
+            } catch (NoSuchTemplateException e) {
+                logger.warning("Template not found during Entry comparison.");
+                e.printStackTrace();
             }
+
             return compare;
         }
     }
