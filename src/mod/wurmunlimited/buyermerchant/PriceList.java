@@ -40,8 +40,8 @@ public class PriceList implements Iterable<PriceList.Entry> {
     private List<Entry> pricesOrder = new ArrayList<>();
     private boolean createdItems = false;
     private int lastInscriptionLength;
-    public static final String noPriceListFoundPlayerMessage = "The buyer fumbles in his pockets but fails to find his price list.";
-    public static final String noSpaceOnPriceListPlayerMessage = "The buyer has run out of space on his price list and cannot record the changes.  Try removing some items from the list.";
+    public static final String noPriceListFoundPlayerMessage = "The buyer fumbles in their pockets but fails to find their price list.";
+    public static final String noSpaceOnPriceListPlayerMessage = "The buyer has run out of space on their price list and cannot record the changes.  Try removing some items from the list.";
     public static final String couldNotCreateItemPlayerMessage = "The buyer looks at you confused, as if not understanding what your saying.";
     public static int unauthorised = -1;
     private static final Pattern pageName = Pattern.compile("(Buy|Sell) List Page (\\d+)");
