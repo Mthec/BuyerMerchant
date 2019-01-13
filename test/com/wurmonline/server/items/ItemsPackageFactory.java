@@ -14,4 +14,8 @@ public class ItemsPackageFactory {
     public static void removeItem(Creature creature, Item item) {
         creature.getInventory().removeItem(item);
     }
+
+    public static void removeItemFrom(Item parent, Item item) {
+        parent.removeItem(item);
+    }
 }

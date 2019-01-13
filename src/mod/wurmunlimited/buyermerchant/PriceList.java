@@ -431,9 +431,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
                 Items.destroyItem(temp.getWurmId());
             lastInscriptionLength -= item.toString().length();
             if (lastInscriptionLength < 0) {
-                // Just assume it will be full?
-                lastInscriptionLength = 500;
-                pageCount -= 1;
+                lastInscriptionLength = 0;
             }
             prices.remove(item);
             pricesOrder.remove(item);
