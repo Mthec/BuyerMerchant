@@ -225,6 +225,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$Entry.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$NoPriceListOnBuyer.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$PriceListFullException.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$PageNotAdded.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerHandler.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTradingWindow.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTrade.class"));

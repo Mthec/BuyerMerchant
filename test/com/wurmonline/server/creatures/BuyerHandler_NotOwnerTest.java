@@ -45,7 +45,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
             priceList.savePriceList();
             Shop shop = factory.getShop(buyer);
             shop.setMoney(shop.getMoney() + (long)(MonetaryConstants.COIN_COPPER * 1.1f));
-        } catch (NoSuchTemplateException | IOException | PriceList.PriceListFullException e) {
+        } catch (NoSuchTemplateException | IOException | PriceList.PriceListFullException | PriceList.PageNotAdded e) {
             throw new RuntimeException(e);
         }
     }
@@ -294,7 +294,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testStillBalancedAfterChange() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testStillBalancedAfterChange() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         Item item = factory.createNewItem();
         player.getInventory().insertItem(item);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -336,7 +336,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testNegativePriceAlwaysReturns0() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void testNegativePriceAlwaysReturns0() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item = factory.createNewItem(factory.getIsWoodId());
         priceList.addItem(item.getTemplateId(), item.getMaterial());
@@ -352,7 +352,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testAcceptingDonatedItems() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testAcceptingDonatedItems() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item1 = factory.createNewItem(factory.getIsWoodId());
         player.getInventory().insertItem(item1);
@@ -369,7 +369,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testAcceptingDonatedItemsDoesNotOverridePrice() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testAcceptingDonatedItemsDoesNotOverridePrice() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item1 = factory.createNewItem(factory.getIsWoodId());
         player.getInventory().insertItem(item1);
@@ -393,7 +393,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testUnauthorisedItemsNotAddedToWindow() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testUnauthorisedItemsNotAddedToWindow() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, -1);
         priceList.addItem(factory.getIsMetalId(), (byte)0, 1.0f, 10);
@@ -423,7 +423,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseItemsAreLabelledSo() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void testMinimumPurchaseItemsAreLabelledSo() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, 1);
         priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, 100);
@@ -440,7 +440,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseReached() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testMinimumPurchaseReached() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         int minimumPurchase = 20;
         int numberOfItems = 20;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -464,7 +464,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseNotReached() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testMinimumPurchaseNotReached() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase - 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -481,7 +481,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseExceeded() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testMinimumPurchaseExceeded() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase + 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -504,7 +504,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseExceedsSpaceButPurchasesSome() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testMinimumPurchaseExceedsSpaceButPurchasesSome() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         BuyerHandler.maxPersonalItems = (int)(minimumPurchase * 1.5f);
@@ -534,7 +534,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testOverMaximumAddedSeparately() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testOverMaximumAddedSeparately() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -569,7 +569,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testSomeMinimumPurchaseItemsRemovedFromTrade() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, IllegalAccessException, NoSuchFieldException {
+    void testSomeMinimumPurchaseItemsRemovedFromTrade() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, IllegalAccessException, NoSuchFieldException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -611,7 +611,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMultipleMinimumPurchasesAtDifferentQLs() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testMultipleMinimumPurchasesAtDifferentQLs() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         int minimumPurchase = 10;
         int numberOfItems = minimumPurchase * 3;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -646,7 +646,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testNoMessageSentAfterAllMinimumPurchaseEntryItemsRemoved() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, NoSuchFieldException, IllegalAccessException {
+    void testNoMessageSentAfterAllMinimumPurchaseEntryItemsRemoved() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, NoSuchFieldException, IllegalAccessException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);

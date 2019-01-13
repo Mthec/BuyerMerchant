@@ -42,7 +42,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testNoFreeMoneyOnFalse() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testNoFreeMoneyOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         assert !BuyerTradingWindow.freeMoney;
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -69,7 +69,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testFreeMoneyOnTrue() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testFreeMoneyOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         BuyerTradingWindow.freeMoney = true;
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -96,7 +96,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testItemsNotDestroyedOnFalse() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testItemsNotDestroyedOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         assert !BuyerTradingWindow.destroyBoughtItems;
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -124,7 +124,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testItemsDestroyedOnTrue() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testItemsDestroyedOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         BuyerTradingWindow.destroyBoughtItems = true;
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -153,7 +153,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testDestroyAndFreeMoney() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testDestroyAndFreeMoney() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         BuyerTradingWindow.freeMoney = true;
         BuyerTradingWindow.destroyBoughtItems = true;
 
@@ -195,7 +195,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testNoWeightRestrictionForDestroyBoughtItems() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testNoWeightRestrictionForDestroyBoughtItems() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         assert !BuyerTradingWindow.destroyBoughtItems;
         // Iron ore.
         int templateId = 38;
@@ -394,7 +394,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         }
     }
 
-    private void tradeItems(int numberOfItems) throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    private void tradeItems(int numberOfItems) throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         Arrays.stream(Economy.getEconomy().getCoinsFor((int)(MonetaryConstants.COIN_IRON * numberOfItems * 1.1f))).forEach(buyer.getInventory()::insertItem);
         factory.getShop(buyer).setMoney((long)(MonetaryConstants.COIN_IRON * numberOfItems * 1.1f));
         Set<Item> items = new HashSet<>(numberOfItems);
@@ -468,7 +468,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testMaxItemsDefaultsTo50() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testMaxItemsDefaultsTo50() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         Properties config = new Properties();
         config.setProperty("max_items", "1.0");
         config.setProperty("apply_max_to_merchant", "true");
@@ -499,7 +499,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testBuyerOnlyMaxItems() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, NoSuchFieldException {
+    void testBuyerOnlyMaxItems() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, NoSuchFieldException {
         int numberOfItems = 100;
         int extraItems = 10;
         Properties config = new Properties();

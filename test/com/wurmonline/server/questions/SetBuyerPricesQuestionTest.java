@@ -8,7 +8,6 @@ import com.wurmonline.server.items.*;
 import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.WurmTradingQuestionTest;
 import mod.wurmunlimited.buyermerchant.PriceList;
-import mod.wurmunlimited.buyermerchant.PriceListTest;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -62,7 +61,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPrice() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void setItemQLAndPrice() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         float ql = 50;
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
@@ -77,7 +76,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPriceWithId() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void setItemQLAndPriceWithId() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         int id = 12;
         float ql = 50;
         int price = 123456789;
@@ -93,7 +92,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPriceNegativeQL() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void setItemQLAndPriceNegativeQL() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         float ql = -100;
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
@@ -108,7 +107,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPriceOver100QL() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void setItemQLAndPriceOver100QL() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         float ql = 101;
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
@@ -230,7 +229,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testRowsAdded() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void testRowsAdded() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         FakeCommunicator ownerCom = factory.getCommunicator(owner);
         askQuestion();
         int empty = factory.getCommunicator(owner).lastBmlContent.length();
@@ -256,7 +255,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testItemValuesCorrect() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void testItemValuesCorrect() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         PriceList list = PriceList.getPriceListFromBuyer(buyer);
         float ql = 55.6f;
         int money = 1122334455;
@@ -277,7 +276,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testItemNameCorrect() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testItemNameCorrect() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(7, (byte)1);
         priceList.savePriceList();
@@ -293,7 +292,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testItemMaterialCorrect() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testItemMaterialCorrect() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         PriceList list = PriceList.getPriceListFromBuyer(buyer);
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(factory.getIsMetalId());
         list.addItem(template.getTemplateId(), ItemMaterials.MATERIAL_MEAT_DRAGON);
@@ -346,7 +345,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testRemoveItemFromList() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testRemoveItemFromList() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         for (int i = 1; i < 15; ++i) {
             priceList.addItem(7, (byte)i, 1.0f, i);
@@ -372,7 +371,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testKilogramsString() throws NoSuchTemplateException, IOException, PriceList.PriceListFullException {
+    void testKilogramsString() throws NoSuchTemplateException, IOException, PriceList.PriceListFullException, PriceList.PageNotAdded {
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(factory.getIsWoodId());
         assert template.getWeightGrams() == 24000;
         ItemTemplate template2 = ItemTemplateFactory.getInstance().getTemplate(factory.getIsCoinId());
@@ -389,7 +388,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testPriceListSortingBml() throws PriceList.PriceListFullException, PriceList.NoPriceListOnBuyer {
+    void testPriceListSortingBml() throws PriceList.PriceListFullException, PriceList.PageNotAdded, PriceList.NoPriceListOnBuyer {
         addItemToPriceList(ItemList.coinCopper,1.0f,10);
         addItemToPriceList(ItemList.backPack,1.0f,10);
         addItemToPriceList(ItemList.log,12.0f,10);

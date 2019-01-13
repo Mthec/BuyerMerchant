@@ -167,7 +167,7 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
                 SetBuyerPricesQuestion.setItemDetails(newItem, -1, this.getAnswer(), responder);
                 priceList.savePriceList();
                 responder.getCommunicator().sendNormalServerMessage(buyer.getName() + " adds the item to their list.");
-            } catch (PriceList.NoPriceListOnBuyer noPriceListOnBuyer) {
+            } catch (PriceList.NoPriceListOnBuyer | PriceList.PageNotAdded noPriceListOnBuyer) {
                 responder.getCommunicator().sendNormalServerMessage(PriceList.noPriceListFoundPlayerMessage);
                 noPriceListOnBuyer.printStackTrace();
             } catch (PriceList.PriceListFullException e) {

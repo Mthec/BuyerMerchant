@@ -16,14 +16,14 @@ import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.BuyerTradingWindow;
-import com.wurmonline.server.items.ItemTemplateFactory;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.text.DecimalFormat;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class SetBuyerPricesQuestion extends QuestionExtension {
     private static final Logger logger = Logger.getLogger(SetBuyerPricesQuestion.class.getName());
@@ -51,8 +51,8 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
         if (wasSelected("sort")) {
             try {
                 priceList.sortAndSave();
-            } catch (PriceList.PriceListFullException e) {
-                responder.getCommunicator().sendNormalServerMessage(PriceList.noSpaceOnPriceListPlayerMessage);
+            } catch (PriceList.PriceListFullException | PriceList.PageNotAdded e) {
+                responder.getCommunicator().sendNormalServerMessage(PriceList.noPriceListFoundPlayerMessage);
                 logger.warning("Price List was not sorted correctly.");
                 e.printStackTrace();
             }
@@ -84,6 +84,9 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
             logger.log(Level.WARNING, responder.getName(), e);
         } catch (PriceList.PriceListFullException e) {
             responder.getCommunicator().sendNormalServerMessage(PriceList.noSpaceOnPriceListPlayerMessage + "  Some of the prices may have been updated.");
+        } catch (PriceList.PageNotAdded e) {
+            responder.getCommunicator().sendNormalServerMessage(PriceList.noPriceListFoundPlayerMessage);
+            e.printStackTrace();
         }
     }
 

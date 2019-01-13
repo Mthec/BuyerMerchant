@@ -222,7 +222,7 @@ class BuyerTradingWindowTest extends WurmTradingTest {
     }
 
     @Test
-    void testOwnerReplacingPriceList() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void testOwnerReplacingPriceList() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException, PriceList.PageNotAdded {
         trade = new BuyerTrade(owner, buyer);
         owner.setTrade(trade);
         buyer.setTrade(trade);

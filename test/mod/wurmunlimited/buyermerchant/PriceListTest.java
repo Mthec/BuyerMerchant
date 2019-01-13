@@ -8,8 +8,6 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.*;
 import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.WurmObjectsFactory;
-import mod.wurmunlimited.WurmTradingTest;
-import org.junit.BeforeClass;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +15,6 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -80,7 +77,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testSaveAndLoad() throws PriceList.PriceListFullException {
+    void testSaveAndLoad() throws PriceList.PriceListFullException, PriceList.PageNotAdded {
         Item priceListItem = createPriceList(one);
         PriceList priceList = new PriceList(priceListItem);
         priceList.savePriceList();
@@ -95,7 +92,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testAddingAboveMaxPageSize() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testAddingAboveMaxPageSize() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, PriceList.PageNotAdded {
         StringBuilder stringBuilder = new StringBuilder(512);
         for (int i = 1; i <= 46; i++)
             stringBuilder.append(i).append(",1,1.0,1\n");
@@ -114,13 +111,13 @@ public class PriceListTest {
     void testAddingAboveMaxBookSize() {
         Item priceListItem = createPriceList("");
         StringBuilder stringBuilder = new StringBuilder(512);
-        for (int i = 0; i < 10; ++i) {
+        for (int i = 1; i <= 10; ++i) {
             for (int j = 0; j <= 49; j++) {
                 stringBuilder.append(1).append(i).append(j).append(",1,1.0,1\n");
             }
             Item newPage = factory.createNewItem(ItemList.papyrusSheet);
             priceListItem.insertItem(newPage);
-            newPage.setName("Buy List Page " + i);
+            newPage.setDescription("Buy List Page " + i);
             newPage.setInscription(stringBuilder.toString(), "");
             stringBuilder = new StringBuilder();
         }
@@ -369,7 +366,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testAnyMaterialGetsPriceCorrectly() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testAnyMaterialGetsPriceCorrectly() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded {
         Item item = factory.createNewItem(factory.getIsWoodId());
         Creature buyer = factory.createNewBuyer(factory.createNewPlayer());
         int price = 101;
@@ -563,7 +560,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testPriceListSorting() throws PriceList.PriceListFullException {
+    void testPriceListSorting() throws PriceList.PriceListFullException, PriceList.PageNotAdded {
         String list =  ItemList.icecream + ",1,1.0,10\n" +
                        ItemList.hatchet + ",1,25.0,10\n" +
                        ItemList.hatchet + ",1,55.0,10\n" +
@@ -587,7 +584,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testPriceListSortingByFullName() throws PriceList.PriceListFullException {
+    void testPriceListSortingByFullName() throws PriceList.PriceListFullException, PriceList.PageNotAdded {
         String list =  ItemList.anvilSmall + ",1,1.0,10\n" +
                                ItemList.hatchet + ",1,25.0,10\n" +
                                ItemList.hatchet + ",1,55.0,10\n" +
@@ -671,35 +668,123 @@ public class PriceListTest {
     }
 
     @Test
-    void testCreatePageBuyList() throws NoSuchTemplateException, FailedException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    void testAddPageBuyList() throws NoSuchTemplateException, FailedException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         Item priceListItem = PriceList.getNewBuyList();
         PriceList priceList = new PriceList(priceListItem);
 
         assertEquals(0, priceListItem.getItemCount());
 
-        Method createPage = PriceList.class.getDeclaredMethod("createPage");
+        Method createPage = PriceList.class.getDeclaredMethod("addPageToPriceList", Item.class);
         createPage.setAccessible(true);
-        createPage.invoke(priceList);
+        createPage.invoke(priceList, priceListItem);
 
         assertEquals(1, priceListItem.getItemCount());
         assertEquals(ItemList.papyrusSheet, priceListItem.getFirstContainedItem().getTemplateId());
-        assertEquals("Buy List Page 1", priceListItem.getFirstContainedItem().getDescription());
         assertNotNull(priceListItem.getFirstContainedItem().getInscription());
     }
 
     @Test
-    void testCreatePageSellList() throws NoSuchTemplateException, FailedException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    void testAddPageSellList() throws NoSuchTemplateException, FailedException, InvocationTargetException, IllegalAccessException, NoSuchMethodException {
         Item priceListItem = PriceList.getNewSellList();
         PriceList priceList = new PriceList(priceListItem);
 
         assertEquals(0, priceListItem.getItemCount());
 
-        Method createPage = PriceList.class.getDeclaredMethod("createPage");
+        Method createPage = PriceList.class.getDeclaredMethod("addPageToPriceList", Item.class);
         createPage.setAccessible(true);
-        createPage.invoke(priceList);
+        createPage.invoke(priceList, priceListItem);
 
         assertEquals(1, priceListItem.getItemCount());
         assertEquals(ItemList.papyrusSheet, priceListItem.getFirstContainedItem().getTemplateId());
-        assertEquals("Sell List Page 1", priceListItem.getFirstContainedItem().getDescription());
+    }
+
+    @Test
+    void testPageRemoval() throws NoSuchTemplateException, FailedException, PriceList.PageNotAdded, PriceList.PriceListFullException, IOException {
+        Item priceListItem = PriceList.getNewBuyList();
+
+        PriceList priceList;
+        int templateId = 0;
+        byte material = 0;
+        while (priceListItem.getItemCount() != 2) {
+            templateId++;
+            if (templateId > 1000) {
+                templateId = 1;
+                material++;
+            }
+
+            priceList = new PriceList(priceListItem);
+            priceList.addItem(templateId, material);
+            priceList.savePriceList();
+        }
+
+        assertEquals(2, priceListItem.getItemCount());
+
+        priceList = new PriceList(priceListItem);
+        priceList.removeItem(priceList.iterator().next());
+        priceList.savePriceList();
+
+        assertEquals(1, priceListItem.getItemCount());
+        assertEquals(ItemList.papyrusSheet, priceListItem.getFirstContainedItem().getTemplateId());
+        assertNotNull(priceListItem.getFirstContainedItem().getInscription());
+    }
+
+    @Test
+    void testPageNotInBook() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, PriceList.NoPriceListOnBuyer {
+        Creature buyer = factory.createNewBuyer(factory.createNewPlayer());
+        Item priceListItem = buyer.getInventory().getFirstContainedItem();
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+
+        Method createPage = PriceList.class.getDeclaredMethod("addPageToPriceList", Item.class);
+        createPage.setAccessible(true);
+        createPage.invoke(priceList, priceListItem);
+
+        Item page = priceListItem.getFirstContainedItem();
+        buyer.getInventory().insertItem(page);
+        ItemsPackageFactory.removeItem(buyer, priceListItem);
+
+        assertThrows(PriceList.NoPriceListOnBuyer.class, () -> PriceList.getPriceListFromBuyer(buyer));
+    }
+
+    @Test
+    void testAddingAboveMaximumEntriesAndRemovingRepeated() throws NoSuchTemplateException, FailedException, IOException, PriceList.PriceListFullException {
+        Item priceListItem = PriceList.getNewBuyList();
+        PriceList list = new PriceList(priceListItem);
+
+        int templateId = 100;
+        while (true) {
+            try {
+                templateId++;
+                list.addItem(templateId, (byte)1);
+            } catch (PriceList.PriceListFullException e) {
+                break;
+            }
+        }
+        // So that the list sizes will be equal.
+        assert templateId < 1000;
+        assertDoesNotThrow(list::savePriceList);
+        assertEquals(10, priceListItem.getItemCount());
+
+        System.out.println("Price List filled.");
+
+        for (int i = 0; i < 100; i++) {
+            PriceList priceList = new PriceList(priceListItem);
+            List<Integer> templateNumbers = new ArrayList<>();
+
+            for (int j = 0; j < 4; j++) {
+                PriceList.Entry entry = priceList.iterator().next();
+                templateNumbers.add(entry.getTemplateId());
+                priceList.removeItem(entry);
+            }
+
+            assertDoesNotThrow(priceList::savePriceList);
+
+            for (Integer id : templateNumbers) {
+                priceList.addItem(id, (byte)1);
+            }
+            int finalTemplateId = templateId;
+            assertThrows(PriceList.PriceListFullException.class, () -> priceList.addItem(finalTemplateId, (byte)1));
+
+            assertDoesNotThrow(priceList::savePriceList);
+        }
     }
 }
