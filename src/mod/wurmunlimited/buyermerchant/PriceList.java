@@ -297,9 +297,10 @@ public class PriceList implements Iterable<PriceList.Entry> {
         return priceList;
     }
 
-    private void addPageToPriceList(Item priceListItem) throws NoSuchTemplateException, FailedException {
+    private static Item addPageToPriceList(Item priceListItem) throws NoSuchTemplateException, FailedException {
         Item newPage = ItemFactory.createItem(ItemList.papyrusSheet, 10, null);
         priceListItem.insertItem(newPage);
+        return newPage;
     }
 
     public static PriceList getPriceListFromBuyer(Creature creature) throws NoPriceListOnBuyer {
@@ -506,5 +507,31 @@ public class PriceList implements Iterable<PriceList.Entry> {
         newPriceList.insertItem(item);
         item.setDescription(BUY_LIST_PAGE_PREFIX + 1);
         return newPriceList;
+    }
+
+    @Nullable
+    public static Item copy(Item priceList) throws NoSuchTemplateException, FailedException {
+        if (!isPriceList(priceList))
+            return null;
+
+        Item newCopy;
+        if (priceList.getDescription().equals(BUY_LIST_DESCRIPTION)) {
+            newCopy = getNewBuyList();
+        } else {
+            newCopy = getNewSellList();
+        }
+
+        for (Item page : priceList.getItems()) {
+            InscriptionData inscription = page.getInscription();
+            if (inscription == null) {
+                logger.warning("No inscription found on page.  Not copying.  WurmId - " + page.getWurmId());
+                continue;
+            }
+            Item newPage = addPageToPriceList(newCopy);
+            newPage.setDescription(page.getDescription());
+            newPage.setInscription(inscription.getInscription(), "");
+        }
+
+        return newCopy;
     }
 }

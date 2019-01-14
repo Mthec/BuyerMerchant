@@ -787,4 +787,88 @@ public class PriceListTest {
             assertDoesNotThrow(priceList::savePriceList);
         }
     }
+
+    @Test
+    void testCopyPriceListEmpty() throws NoSuchTemplateException, FailedException {
+        Item priceList = factory.createPriceList();
+        Item copiedPriceList = PriceList.copy(priceList);
+
+        assertNotNull(copiedPriceList);
+        assertNotEquals(priceList, copiedPriceList);
+        assertTrue(PriceList.isPriceList(copiedPriceList));
+        assertEquals(priceList.getDescription(), copiedPriceList.getDescription());
+        assertEquals(priceList.getItemCount(), copiedPriceList.getItemCount());
+    }
+
+    @Test
+    void testCopyPriceListFull() throws NoSuchTemplateException, FailedException, IOException {
+        Item priceList = factory.createPriceList();
+        PriceList list = new PriceList(priceList);
+        int templateId = 100;
+        while (true) {
+            try {
+                templateId++;
+                list.addItem(templateId, (byte)1);
+            } catch (PriceList.PriceListFullException e) {
+                break;
+            }
+        }
+        assertDoesNotThrow(list::savePriceList);
+        assertEquals(10, priceList.getItemCount());
+
+        Item copiedPriceList = PriceList.copy(priceList);
+
+        assertNotNull(copiedPriceList);
+        assertNotEquals(priceList, copiedPriceList);
+        assertTrue(PriceList.isPriceList(copiedPriceList));
+        assertEquals(priceList.getDescription(), copiedPriceList.getDescription());
+        assertEquals(priceList.getItemCount(), copiedPriceList.getItemCount());
+
+        for (int i = 0; i < priceList.getItemCount(); i++) {
+            assertEquals(Objects.requireNonNull(priceList.getItemsAsArray()[i].getInscription()).getInscription(),
+                    Objects.requireNonNull(priceList.getItemsAsArray()[i].getInscription()).getInscription());
+        }
+    }
+
+    @Test
+    void testCopyPriceListSell() throws NoSuchTemplateException, FailedException {
+        Item priceList = factory.createPriceList();
+        priceList.setDescription("Sell List");
+        Item copiedPriceList = PriceList.copy(priceList);
+
+        assertNotNull(copiedPriceList);
+        assertNotEquals(priceList, copiedPriceList);
+        assertTrue(PriceList.isPriceList(copiedPriceList));
+        assertEquals(priceList.getDescription(), copiedPriceList.getDescription());
+        assertEquals(priceList.getItemCount(), copiedPriceList.getItemCount());
+        assertEquals("Sell List", copiedPriceList.getDescription());
+    }
+
+    @Test
+    void testCopyDoesNotCopyBadPages() throws NoSuchTemplateException, FailedException, IOException, NoSuchFieldException, IllegalAccessException {
+        Item priceList = factory.createPriceList();
+        PriceList list = new PriceList(priceList);
+        int templateId = 100;
+        while (true) {
+            try {
+                templateId++;
+                list.addItem(templateId, (byte)1);
+            } catch (PriceList.PriceListFullException e) {
+                break;
+            }
+        }
+        assertDoesNotThrow(list::savePriceList);
+        assertEquals(10, priceList.getItemCount());
+
+        Iterator<Item> itr = priceList.getItems().iterator();
+        Field inscription = Item.class.getDeclaredField("inscription");
+        inscription.setAccessible(true);
+        inscription.set(itr.next(), null);
+        inscription.set(itr.next(), null);
+
+        Item copiedPriceList = PriceList.copy(priceList);
+
+        assertNotNull(copiedPriceList);
+        assertEquals(priceList.getItemCount() - 2, copiedPriceList.getItemCount());
+    }
 }

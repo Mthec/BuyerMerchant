@@ -145,8 +145,12 @@ public class WurmObjectsFactory {
     }
 
     public Creature createNewCreature() {
+        return createNewCreature(1);
+    }
+
+    public Creature createNewCreature(int templateId) {
         try {
-            Creature creature = Creature.doNew(CreatureTemplateIds.HUMAN_CID, 1, 1, 1, 1, "Creature" + (creatures.size() + 1), (byte)0);
+            Creature creature = Creature.doNew(templateId, 1, 1, 1, 1, "Creature" + (creatures.size() + 1), (byte)0);
             creatures.put(creature.getWurmId(), creature);
             creature.createPossessions();
             attachFakeCommunicator(creature);
@@ -231,7 +235,7 @@ public class WurmObjectsFactory {
             if (!str.isEmpty()) {
                 Item newPage = createNewItem(ItemList.papyrusSheet);
                 newItem.insertItem(newPage);
-                newPage.setName("Buy List Page 1");
+                newPage.setDescription("Buy List Page 1");
                 newPage.setInscription(str, "");
             }
         } catch (FailedException | NoSuchTemplateException e) {

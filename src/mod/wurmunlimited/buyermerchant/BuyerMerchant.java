@@ -15,6 +15,7 @@ import javassist.*;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.ItemTemplateBuilder;
+import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -233,13 +234,18 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerManagementQuestion.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetBuyerPricesQuestion.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerQuestion.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyPriceListAction.class"));
         } catch (NotFoundException | IOException | CannotCompileException e) {
             throw new RuntimeException(e);
         }
+
+        ModActions.init();
     }
 
     @Override
     public void onServerStarted() {
+        ModActions.registerAction(new CopyPriceListAction(templateId));
+
         BuyerTradingWindow.freeMoney = freeMoney;
         BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;
         if (destroyBoughtItems)
