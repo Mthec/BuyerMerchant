@@ -235,6 +235,11 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetBuyerPricesQuestion.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerQuestion.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyPriceListAction.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ContractMinimum.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$1.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$2.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumSet.class"));
         } catch (NotFoundException | IOException | CannotCompileException e) {
             throw new RuntimeException(e);
         }

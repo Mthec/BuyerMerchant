@@ -13,6 +13,7 @@ import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
+import javafx.util.Pair;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.util.*;
@@ -29,7 +30,10 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
     private final Shop shop;
     private final boolean ownerTrade;
     private PriceList priceList;
-    private Map<PriceList.Entry, HashSet<Item>> minimumRequired = new HashMap<>();
+    private Map<PriceList.Entry, MinimumRequired> minimumRequiredMap = new HashMap<>();
+    private static int deliveryContractId = -10;
+    private static final int unauthorisedItem = 1;
+    private static final int notFullWeight = 2;
 
     public BuyerHandler(Creature aCreature, Trade _trade) throws PriceList.NoPriceListOnBuyer {
         this.creature = aCreature;
@@ -143,45 +147,60 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         return Math.max(0, (int)(markedPrice * weightRatio));
     }
 
-    private long getDiff() {
-        if (this.ownerTrade) {
-            return 0L;
-        } else {
-            // whatPlayerWants in TradeHandler is not needed as all coins are removed before working out diff.
-            Item[] whatIWant = this.trade.getCreatureTwoRequestWindow().getItems();
-            long myDemand = 0L;
+    private int addContractToMinimumRequirement(Item contract) {
+        assert contract.getTemplateId() == deliveryContractId;
 
-            for (Item item : whatIWant) {
-                myDemand += getTraderBuyPriceForItem(item);
+        Map<PriceList.Entry, Integer> entries = new HashMap<>();
+
+        for (Item item : contract.getItems()) {
+            // TODO - More performant way to check?  What about ql differences?
+            PriceList.Entry entry = priceList.getEntryFor(item);
+            if (entry == null) {
+                return unauthorisedItem;
+            }
+            if (entry.getMinimumPurchase() != 1 && item.getWeightGrams() < item.getTemplate().getWeightGrams()) {
+                return notFullWeight;
             }
 
-            return myDemand;
+            entries.merge(entry, 1, Integer::sum);
         }
+
+        ContractMinimum prices = new ContractMinimum(contract, entries);
+        for (PriceList.Entry entry : prices.getLinked()) {
+            MinimumRequired minimum = minimumRequiredMap.get(entry);
+            if (minimum == null) {
+                minimum = new MinimumRequired(entry);
+                minimumRequiredMap.put(entry, minimum);
+            }
+
+            minimum.addItem(prices);
+        }
+
+        return 0;
     }
 
     public static int getMaxNumPersonalItems() {
         return maxPersonalItems;
     }
 
-    private void suckInterestingItems() {
+    private int suckInterestingItems() {
         TradingWindow offeredWindow = this.trade.getTradingWindow(2L);
         TradingWindow targetWindow = this.trade.getTradingWindow(4L);
 
-        // Reset minimumRequired items for easier adding of new items that match the Entry.
-        if (!minimumRequired.isEmpty()) {
+        // Reset minimumRequiredMap items for easier adding of new items that match the Entry.
+        if (!minimumRequiredMap.isEmpty()) {
             Set<Item> items = new HashSet<>(Arrays.asList(targetWindow.getItems()));
 
-            for (Map.Entry<PriceList.Entry, HashSet<Item>> entries : minimumRequired.entrySet()) {
-                HashSet<Item> list = entries.getValue();
-                for (Item item : list.toArray(new Item[0])) {
+            for (MinimumRequired minimum : minimumRequiredMap.values()) {
+                for (Item item : minimum.getItems()) {
                     if (items.contains(item)) {
                         targetWindow.removeItem(item);
                         offeredWindow.addItem(item);
-                    } else {
-                        list.remove(item);
                     }
                 }
             }
+
+            minimumRequiredMap.clear();
         }
 
         Item[] offeredItems = offeredWindow.getItems();
@@ -198,8 +217,11 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
             }
 
             targetWindow.stopReceivingItems();
+
+            return 0;
         } else {
             int size = 0;
+            int totalPrice;
 
             // This is correct for buyer as TradeHandler gets current total from window 1.
             for (Item item : this.creature.getInventory().getItems()) {
@@ -211,12 +233,15 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
             }
 
             size += alreadyAcceptedItems.length;
+            totalPrice = Arrays.stream(alreadyAcceptedItems).mapToInt(this::getTraderBuyPriceForItem).sum();
+
             if (size >= maxPersonalItems) {
                 this.trade.creatureOne.getCommunicator().sendNormalServerMessage(this.creature.getName() + " says, 'I cannot add more items to my stock right now.'");
             } else {
                 boolean anyNotAuthorised = false;
                 boolean anyDamaged = false;
                 boolean anyLocked = false;
+                boolean anyMinimumNotFullWeight = false;
                 boolean personalItemsFull = false;
                 targetWindow.startReceivingItems();
 
@@ -228,6 +253,13 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                             anyLocked = true;
                         } else if ((offeredItem.isHollow() && !offeredItem.isEmpty(true)) || offeredItem.isSealedByPlayer()) {
                             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'Please empty the " + offeredItem.getName() + " first.'");
+                        } else if (offeredItem.getTemplateId() == deliveryContractId) {
+                            int contractResult = addContractToMinimumRequirement(offeredItem);
+                            if (contractResult == unauthorisedItem) {
+                                anyNotAuthorised = true;
+                            } else if (contractResult == notFullWeight) {
+                                anyMinimumNotFullWeight = true;
+                            }
                         }
                         else if (!offeredItem.isCoin()) {
                             PriceList.Entry entry = priceList.getEntryFor(offeredItem);
@@ -235,9 +267,17 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                                 int price = getTraderBuyPriceForItem(entry, offeredItem);
                                 if (price != PriceList.unauthorised) {
                                     if (entry.getMinimumPurchase() != 1) {
-                                        if (!minimumRequired.containsKey(entry))
-                                            minimumRequired.put(entry, new HashSet<>());
-                                        minimumRequired.get(entry).add(offeredItem);
+                                        if (offeredItem.getWeightGrams() == offeredItem.getTemplate().getWeightGrams()) {
+                                            MinimumRequired minimum = minimumRequiredMap.get(entry);
+                                            if (minimum == null) {
+                                                minimum = new MinimumRequired(entry);
+                                                minimumRequiredMap.put(entry, minimum);
+                                            }
+
+                                            minimum.addItem(offeredItem);
+                                        } else {
+                                            anyMinimumNotFullWeight = true;
+                                        }
                                     } else {
                                         if (price == 0) {
                                             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I will not pay you anything, but will accept the " + offeredItem.getName() + " as a donation.'");
@@ -253,6 +293,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                                             offeredWindow.removeItem(offeredItem);
                                             targetWindow.addItem(offeredItem);
                                             ++size;
+                                            totalPrice += price;
                                         }
                                     }
 
@@ -267,54 +308,92 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                     }
                 }
 
-                if (!minimumRequired.isEmpty()) {
-                    Iterator<Map.Entry<PriceList.Entry, HashSet<Item>>> allEntries = minimumRequired.entrySet().iterator();
-                    while (allEntries.hasNext()) {
-                        Map.Entry<PriceList.Entry, HashSet<Item>> entries = allEntries.next();
-                        PriceList.Entry entry = entries.getKey();
-                        HashSet<Item> minimumRequiredItems = entries.getValue();
+                // Knapsack Problem Plus is hard!
+                if (!minimumRequiredMap.isEmpty()) {
+                    List<PriceList.Entry> entries = new LinkedList<>(minimumRequiredMap.keySet());
+                    List<PriceList.Entry> confirmed = new LinkedList<>();
+                    Set<MinimumSet> invalidSets = new HashSet<>();
 
-                        if (minimumRequiredItems.isEmpty()) {
-                            allEntries.remove();
-                            continue;
-                        }
+                    // Filter out items that don't meet the requirement and remove MinimumSets from all counts.
+                    while (entries.size() > 0) {
+                        PriceList.Entry entry = entries.get(0);
+                        MinimumRequired minimumRequired = minimumRequiredMap.get(entry);
+                        minimumRequired.removeInvalidSets(invalidSets);
 
-                        if (minimumRequiredItems.size() >= entry.getMinimumPurchase()) {
-                            if (size + entry.getMinimumPurchase() <= maxPersonalItems) {
-                                if (size + minimumRequiredItems.size() > maxPersonalItems)
-                                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I do not have enough space to accept all of the " + entry.getItem().getTemplate().getPlural() + ".'");
+                        int count = minimumRequired.count();
 
-                                int price = getTraderBuyPriceForItem(entry, minimumRequiredItems.iterator().next());
-                                if (price == 0) {
-                                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I will not pay you anything, but will accept the " + minimumRequiredItems.iterator().next().getTemplate().getPlural() + " as a donation.'");
-                                }
+                        if (count >= entry.getMinimumPurchase()) {
+                            confirmed.add(entry);
+                        } else if (count != 0) { // Prevent entries with removed sets from sending messages.
+                            Set<PriceList.Entry> toReevaluate = minimumRequired.getLinked();
+                            confirmed.removeAll(toReevaluate);
+                            entries.addAll(toReevaluate);
+                            invalidSets.addAll(minimumRequired.getMinimumSets());
 
-                                // Don't know why this wouldn't be true, because of container test above.
-                                if (minimumRequiredItems.stream().allMatch(item -> {
-                                    Item parent = item;
-                                    try {
-                                        parent = item.getParent();
-                                    } catch (NoSuchItemException ignored) {
-                                    }
-
-                                    return item == parent || parent.isViewableBy(this.creature);
-                                })) {
-                                    for (Item offeredItem : minimumRequiredItems) {
-                                        if (size < maxPersonalItems) {
-                                            offeredWindow.removeItem(offeredItem);
-                                            targetWindow.addItem(offeredItem);
-                                            ++size;
-                                        }
-                                    }
-                                }
-                            } else {
-                                personalItemsFull = true;
-                                break;
-                            }
-                        } else {
-                            int numberRequired = entry.getMinimumPurchase() - minimumRequiredItems.size();
+                            int numberRequired = entry.getMinimumPurchase() - count;
                             ItemTemplate template = entry.getItem().getTemplate();
                             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I will need " + numberRequired + " more " + (numberRequired == 1 ? template.getName() : template.getPlural()) + " in order to accept them.'");
+                        }
+
+                        entries.remove(entry);
+                    }
+
+                    List<PriceList.Entry> accepted = new LinkedList<>();
+                    invalidSets = new HashSet<>();
+                    int itemCount = size;
+
+                    while (confirmed.size() > 0) {
+                        PriceList.Entry entry = confirmed.get(0);
+                        MinimumRequired minimumRequired = minimumRequiredMap.get(entry);
+                        minimumRequired.removeInvalidSets(invalidSets);
+
+                        if (itemCount + minimumRequired.itemCount() <= maxPersonalItems) {
+                            accepted.add(entry);
+                            itemCount += minimumRequired.itemCount();
+                        } else {
+                            // Optimise set attempt
+                            // One drawback, if set entry is removed later it won't get all of the items if they would now fit.
+                            // Another drawback, can only remove non-sets as it gets way to complicated otherwise.
+                            if (minimumRequired.shrinkToFit(maxPersonalItems - itemCount)) {
+                                accepted.add(entry);
+                                itemCount += minimumRequired.itemCount();
+                                personalItemsFull = true;
+                            } else {
+                                Set<PriceList.Entry> toReevaluate = minimumRequired.getLinked();
+                                accepted.removeAll(toReevaluate);
+                                confirmed.addAll(toReevaluate);
+                                invalidSets.addAll(minimumRequired.getMinimumSets());
+                                personalItemsFull = true;
+                            }
+                        }
+
+                        confirmed.remove(entry);
+                    }
+
+                    Set<Item> addedContracts = new HashSet<>();
+                    // Finally, move windows.
+                    for (PriceList.Entry entry : accepted) {
+                        MinimumRequired minimumRequired = minimumRequiredMap.get(entry);
+                        if (minimumRequired.isOptimal())
+                            this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I do not have enough space to accept all of the " + entry.getItem().getTemplate().getPlural() + ".'");
+
+                        int setPrice = minimumRequired.getTotalPrice();
+                        if (setPrice == 0) {
+                            this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I will not pay you anything, but will accept the " + entry.getItem().getTemplate().getPlural() + " as a donation.'");
+                        }
+
+                        for (Pair<Item, Integer> itemPrice : minimumRequired.getItemsAndPrices()) {
+                            Item offeredItem = itemPrice.getKey();
+                            if (offeredItem.getTemplateId() == deliveryContractId) {
+                                if (addedContracts.contains(offeredItem))
+                                    continue;
+                                else
+                                    addedContracts.add(offeredItem);
+                            }
+                            offeredWindow.removeItem(offeredItem);
+                            targetWindow.addItem(offeredItem);
+                            ++size;
+                            totalPrice += itemPrice.getValue();
                         }
                     }
                 }
@@ -325,11 +404,15 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept damaged items.'");
                 if (anyLocked)
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept locked items any more. Sorry for the inconvenience.'");
+                if (anyMinimumNotFullWeight)
+                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I can only accept full weight items when there is a minimum required amount.'");
                 if (anyNotAuthorised)
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I am not authorised to buy " + (offeredWindow.getItems().length != 1 ? "these items" : "this item") + ".'");
                 if (personalItemsFull)
                     this.trade.creatureOne.getCommunicator().sendNormalServerMessage(this.creature.getName() + " says, 'I cannot add more items to my stock right now.'");
             }
+
+            return totalPrice;
         }
     }
 
@@ -342,12 +425,11 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                 this.balanced = true;
             } else {
                 if (this.shop.isPersonal() && !this.waiting) {
-                    this.suckInterestingItems();
                     for (Item item : this.trade.getCreatureOneRequestWindow().getItems()) {
                         if (item.isCoin())
                             this.trade.getCreatureOneRequestWindow().removeItem(item);
                     }
-                    long diff = this.getDiff();
+                    long diff = this.suckInterestingItems();
                     if (diff > 0L) {
                         long withBuyersCut = (long)(diff * 1.1f);
                         if (!BuyerTradingWindow.freeMoney && withBuyersCut > this.shop.getMoney()) {

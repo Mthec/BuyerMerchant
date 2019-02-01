@@ -680,4 +680,39 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         assertEquals(items.size(), player.getInventory().getNumItemsNotCoins());
         assertThat(player, hasCoinsOfValue(0L));
     }
+
+    @Test
+    void testDoesNotAcceptUnauthorisedAsDonation() {
+        Item unauthorised = factory.createNewItem();
+        player.getInventory().insertItem(unauthorised);
+
+        createHandler();
+        playerOffer.addItem(unauthorised);
+        handler.balance();
+
+        assertFalse(receivedMessageContaining("donation").matches(player));
+        assertEquals(1, playerOffer.getItems().length);
+        assertEquals(unauthorised, playerOffer.getItems()[0]);
+    }
+
+    @Test
+    void testMinimumRequirementItemsMustBeFullWeight() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded {
+        int minimumPurchase = 20;
+        int numberOfItems = minimumPurchase + 1;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.savePriceList();
+        factory.getShop(buyer).setMoney(100000);
+
+        createHandler();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).forEach(playerOffer::addItem);
+        Item underweight = playerOffer.getItems()[0];
+        underweight.setWeight(underweight.getTemplate().getWeightGrams() - 1, false);
+        handler.balance();
+
+        assertEquals(1, playerOffer.getItems().length);
+        assertEquals(numberOfItems - 1, playerToTrade.getItems().length);
+        assertSame(underweight, playerOffer.getItems()[0]);
+        assertThat(player, receivedMessageContaining("full weight"));
+    }
 }
