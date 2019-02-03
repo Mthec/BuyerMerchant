@@ -39,11 +39,13 @@ class CopyPriceListActionTest extends WurmTradingTest {
         action = new CopyPriceListAction(contract.getTemplateId());
         id = action.getActionId();
         act = mock(Action.class);
+        when(act.getSubjectId()).thenReturn(contract.getWurmId());
     }
 
     private Item createNotContract() {
         Item notContract = factory.createNewItem();
         assert notContract.getTemplateId() != contract.getTemplateId();
+        when(act.getSubjectId()).thenReturn(notContract.getWurmId());
         return notContract;
     }
 
