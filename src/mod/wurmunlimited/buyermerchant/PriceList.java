@@ -40,7 +40,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
     private int lastInscriptionLength;
     public static final String noPriceListFoundPlayerMessage = "The buyer fumbles in their pockets but fails to find their price list.";
     public static final String noSpaceOnPriceListPlayerMessage = "The buyer has run out of space on their price list and cannot record the changes.  Try removing some items from the list.";
-    public static final String couldNotCreateItemPlayerMessage = "The buyer looks at you confused, as if not understanding what your saying.";
+    public static final String couldNotCreateItemPlayerMessage = "The buyer looks at you confused, as if not understanding what you're saying.";
     public static int unauthorised = -1;
     private static final Pattern pageName = Pattern.compile("[\\w\\s]*(Buy|Sell) List Page (\\d+)");
     // Causes testIncorrectPriceListInscriptionRemovesEntry to fail if final.
@@ -50,9 +50,11 @@ public class PriceList implements Iterable<PriceList.Entry> {
         int template;
         // Using 0 as substitute for Any.
         byte material;
+        int weight;
         float minQL;
         int price;
         int minimumPurchase;
+
         Entry(String entry) throws NumberFormatException {
             String[] entries = entry.split(",");
             template = Integer.parseInt(entries[0]);
@@ -61,29 +63,45 @@ public class PriceList implements Iterable<PriceList.Entry> {
             material = Byte.parseByte(entries[1]);
             if (material < (byte)0)
                 throw new NumberFormatException("Material id was " + entries[1]);
-            minQL = Float.parseFloat(entries[2]);
+            if (!entries[2].isEmpty()) {
+                try {
+                    weight = Integer.parseInt(entries[2]);
+                } catch (NumberFormatException e) {
+                    //noinspection ResultOfMethodCallIgnored
+                    Float.parseFloat(entries[2]);
+                    List<String> entriesCopy = new ArrayList<>(Arrays.asList(entries));
+                    entriesCopy.add(2, "");
+                    entries = entriesCopy.toArray(new String[0]);
+                    weight = -1;
+                }
+                if (weight == 0 || weight < -1)
+                    throw new NumberFormatException("weight was " + entries[2]);
+            } else
+                weight = -1;
+            minQL = Float.parseFloat(entries[3]);
             if (minQL < 0)
-                throw new NumberFormatException("minQl was " + entries[2]);
+                throw new NumberFormatException("minQl was " + entries[3]);
             // -1 for bad price format in menu.  Saves having to go all the way through again.
-            price = Integer.parseInt(entries[3]);
+            price = Integer.parseInt(entries[4]);
             if (price < -1)
-                throw new NumberFormatException("Price was " + entries[3]);
-            if (entries.length == 5) {
-                minimumPurchase = Integer.parseInt(entries[4]);
+                throw new NumberFormatException("Price was " + entries[4]);
+            if (entries.length == 6) {
+                minimumPurchase = Integer.parseInt(entries[5]);
                 if (minimumPurchase < 0)
-                    throw new NumberFormatException("minQl was " + entries[4]);
+                    throw new NumberFormatException("minimum purchase was " + entries[5]);
             }
             if (minimumPurchase == 0)
                 minimumPurchase = 1;
         }
 
-        Entry(int template, byte material, float minQL, int price, int minimumPurchase) {
-            update(template, material, minQL, price, minimumPurchase);
+        Entry(int template, byte material, int weight, float minQL, int price, int minimumPurchase) {
+            update(template, material, weight, minQL, price, minimumPurchase);
         }
 
-        private void update(int template, byte material, float minQL, int price, int minimumPurchase) {
+        private void update(int template, byte material, int weight, float minQL, int price, int minimumPurchase) {
             this.template = template;
             this.material = material;
+            this.weight = weight;
             this.minQL = minQL;
             this.price = price;
             this.minimumPurchase = minimumPurchase;
@@ -106,30 +124,43 @@ public class PriceList implements Iterable<PriceList.Entry> {
         }
 
         public String toString() {
+            String weightMinQL;
+            if (weight == -1)
+                weightMinQL = Float.toString(minQL);
+            else
+                weightMinQL = weight + "," + minQL;
+
             if (minimumPurchase != 1)
-                return Joiner.on(",").join(template, material, minQL, price, minimumPurchase);
-            return Joiner.on(",").join(template, material, minQL, price);
+                return Joiner.on(",").join(template, material, weightMinQL, price, minimumPurchase);
+            return Joiner.on(",").join(template, material, weightMinQL, price);
         }
 
-        public void updateItemDetails(float minQL, int price, int minimumPurchase) throws PriceListFullException {
-            updateItem(template, material, minQL, price, minimumPurchase);
+        public void updateItemDetails(int weight, float minQL, int price, int minimumPurchase) throws PriceListFullException {
+            updateItem(template, material, weight, minQL, price, minimumPurchase);
         }
 
-        public void updateItem(int template, byte material, float minQL, int price, int minimumPurchase) throws PriceListFullException {
+        public void updateItem(int template, byte material, int weight, float minQL, int price, int minimumPurchase) throws PriceListFullException {
             if (minQL < 0 || minQL > 100)
                 minQL = this.minQL;
             int oldLength = toString().length();
-            int newLength = new Entry(template, material, minQL, price, minimumPurchase).toString().length();
+            int newLength = new Entry(template, material, weight, minQL, price, minimumPurchase).toString().length();
             if (lastInscriptionLength + (newLength - oldLength) > MAX_INSCRIPTION_LENGTH)
                 throw new PriceListFullException("Not enough space for that update.");
             if (minimumPurchase == -1)
                 minimumPurchase = this.minimumPurchase;
-            update(template, material, minQL, price, minimumPurchase);
+            update(template, material, weight, minQL, price, minimumPurchase);
             lastInscriptionLength += newLength - oldLength;
         }
 
         public int getTemplateId() {
             return template;
+        }
+
+        public int getWeight() {
+            if (weight == -1) {
+                return getItem().getWeightGrams();
+            } else
+                return weight;
         }
 
         public float getQualityLevel() {
@@ -153,6 +184,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
             Entry entry = (Entry)o;
             return template == entry.template &&
                            material == entry.material &&
+                           entry.weight == weight &&
                            Float.compare(entry.minQL, minQL) == 0 &&
                            minimumPurchase == entry.minimumPurchase;
         }
@@ -160,7 +192,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
         @Override
         public int hashCode() {
             //noinspection ObjectInstantiationInEqualsHashCode
-            return Objects.hash(template, material, minQL, minimumPurchase);
+            return Objects.hash(template, material, weight, minQL, minimumPurchase);
         }
 
         /**
@@ -173,6 +205,9 @@ public class PriceList implements Iterable<PriceList.Entry> {
             int compare = 0;
             try {
                 compare = getName().compareTo(ItemFactory.generateName(factory.getTemplate(other.template), other.material));
+                if (compare == 0) {
+                    compare = Integer.compare(other.weight, weight);
+                }
                 if (compare == 0) {
                     compare = Float.compare(other.minQL, minQL);
                 }
@@ -299,7 +334,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
     private static Item addPageToPriceList(Item priceListItem) throws NoSuchTemplateException, FailedException {
         Item newPage = ItemFactory.createItem(ItemList.papyrusSheet, 10, null);
-        priceListItem.insertItem(newPage);
+        priceListItem.insertItem(newPage, true);
         return newPage;
     }
 
@@ -368,6 +403,11 @@ public class PriceList implements Iterable<PriceList.Entry> {
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(item.template);
         TempItem newItem = new TempItem(ItemFactory.generateName(template, item.material) + (item.material == (byte)0 ? ", any" : "") + (item.minimumPurchase != 1 ? " - minimum " + item.minimumPurchase : ""), template, item.minQL, "PriceList");
         newItem.setMaterial(item.material);
+        int weight = item.weight;
+        if (item.weight == -1)
+            weight = template.getWeightGrams();
+        if (weight != 0)
+            newItem.setWeight(weight, false);
         newItem.setPrice(item.price);
         newItem.setOwnerId(priceListItem.getOwnerId());
         return newItem;
@@ -386,14 +426,14 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
     // TODO - Remove IOException and just make getItems check for nulls?
     public Entry addItem(int templateId, byte material) throws PriceListFullException, IOException, NoSuchTemplateException {
-        return addItem(templateId, material, 1.0f, 1);
+        return addItem(templateId, material, -1, 1.0f, 1);
     }
 
-    public Entry addItem(int templateId, byte material, float minQL, int price) throws PriceListFullException, IOException, NoSuchTemplateException {
-        return addItem(templateId, material, minQL, price, 1);
+    public Entry addItem(int templateId, byte material, int weight, float minQL, int price) throws PriceListFullException, IOException, NoSuchTemplateException {
+        return addItem(templateId, material, weight, minQL, price, 1);
     }
-    public Entry addItem(int templateId, byte material, float minQL, int price, int minimumPurchase) throws PriceListFullException, IOException, NoSuchTemplateException {
-        Entry item = new Entry(templateId, material, minQL, price, minimumPurchase);
+    public Entry addItem(int templateId, byte material, int weight, float minQL, int price, int minimumPurchase) throws PriceListFullException, IOException, NoSuchTemplateException {
+        Entry item = new Entry(templateId, material, weight, minQL, price, minimumPurchase);
         if (prices.containsKey(item)) {
             Entry alreadyListed = prices.keySet().stream().filter(entry -> entry.equals(item)).findAny().orElse(null);
             if (alreadyListed != null) {

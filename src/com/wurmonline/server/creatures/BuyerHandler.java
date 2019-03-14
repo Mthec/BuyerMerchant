@@ -142,7 +142,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         if (markedPrice < 1)
             return markedPrice;
 
-        float weightRatio = ((float)item.getWeightGrams()) / ((float)item.getTemplate().getWeightGrams());
+        float weightRatio = ((float)item.getWeightGrams()) / ((float)entry.getWeight());
 
         return Math.max(0, (int)(markedPrice * weightRatio));
     }
@@ -158,7 +158,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
             if (entry == null) {
                 return unauthorisedItem;
             }
-            if (entry.getMinimumPurchase() != 1 && item.getWeightGrams() < item.getTemplate().getWeightGrams()) {
+            if (entry.getMinimumPurchase() != 1 && item.getWeightGrams() < entry.getWeight()) {
                 return notFullWeight;
             }
 
@@ -267,7 +267,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                                 int price = getTraderBuyPriceForItem(entry, offeredItem);
                                 if (price != PriceList.unauthorised) {
                                     if (entry.getMinimumPurchase() != 1) {
-                                        if (offeredItem.getWeightGrams() == offeredItem.getTemplate().getWeightGrams()) {
+                                        if (offeredItem.getWeightGrams() == entry.getWeight()) {
                                             MinimumRequired minimum = minimumRequiredMap.get(entry);
                                             if (minimum == null) {
                                                 minimum = new MinimumRequired(entry);

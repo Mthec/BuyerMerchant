@@ -367,7 +367,7 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
         // New item row
         buf.append("harray{label{text=\"" + itemTemplate.getName() + "\"}};");
         buf.append("harray{label{text=\"" + (material == 0 ? "Any" : MaterialUtilities.getMaterialString(material)) + "\"}};");
-        buf.append("harray{label{text=\"" + df.format(itemTemplate.getWeightGrams() / 1000.0f) + "kg\"}};");
+        buf.append("harray{input{maxchars=\"4\"; id=\"weight\";text=\"" + df.format(itemTemplate.getWeightGrams() / 1000.0f) + "kg \"}};");
         buf.append("harray{input{maxchars=\"3\"; id=\"q\";text=\"" + df.format(1) + "\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"3\"; id=\"g\";text=\"0\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"2\"; id=\"s\";text=\"0\"};label{text=\" \"}};");

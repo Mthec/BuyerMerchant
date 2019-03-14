@@ -55,7 +55,7 @@ public class PriceListTest {
     @Test
     void testLoadPriceListItem() {
         PriceList priceList = new PriceList(createPriceList(one));
-        assertEquals(priceList.new Entry(1, (byte)1, 1.0f, 10, 1).toString(), priceList.iterator().next().toString());
+        assertEquals(priceList.new Entry(1, (byte)1, -1, 1.0f, 10, 1).toString(), priceList.iterator().next().toString());
     }
 
     @Test
@@ -102,7 +102,7 @@ public class PriceListTest {
         Item priceListItem = createPriceList(str);
         PriceList priceList = new PriceList(priceListItem);
         assertEquals(1, priceListItem.getItemCount());
-        priceList.addItem(1, (byte)2, 1.0f, 10);
+        priceList.addItem(1, (byte)2, -1, 1.0f, 10);
         priceList.savePriceList();
         assertEquals(2, priceListItem.getItemCount());
     }
@@ -124,7 +124,7 @@ public class PriceListTest {
 
         assert priceListItem.getItemCount() == 10;
         PriceList priceList = new PriceList(priceListItem);
-        assertThrows(PriceList.PriceListFullException.class, () -> priceList.addItem(1, (byte)2, 1.0f, 10));
+        assertThrows(PriceList.PriceListFullException.class, () -> priceList.addItem(1, (byte)2, -1, 1.0f, 10));
     }
 
     @Test
@@ -143,7 +143,7 @@ public class PriceListTest {
     void testUpdate () throws PriceList.PriceListFullException {
         PriceList priceList = new PriceList(createPriceList(one));
         String oldString = priceList.toString();
-        priceList.iterator().next().updateItem(2, (byte)2, 2, 10000000, 1);
+        priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 1);
         assertEquals(oldString, priceList.toString());
     }
 
@@ -151,7 +151,7 @@ public class PriceListTest {
     void testUpdateDetails () throws PriceList.PriceListFullException {
         PriceList priceList = new PriceList(createPriceList(one));
         String oldString = priceList.toString();
-        priceList.iterator().next().updateItemDetails(2, 10000000, 1);
+        priceList.iterator().next().updateItemDetails(-1, 2, 10000000, 1);
         assertEquals(oldString, priceList.toString());
     }
 
@@ -163,7 +163,7 @@ public class PriceListTest {
         String str = stringBuilder.toString();
         assert str.length() <= 500;
         PriceList priceList = new PriceList(createPriceList(str));
-        assertThrows(PriceList.PriceListFullException.class, () -> priceList.iterator().next().updateItem(2, (byte)2, 2, 10000000, 1));
+        assertThrows(PriceList.PriceListFullException.class, () -> priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 1));
     }
 
     @Test
@@ -235,9 +235,9 @@ public class PriceListTest {
         PriceList.Entry item = priceList.iterator().next();
         float ql = item.minQL;
 
-        item.updateItem(item.template, item.material, 101, item.price, 1);
+        item.updateItem(item.template, item.material, -1, 101, item.price, 1);
         assertEquals(ql, item.minQL);
-        item.updateItem(item.template, item.material, -0.1f, item.price, 1);
+        item.updateItem(item.template, item.material, -1, -0.1f, item.price, 1);
         assertEquals(ql, item.minQL);
     }
 
@@ -334,7 +334,7 @@ public class PriceListTest {
         byte material = (byte)5;
         float ql = 2.5f;
         int price = 100;
-        priceList.addItem(templateId, material, ql, price);
+        priceList.addItem(templateId, material, -1, ql, price);
         TempItem[] secondItems = priceList.getItems().toArray(new TempItem[0]);
         TempItem newItem = null;
         for (TempItem item : secondItems) {
@@ -371,7 +371,7 @@ public class PriceListTest {
         Creature buyer = factory.createNewBuyer(factory.createNewPlayer());
         int price = 101;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(item.getTemplateId(), (byte)0, 1.0f, price);
+        priceList.addItem(item.getTemplateId(), (byte)0, -1, 1.0f, price);
         priceList.savePriceList();
 
         for (byte i = 0; i < ItemMaterials.MATERIAL_MAX; ++i) {
@@ -458,7 +458,7 @@ public class PriceListTest {
     void testMinimumRequirementAddItem() {
         PriceList priceList = new PriceList(createPriceList(""));
 
-        assertDoesNotThrow(() -> priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, 1.0f, 1, 100));
+        assertDoesNotThrow(() -> priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, 1, 100));
         assertDoesNotThrow(priceList::savePriceList);
 
         assertEquals(100, priceList.iterator().next().minimumPurchase);
@@ -537,11 +537,11 @@ public class PriceListTest {
     void testDuplicatePriceListEntryUpdatesInstead() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
         PriceList priceList = new PriceList(createPriceList(""));
 
-        priceList.addItem(1, (byte)1, 1.0f, 1);
+        priceList.addItem(1, (byte)1, -1, 1.0f, 1);
         assertEquals(1, priceList.iterator().next().getPrice());
 
-        priceList.addItem(1, (byte)1, 1.0f, 1);
-        priceList.addItem(1, (byte)1, 1.0f, 2);
+        priceList.addItem(1, (byte)1, -1, 1.0f, 1);
+        priceList.addItem(1, (byte)1, -1, 1.0f, 2);
         assertEquals(1, priceList.size());
         assertEquals(2, priceList.iterator().next().getPrice());
     }
@@ -550,11 +550,11 @@ public class PriceListTest {
     void testDuplicatePriceListEntryUpdatesItemToo() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
         PriceList priceList = new PriceList(createPriceList(""));
 
-        priceList.addItem(1, (byte)1, 1.0f, 1);
+        priceList.addItem(1, (byte)1, -1, 1.0f, 1);
         assertEquals(1, priceList.getItems().iterator().next().getPrice());
 
-        priceList.addItem(1, (byte)1, 1.0f, 1);
-        priceList.addItem(1, (byte)1, 1.0f, 2);
+        priceList.addItem(1, (byte)1, -1, 1.0f, 1);
+        priceList.addItem(1, (byte)1, -1, 1.0f, 2);
         assertEquals(1, priceList.size());
         assertEquals(2, priceList.getItems().iterator().next().getPrice());
     }

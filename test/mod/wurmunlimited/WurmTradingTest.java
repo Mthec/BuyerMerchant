@@ -13,18 +13,15 @@ import com.wurmonline.server.questions.Question;
 import com.wurmonline.server.questions.Questions;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.buyermerchant.PriceList;
-import org.junit.AfterClass;
+import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.internal.util.reflection.FieldSetter;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.Objects;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,6 +38,7 @@ public abstract class WurmTradingTest {
 
     @BeforeEach
     protected void setUp() throws Throwable {
+        ActionEntryBuilder.init();
         WurmMail.resetStatic();
         Zones.resetStatic();
         FieldSetter.setField(null, Players.class.getDeclaredField("instance"), null);

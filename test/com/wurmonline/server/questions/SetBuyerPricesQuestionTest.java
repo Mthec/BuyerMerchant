@@ -33,7 +33,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         try {
             PriceList list = PriceList.getPriceListFromBuyer(buyer);
             ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(templateId);
-            list.addItem(template.getTemplateId(), ItemMaterials.MATERIAL_MEAT_DRAGON, ql, price);
+            list.addItem(template.getTemplateId(), ItemMaterials.MATERIAL_MEAT_DRAGON, -1, ql, price);
             list.savePriceList();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -42,6 +42,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
 
     private Properties generateProperties(String id, float ql, int price, int minimumPurchase) {
         Properties answers = new Properties();
+        answers.setProperty(id+"weight", Integer.toString(1));
         answers.setProperty(id+"q", Float.toString(ql));
         answers.setProperty(id+"g", Integer.toString((int)new Change(price).getGoldCoins()));
         answers.setProperty(id+"s", Integer.toString((int)new Change(price).getSilverCoins()));
@@ -66,7 +67,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(1,(byte)1,1.0f,1);
+        priceList.addItem(1,(byte)1,-1,1.0f,1);
         priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
 
@@ -82,7 +83,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         int price = 123456789;
         Properties answers = generateProperties(id, ql, price, 1);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(1,(byte)1,1.0f,1);
+        priceList.addItem(1,(byte)1,-1,1.0f,1);
         priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
 
@@ -97,10 +98,10 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(1,(byte)1,1.0f,1);
+        priceList.addItem(1,(byte)1,-1,1.0f,1);
         priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
-        item.updateItem(7, (byte)0, 1, 1, 1);
+        item.updateItem(7, (byte)0, -1, 1, 1, 1);
 
         SetBuyerPricesQuestion.setItemDetails(item, -1, answers, factory.createNewCreature());
         assertEquals(1.0, item.getQualityLevel(), 0.01);
@@ -112,10 +113,10 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(1,(byte)1,1.0f,1);
+        priceList.addItem(1,(byte)1,-1,1.0f,1);
         priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
-        item.updateItem(7, (byte)0, 1, 1, 1);
+        item.updateItem(7, (byte)0, -1, 1, 1, 1);
 
         Creature creature = factory.createNewCreature();
         SetBuyerPricesQuestion.setItemDetails(item, -1, answers, creature);
@@ -134,6 +135,8 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty("i", ".2");
         addItemToPriceList(1, ql, price);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        answers.setProperty("weight", Float.toString(priceList.iterator().next().getWeight() / 1000.0f));
+        priceList.destroyItems();
         SetBuyerPricesQuestion.setItemDetails(priceList.iterator().next(), -1, answers, owner);
 
         String[] messages = factory.getCommunicator(owner).getMessages();
@@ -157,6 +160,8 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty("i", "-10");
         addItemToPriceList(1, ql, price);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        answers.setProperty("weight", Float.toString(priceList.iterator().next().getWeight() / 1000.0f));
+        priceList.destroyItems();
         SetBuyerPricesQuestion.setItemDetails(priceList.iterator().next(), -1, answers, owner);
 
         String[] messages = factory.getCommunicator(owner).getMessages();
@@ -260,7 +265,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         float ql = 55.6f;
         int money = 1122334455;
         Change change = new Change(money);
-        list.addItem(1, (byte)1, ql, money);
+        list.addItem(1, (byte)1, -1, ql, money);
         list.savePriceList();
         askQuestion();
 
@@ -348,7 +353,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     void testRemoveItemFromList() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         for (int i = 1; i < 15; ++i) {
-            priceList.addItem(7, (byte)i, 1.0f, i);
+            priceList.addItem(7, (byte)i, -1, 1.0f, i);
         }
         priceList.savePriceList();
 

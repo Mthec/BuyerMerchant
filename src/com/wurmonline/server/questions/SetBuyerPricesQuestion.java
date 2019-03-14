@@ -16,6 +16,8 @@ import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.BuyerTradingWindow;
+import com.wurmonline.server.items.ItemTemplate;
+import com.wurmonline.server.items.ItemTemplateFactory;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.text.DecimalFormat;
@@ -93,6 +95,8 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
     static void setItemDetails(PriceList.Entry item, int id, Properties answers, Creature responder) throws PriceList.PriceListFullException {
         int price = 0;
         boolean badPrice = false;
+        ItemTemplate template = ItemTemplateFactory.getInstance().getTemplateOrNull(item.getTemplateId());
+        int weight = (template != null ? template.getWeightGrams() : -1);
         float ql = -1;
         int minimumPurchase = -1;
         String stringId;
@@ -101,12 +105,25 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
         else
             stringId = Integer.toString(id);
 
-        String val = answers.getProperty(stringId + "q");
+        String val = answers.getProperty(stringId + "weight");
+        if (val != null && val.length() > 0) {
+            try {
+                weight = (int)(Float.parseFloat(val) * 1000.0f);
+                if (weight < 0)
+                    throw new NumberFormatException("Weight cannot be negative.");
+                if (template == null || weight == template.getWeightGrams())
+                    weight = -1;
+            } catch (NumberFormatException var21) {
+                responder.getCommunicator().sendNormalServerMessage("Failed to set the weight for " + item.getName() + ".");
+                weight = -1;
+            }
+        }
+        val = answers.getProperty(stringId + "q");
         if (val != null && val.length() > 0) {
             try {
                 ql = Float.parseFloat(val);
                 if (ql > 100 || ql < 0)
-                    throw new NumberFormatException("Quality level out of range");
+                    throw new NumberFormatException("Quality level out of range.");
             } catch (NumberFormatException var21) {
                 responder.getCommunicator().sendNormalServerMessage("Failed to set the minimum quality level for " + item.getName() + ".");
                 ql = -1;
@@ -172,7 +189,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                 minimumPurchase = -1;
             }
         }
-        item.updateItemDetails(ql, price, minimumPurchase);
+        item.updateItemDetails(weight, ql, price, minimumPurchase);
     }
 
     public void sendQuestion() {
@@ -197,7 +214,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                         ++idx;
                         Change change = Economy.getEconomy().getChangeFor((long)item.getPrice());
                         buf.append(itemNameWithColorByRarity(item.getItem()).replaceFirst(" - minimum [\\d]+", ""));
-                        buf.append("harray{label{text=\"" + df.format(item.getItem().getWeightGrams() / 1000.0f) + "kg\"}};");
+                        buf.append("harray{input{maxchars=\"4\"; id=\"" + idx + "weight\";text=\"" + df.format(item.getWeight() / 1000.0f) + "kg\"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "q\";text=\"" + df.format((double)item.getQualityLevel()) + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "g\";text=\"" + change.getGoldCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "s\";text=\"" + change.getSilverCoins() + "\"};label{text=\" \"}};");

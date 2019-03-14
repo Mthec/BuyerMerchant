@@ -41,7 +41,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     private void addOneCopperItemToPriceList(Item item) {
         try {
             PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-            priceList.addItem(item.getTemplateId(), item.getMaterial(), 1.0f, MonetaryConstants.COIN_COPPER);
+            priceList.addItem(item.getTemplateId(), item.getMaterial(), -1, 1.0f, MonetaryConstants.COIN_COPPER);
             priceList.savePriceList();
             Shop shop = factory.getShop(buyer);
             shop.setMoney(shop.getMoney() + (long)(MonetaryConstants.COIN_COPPER * 1.1f));
@@ -344,7 +344,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         // Skip -1 as that value is used in PriceList as an invalid price string.
         for (int i = -2; i > -100; --i) {
-            priceList.iterator().next().updateItemDetails(1.0f, i, 1);
+            priceList.iterator().next().updateItemDetails(-1,1.0f, i, 1);
             priceList.savePriceList();
             createHandler();
             assertEquals(0, handler.getTraderBuyPriceForItem(item));
@@ -356,7 +356,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item1 = factory.createNewItem(factory.getIsWoodId());
         player.getInventory().insertItem(item1);
-        priceList.addItem(item1.getTemplateId(), item1.getMaterial(), 1.0f, 0);
+        priceList.addItem(item1.getTemplateId(), item1.getMaterial(), -1, 1.0f, 0);
         priceList.savePriceList();
 
         createHandler();
@@ -373,11 +373,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item1 = factory.createNewItem(factory.getIsWoodId());
         player.getInventory().insertItem(item1);
-        priceList.addItem(item1.getTemplateId(), item1.getMaterial(), 1.0f, 0);
+        priceList.addItem(item1.getTemplateId(), item1.getMaterial(), -1, 1.0f, 0);
         Item item2 = factory.createNewItem(factory.getIsWoodId());
         item2.setQualityLevel(20.0f);
         player.getInventory().insertItem(item2);
-        priceList.addItem(item2.getTemplateId(), item2.getMaterial(), item2.getQualityLevel() - 1, 10);
+        priceList.addItem(item2.getTemplateId(), item2.getMaterial(), -1, item2.getQualityLevel() - 1, 10);
         priceList.savePriceList();
         factory.getShop(buyer).setMoney(100);
 
@@ -395,8 +395,8 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     @Test
     void testUnauthorisedItemsNotAddedToWindow() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, -1);
-        priceList.addItem(factory.getIsMetalId(), (byte)0, 1.0f, 10);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, -1);
+        priceList.addItem(factory.getIsMetalId(), (byte)0, -1, 1.0f, 10);
         priceList.savePriceList();
 
         createHandler();
@@ -425,8 +425,8 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     @Test
     void testMinimumPurchaseItemsAreLabelledSo() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, 1);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, 100);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, 1);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, 100);
         priceList.savePriceList();
 
         createHandler();
@@ -444,7 +444,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = 20;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
         priceList.savePriceList();
 
         createHandler();
@@ -468,7 +468,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase - 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
         priceList.savePriceList();
 
         createHandler();
@@ -485,7 +485,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase + 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
         priceList.savePriceList();
 
         createHandler();
@@ -509,7 +509,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int numberOfItems = minimumPurchase * 2;
         BuyerHandler.maxPersonalItems = (int)(minimumPurchase * 1.5f);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
         priceList.savePriceList();
 
         createHandler();
@@ -538,7 +538,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
         priceList.savePriceList();
 
         createHandler();
@@ -573,7 +573,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
         priceList.savePriceList();
 
         createHandler();
@@ -615,8 +615,8 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 10;
         int numberOfItems = minimumPurchase * 3;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase * 2);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 25.0f, 20, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase * 2);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 25.0f, 20, minimumPurchase);
         priceList.savePriceList();
 
         createHandler();
@@ -650,7 +650,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
         priceList.savePriceList();
 
         createHandler();
@@ -700,7 +700,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase + 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
         priceList.savePriceList();
         factory.getShop(buyer).setMoney(100000);
 

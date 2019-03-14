@@ -46,7 +46,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         assert !BuyerTradingWindow.freeMoney;
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, 1.0f, MonetaryConstants.COIN_GOLD);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_GOLD);
         priceList.savePriceList();
         buyer.getInventory().insertItem(factory.createNewCopperCoin());
         factory.getShop(buyer).setMoney(MonetaryConstants.COIN_COPPER);
@@ -73,7 +73,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerTradingWindow.freeMoney = true;
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, 1.0f, MonetaryConstants.COIN_GOLD);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_GOLD);
         priceList.savePriceList();
         buyer.getInventory().insertItem(factory.createNewCopperCoin());
         factory.getShop(buyer).setMoney(MonetaryConstants.COIN_COPPER);
@@ -100,7 +100,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         assert !BuyerTradingWindow.destroyBoughtItems;
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, 1.0f, MonetaryConstants.COIN_COPPER);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_COPPER);
         priceList.savePriceList();
         Stream.of(Economy.getEconomy().getCoinsFor((long)(MonetaryConstants.COIN_COPPER * 1.1f))).forEach(buyer.getInventory()::insertItem);
         factory.getShop(buyer).setMoney((long)(MonetaryConstants.COIN_COPPER * 1.1f));
@@ -128,7 +128,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerTradingWindow.destroyBoughtItems = true;
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, 1.0f, MonetaryConstants.COIN_COPPER);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_COPPER);
         priceList.savePriceList();
         Stream.of(Economy.getEconomy().getCoinsFor((long)(MonetaryConstants.COIN_COPPER * 1.1f))).forEach(buyer.getInventory()::insertItem);
         factory.getShop(buyer).setMoney((long)(MonetaryConstants.COIN_COPPER * 1.1f));
@@ -158,7 +158,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerTradingWindow.destroyBoughtItems = true;
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, 1.0f, MonetaryConstants.COIN_GOLD);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_GOLD);
         priceList.savePriceList();
         Stream.of(Economy.getEconomy().getCoinsFor((long)(MonetaryConstants.COIN_COPPER * 1.1f))).forEach(buyer.getInventory()::insertItem);
         int buyerItemCount = buyer.getInventory().getItemCount();
@@ -205,7 +205,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         setOptions(true, true);
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(templateId, ItemMaterials.MATERIAL_IRON, 1.0f, (int)price);
+        priceList.addItem(templateId, ItemMaterials.MATERIAL_IRON, -1, 1.0f, (int)price);
         priceList.savePriceList();
         assert Economy.getEconomy().getCoinsFor(price * numberOfItems).length < 99;
 
@@ -401,7 +401,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         factory.createManyItems(numberOfItems).forEach(items::add);
         Item item = items.iterator().next();
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(item.getTemplateId(), item.getMaterial(), 1.0f, MonetaryConstants.COIN_IRON);
+        priceList.addItem(item.getTemplateId(), item.getMaterial(), -1, 1.0f, MonetaryConstants.COIN_IRON);
         priceList.savePriceList();
 
         tradeAllItems(items);
@@ -485,7 +485,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         factory.createManyItems(numberOfItems).forEach(items::add);
         Item item = items.iterator().next();
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(item.getTemplateId(), item.getMaterial(), 1.0f, MonetaryConstants.COIN_IRON);
+        priceList.addItem(item.getTemplateId(), item.getMaterial(), -1, 1.0f, MonetaryConstants.COIN_IRON);
         priceList.savePriceList();
 
         tradeAllItems(items);
