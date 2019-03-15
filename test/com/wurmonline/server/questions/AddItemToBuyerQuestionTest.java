@@ -17,8 +17,9 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.wurmonline.server.items.ItemList.*;
-import static mod.wurmunlimited.Assert.*;
+import static com.wurmonline.server.items.ItemList.backPack;
+import static mod.wurmunlimited.Assert.bmlNotEqual;
+import static mod.wurmunlimited.Assert.receivedMessageContaining;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -281,6 +282,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
     void testItemWithCorrectDetailsAddedToPriceList() throws PriceList.NoPriceListOnBuyer, NoSuchTemplateException {
         int templateId = 7;
         byte material = ItemTemplateFactory.getInstance().getTemplate(templateId).getMaterial();
+        int weight = 1000;
         float ql = 55.6f;
         int money = 1122334455;
         int minimumPurchase = 100;
@@ -292,7 +294,8 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
 
         answers.setProperty("material", getElementPositionInOptions(com.lastBmlContent, Item.getMaterialString(material)));
         answer();
-        
+
+        answers.setProperty("weight", WeightString.toString(weight));
         answers.setProperty("q", Float.toString(ql));
         answers.setProperty("g", Long.toString(change.goldCoins));
         answers.setProperty("s", Long.toString(change.silverCoins));
@@ -307,6 +310,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         assertAll(
                 () -> assertEquals(templateId, item.getItem().getTemplateId(), "Template Id incorrect"),
                 () -> assertEquals(material, item.getItem().getMaterial(), "Material incorrect"),
+                () -> assertEquals(weight, item.getItem().getWeightGrams(), "Weight incorrect"),
                 () -> assertEquals(ql, item.getItem().getQualityLevel(), "QL incorrect"),
                 () -> assertEquals(change.goldCoins, price.goldCoins, "Gold incorrect"),
                 () -> assertEquals(change.silverCoins, price.silverCoins, "Silver incorrect"),

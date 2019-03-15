@@ -108,7 +108,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
         String val = answers.getProperty(stringId + "weight");
         if (val != null && val.length() > 0) {
             try {
-                weight = (int)(Float.parseFloat(val) * 1000.0f);
+                weight = WeightString.toInt(val);
                 if (weight < 0)
                     throw new NumberFormatException("Weight cannot be negative.");
                 if (template == null || weight == template.getWeightGrams())
@@ -214,7 +214,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                         ++idx;
                         Change change = Economy.getEconomy().getChangeFor((long)item.getPrice());
                         buf.append(itemNameWithColorByRarity(item.getItem()).replaceFirst(" - minimum [\\d]+", ""));
-                        buf.append("harray{input{maxchars=\"4\"; id=\"" + idx + "weight\";text=\"" + df.format(item.getWeight() / 1000.0f) + "kg\"}};");
+                        buf.append("harray{input{maxchars=\"8\"; id=\"" + idx + "weight\";text=\"").append(WeightString.toString(item.getWeight())).append("kg\"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "q\";text=\"" + df.format((double)item.getQualityLevel()) + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "g\";text=\"" + change.getGoldCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "s\";text=\"" + change.getSilverCoins() + "\"};label{text=\" \"}};");

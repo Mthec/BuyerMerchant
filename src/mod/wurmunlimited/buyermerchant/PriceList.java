@@ -423,7 +423,6 @@ public class PriceList implements Iterable<PriceList.Entry> {
         createdItems = false;
     }
 
-
     // TODO - Remove IOException and just make getItems check for nulls?
     public Entry addItem(int templateId, byte material) throws PriceListFullException, IOException, NoSuchTemplateException {
         return addItem(templateId, material, -1, 1.0f, 1);

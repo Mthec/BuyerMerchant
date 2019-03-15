@@ -25,6 +25,7 @@ public class PriceListTest {
 
     public static final String one = "1,1,1.0,10";
     public static final String two = "2,2,2.1,20";
+    public static final String weightOne = "1,1,1,1.0,10";
     private WurmObjectsFactory factory;
 
     private Item createPriceList(String str) {
@@ -870,5 +871,60 @@ public class PriceListTest {
 
         assertNotNull(copiedPriceList);
         assertEquals(priceList.getItemCount() - 2, copiedPriceList.getItemCount());
+    }
+
+    @Test
+    void testWeightValueProperlyLoaded() {
+        Item priceListItem = createPriceList(weightOne);
+        PriceList priceList = new PriceList(priceListItem);
+
+        assertEquals(1, priceList.iterator().next().getWeight());
+    }
+
+    @Test
+    void testWeightValueProperlyLoadedWhenMinimumPurchase() {
+        Item priceListItem = createPriceList(weightOne + ",100");
+        PriceList priceList = new PriceList(priceListItem);
+
+        assertEquals(1, priceList.iterator().next().getWeight());
+    }
+
+    @Test
+    void testWeightValueDefaultTemplateWeightWhenNotProvided() throws NoSuchTemplateException {
+        Item priceListItem = createPriceList(one);
+        PriceList priceList = new PriceList(priceListItem);
+
+        assertEquals(ItemTemplateFactory.getInstance().getTemplate(1).getWeightGrams(), priceList.iterator().next().getWeight());
+    }
+
+    @Test
+    void testWeightValueNegativeWeightThrowsError() {
+        Item priceListItem = createPriceList("1,1,-20,1.0,1");
+        assertThrows(NumberFormatException.class, () -> new PriceList(priceListItem));
+    }
+
+    @Test
+    void testWeightValueNotAddedToPriceListItemIfDefault() throws PriceList.PageNotAdded, PriceList.PriceListFullException {
+        Item priceListItem = createPriceList(weightOne);
+        PriceList priceList = new PriceList(priceListItem);
+        priceList.iterator().next().weight = -1;
+        priceList.savePriceList();
+
+        assertEquals(one + "\n", Objects.requireNonNull(priceListItem.getFirstContainedItem().getInscription()).getInscription());
+    }
+
+    @Test
+    void testAddPriceListEntryWeightValue() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+        Item priceListItem = createPriceList("");
+        PriceList priceList = new PriceList(priceListItem);
+
+        for (int i = 0; i < 100; i++) {
+            priceList.addItem(1, (byte)1, i, 1.0f, 1);
+        }
+
+        Iterator<PriceList.Entry> iterator = priceList.iterator();
+        for (int i = 0; i < 100; i++) {
+            assertEquals(i, iterator.next().getWeight());
+        }
     }
 }

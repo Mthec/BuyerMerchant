@@ -336,6 +336,31 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
+    void testPriceOnLowWeightItemsWithCustomWeight() throws PriceList.NoPriceListOnBuyer, PriceList.PriceListFullException, PriceList.PageNotAdded {
+        Item fullWeight = factory.createNewItem();
+        addOneCopperItemToPriceList(fullWeight);
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        PriceList.Entry entry = priceList.iterator().next();
+        entry.updateItemDetails(fullWeight.getWeightGrams() / 2, entry.getQualityLevel(), entry.getPrice(), 1);
+        priceList.savePriceList();
+
+        Item halfWeight = factory.createNewItem();
+        halfWeight.setWeight(halfWeight.getTemplate().getWeightGrams() / 2, false);
+
+        Item minimalWeight = factory.createNewItem();
+        minimalWeight.setWeight(1, false);
+
+        createHandler();
+        handler.getTraderBuyPriceForItem(halfWeight);
+
+        assertAll(
+                () -> assertEquals(MonetaryConstants.COIN_COPPER * 2, handler.getTraderBuyPriceForItem(fullWeight)),
+                () -> assertEquals(MonetaryConstants.COIN_COPPER, handler.getTraderBuyPriceForItem(halfWeight)),
+                () -> assertEquals(0, handler.getTraderBuyPriceForItem(minimalWeight))
+        );
+    }
+
+    @Test
     void testNegativePriceAlwaysReturns0() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item = factory.createNewItem(factory.getIsWoodId());
