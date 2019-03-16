@@ -478,10 +478,9 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         list.savePriceList();
         askQuestion();
 
-        System.out.println(com.lastBmlContent);
-        assertTrue(com.lastBmlContent.contains("24kg"));
-        assertTrue(com.lastBmlContent.contains("0.01kg"));
-        assertTrue(com.lastBmlContent.contains("4.321kg"));
+        assertTrue(com.lastBmlContent.replace("\"};label{text=\"", "").contains("24kg"));
+        assertTrue(com.lastBmlContent.replace("\"};label{text=\"", "").contains("0.01kg"));
+        assertTrue(com.lastBmlContent.replace("\"};label{text=\"", "").contains("4.321kg"));
     }
 
     @Test

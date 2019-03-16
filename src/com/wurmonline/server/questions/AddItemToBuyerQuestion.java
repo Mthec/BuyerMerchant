@@ -362,12 +362,12 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
         StringBuilder buf = new StringBuilder(this.getBmlHeader());
         DecimalFormat df = new DecimalFormat("#.##");
         buf.append("text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}");
-        buf.append("table{rows=\"1\"; cols=\"10\";label{text=\"Item type\"};label{text=\"Material\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"};label{text=\"Minimum Purchase\"};label{text=\"Accept Damaged\"}");
+        buf.append("table{rows=\"1\"; cols=\"10\";label{text=\"Item type\"};label{text=\"Material\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"}");
 
         // New item row
         buf.append("harray{label{text=\"" + itemTemplate.getName() + "\"}};");
         buf.append("harray{label{text=\"" + (material == 0 ? "Any" : MaterialUtilities.getMaterialString(material)) + "\"}};");
-        buf.append("harray{input{maxchars=\"4\"; id=\"weight\";text=\"" + WeightString.toString(itemTemplate.getWeightGrams()) + "kg \"}};");
+        buf.append("harray{input{maxchars=\"8\"; id=\"weight\";text=\"" + WeightString.toString(itemTemplate.getWeightGrams()) + "\"};label{text=\"kg \"}};");
         buf.append("harray{input{maxchars=\"3\"; id=\"q\";text=\"" + df.format(1) + "\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"3\"; id=\"g\";text=\"0\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"2\"; id=\"s\";text=\"0\"};label{text=\" \"}};");
@@ -379,6 +379,6 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
         buf.append("}");
         buf.append("text{text=\"\"}");
         buf.append("harray {button{text=\"Add Item\";id=\"submit\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Back\";id=\"back\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Cancel\";id=\"cancel\"};}}}null;null;};");
-        this.getResponder().getCommunicator().sendBml(450, 300, true, true, buf.toString(), 200, 200, 200, this.title);
+        this.getResponder().getCommunicator().sendBml(625, 300, true, true, buf.toString(), 200, 200, 200, this.title);
     }
 }

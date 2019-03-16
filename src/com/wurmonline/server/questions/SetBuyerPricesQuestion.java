@@ -213,13 +213,13 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     if (!BuyerTradingWindow.destroyBoughtItems)
                         buf.append("text{text=\"" + trader.getName() + " has inventory space for " + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + " more items.\"}");
                     buf.append("text{type=\"bold\";text=\"Prices for " + trader.getName() + "\"}text{text=''}");
-                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"10\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Min. Amount\"};label{text=\"Accept Damaged\"};label{text=\"Remove?\"}");
+                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"10\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"};label{text=\"Remove?\"}");
 
                     for(PriceList.Entry item : priceList) {
                         ++idx;
                         Change change = Economy.getEconomy().getChangeFor((long)item.getPrice());
                         buf.append(itemNameWithColorByRarity(item.getItem()).replaceFirst(" - minimum [\\d]+", ""));
-                        buf.append("harray{input{maxchars=\"8\"; id=\"" + idx + "weight\";text=\"").append(WeightString.toString(item.getWeight())).append("kg\"}};");
+                        buf.append("harray{input{maxchars=\"8\"; id=\"" + idx + "weight\";text=\"").append(WeightString.toString(item.getWeight())).append("\"};label{text=\"kg \"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "q\";text=\"" + df.format((double)item.getQualityLevel()) + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "g\";text=\"" + change.getGoldCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "s\";text=\"" + change.getSilverCoins() + "\"};label{text=\" \"}};");
@@ -234,7 +234,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     buf.append("}");
                     buf.append("text{text=\"\"}");
                     buf.append("harray {button{text='Save Prices';id='submit'};label{text=\" \";id=\"spacedlxg\"};button{text='Add New';id='new'}label{text=\" \";id=\"spacedlxg\"};button{text='Sort';id='sort'}}}}null;null;}");
-                    this.getResponder().getCommunicator().sendBml(600, 300, true, true, buf.toString(), 200, 200, 200, this.title);
+                    this.getResponder().getCommunicator().sendBml(625, 300, true, true, buf.toString(), 200, 200, 200, this.title);
                 } else {
                     this.getResponder().getCommunicator().sendNormalServerMessage("You don't own that shop.");
                 }

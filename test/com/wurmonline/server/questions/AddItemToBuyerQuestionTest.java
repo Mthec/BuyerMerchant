@@ -621,7 +621,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
 
     @Test
     void testKilogramsString() throws NoSuchTemplateException {
-        Pattern weight = Pattern.compile("([0-9.]+kg)");
+        Pattern weight = Pattern.compile("([0-9.]+)\"};label\\{text=\"kg");
 
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(factory.getIsWoodId());
         assert template.getWeightGrams() == 24000;
@@ -634,7 +634,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
 
         Matcher matcher = weight.matcher(com.lastBmlContent);
         assertTrue(matcher.find());
-        assertEquals("24kg", matcher.group(1));
+        assertEquals("24", matcher.group(1));
 
         template = ItemTemplateFactory.getInstance().getTemplate(factory.getIsCoinId());
         assert template.getWeightGrams() == 10;
@@ -646,7 +646,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
 
         matcher = weight.matcher(com.lastBmlContent);
         assertTrue(matcher.find());
-        assertEquals("0.01kg", matcher.group(1));
+        assertEquals("0.01", matcher.group(1));
     }
 
     @SuppressWarnings("unchecked")
