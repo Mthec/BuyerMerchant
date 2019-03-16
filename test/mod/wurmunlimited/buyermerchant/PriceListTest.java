@@ -56,7 +56,7 @@ public class PriceListTest {
     @Test
     void testLoadPriceListItem() {
         PriceList priceList = new PriceList(createPriceList(one));
-        assertEquals(priceList.new Entry(1, (byte)1, -1, 1.0f, 10, 1).toString(), priceList.iterator().next().toString());
+        assertEquals(priceList.new Entry(1, (byte)1, -1, 1.0f, 10, 1, false).toString(), priceList.iterator().next().toString());
     }
 
     @Test
@@ -141,19 +141,19 @@ public class PriceListTest {
 
     // PriceList.Entry tests.
     @Test
-    void testUpdate () throws PriceList.PriceListFullException {
+    void testUpdate() throws PriceList.PriceListFullException {
         PriceList priceList = new PriceList(createPriceList(one));
-        String oldString = priceList.toString();
-        priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 1);
-        assertEquals(oldString, priceList.toString());
+        String oldString = priceList.iterator().next().toString();
+        priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 1, false);
+        assertNotEquals(oldString, priceList.iterator().next().toString());
     }
 
     @Test
-    void testUpdateDetails () throws PriceList.PriceListFullException {
+    void testUpdateDetails() throws PriceList.PriceListFullException {
         PriceList priceList = new PriceList(createPriceList(one));
-        String oldString = priceList.toString();
+        String oldString = priceList.iterator().next().toString();
         priceList.iterator().next().updateItemDetails(-1, 2, 10000000, 1);
-        assertEquals(oldString, priceList.toString());
+        assertNotEquals(oldString, priceList.iterator().next().toString());
     }
 
     @Test
@@ -164,7 +164,7 @@ public class PriceListTest {
         String str = stringBuilder.toString();
         assert str.length() <= 500;
         PriceList priceList = new PriceList(createPriceList(str));
-        assertThrows(PriceList.PriceListFullException.class, () -> priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 1));
+        assertThrows(PriceList.PriceListFullException.class, () -> priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 1, true));
     }
 
     @Test
@@ -236,9 +236,9 @@ public class PriceListTest {
         PriceList.Entry item = priceList.iterator().next();
         float ql = item.minQL;
 
-        item.updateItem(item.template, item.material, -1, 101, item.price, 1);
+        item.updateItem(item.template, item.material, -1, 101, item.price, 1, false);
         assertEquals(ql, item.minQL);
-        item.updateItem(item.template, item.material, -1, -0.1f, item.price, 1);
+        item.updateItem(item.template, item.material, -1, -0.1f, item.price, 1, false);
         assertEquals(ql, item.minQL);
     }
 
@@ -459,7 +459,7 @@ public class PriceListTest {
     void testMinimumRequirementAddItem() {
         PriceList priceList = new PriceList(createPriceList(""));
 
-        assertDoesNotThrow(() -> priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, 1, 100));
+        assertDoesNotThrow(() -> priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, 1, 100, false));
         assertDoesNotThrow(priceList::savePriceList);
 
         assertEquals(100, priceList.iterator().next().minimumPurchase);
@@ -899,8 +899,8 @@ public class PriceListTest {
 
     @Test
     void testWeightValueNegativeWeightThrowsError() {
-        Item priceListItem = createPriceList("1,1,-20,1.0,1");
-        assertThrows(NumberFormatException.class, () -> new PriceList(priceListItem));
+        Item priceListItem = createPriceList("");
+        assertThrows(NumberFormatException.class, () -> new PriceList(priceListItem).new Entry("1,1,-20,1.0,1"));
     }
 
     @Test
@@ -926,5 +926,21 @@ public class PriceListTest {
         for (int i = 0; i < 100; i++) {
             assertEquals(i, iterator.next().getWeight());
         }
+    }
+
+    @Test
+    void testAcceptsDamagedTrue() {
+        Item priceListItem = createPriceList(one + ",y");
+        PriceList priceList = new PriceList(priceListItem);
+
+        assertTrue(priceList.iterator().next().acceptsDamaged());
+    }
+
+    @Test
+    void testAcceptsDamagedFalse() {
+        Item priceListItem = createPriceList(one);
+        PriceList priceList = new PriceList(priceListItem);
+
+        assertFalse(priceList.iterator().next().acceptsDamaged());
     }
 }

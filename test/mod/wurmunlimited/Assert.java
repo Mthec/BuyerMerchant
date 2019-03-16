@@ -8,7 +8,10 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -113,7 +116,6 @@ public class Assert {
     public static class ContainsMessage extends TypeSafeMatcher<Creature> {
 
         private String message;
-        private List<String> answer = new ArrayList<>(10);
 
         private ContainsMessage(String message) {
             this.message = message;
@@ -124,9 +126,9 @@ public class Assert {
             String[] messages = WurmObjectsFactory.getCurrent().getMessagesFor(creature);
             for (String msg : messages) {
                 if (msg.contains(message))
-                    answer.add(msg);
+                    return true;
             }
-            return answer.size() > 0;
+            return false;
         }
 
         @Override
@@ -142,6 +144,39 @@ public class Assert {
 
     public static Matcher<Creature> receivedMessageContaining(String message) {
         return new Assert.ContainsMessage(message);
+    }
+
+    public static class DoesNotContainMessage extends TypeSafeMatcher<Creature> {
+
+        private String message;
+
+        private DoesNotContainMessage(String message) {
+            this.message = message;
+        }
+
+        @Override
+        protected boolean matchesSafely(Creature creature) {
+            String[] messages = WurmObjectsFactory.getCurrent().getMessagesFor(creature);
+            for (String msg : messages) {
+                if (msg.contains(message))
+                    return false;
+            }
+            return true;
+        }
+
+        @Override
+        public void describeTo(Description description) {
+            description.appendText(" no messages containing " + message);
+        }
+
+        @Override
+        public void describeMismatchSafely(Creature creature, Description description) {
+            description.appendText("At least one matching message was found.");
+        }
+    }
+
+    public static Matcher<Creature> didNotReceiveMessageContaining(String message) {
+        return new Assert.DoesNotContainMessage(message);
     }
 
     public static class InAscendingOrder extends TypeSafeMatcher<List<Integer>> {

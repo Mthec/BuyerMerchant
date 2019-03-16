@@ -247,9 +247,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
 
                 for (Item offeredItem : offeredItems) {
                     if (size < maxPersonalItems) {
-                        if (offeredItem.getDamage() > 0) {
-                            anyDamaged = true;
-                        } else if (offeredItem.isLockable() && offeredItem.isLocked()) {
+                        if (offeredItem.isLockable() && offeredItem.isLocked()) {
                             anyLocked = true;
                         } else if ((offeredItem.isHollow() && !offeredItem.isEmpty(true)) || offeredItem.isSealedByPlayer()) {
                             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'Please empty the " + offeredItem.getName() + " first.'");
@@ -264,6 +262,10 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                         else if (!offeredItem.isCoin()) {
                             PriceList.Entry entry = priceList.getEntryFor(offeredItem);
                             if (entry != null) {
+                                if (offeredItem.getDamage() > 0 && !entry.acceptsDamaged()) {
+                                    anyDamaged = true;
+                                    continue;
+                                }
                                 int price = getTraderBuyPriceForItem(entry, offeredItem);
                                 if (price != PriceList.unauthorised) {
                                     if (entry.getMinimumPurchase() != 1) {
@@ -401,7 +403,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                 targetWindow.stopReceivingItems();
 
                 if (anyDamaged)
-                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept damaged items.'");
+                    this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept damaged items of that type.'");
                 if (anyLocked)
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept locked items any more. Sorry for the inconvenience.'");
                 if (anyMinimumNotFullWeight)

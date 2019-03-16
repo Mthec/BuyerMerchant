@@ -30,17 +30,21 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     private void addItemToPriceList(int templateId, float ql, int price) {
+        addItemToPriceList(templateId, ql, price, false);
+    }
+
+    private void addItemToPriceList(int templateId, float ql, int price, boolean acceptsDamage) {
         try {
             PriceList list = PriceList.getPriceListFromBuyer(buyer);
             ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(templateId);
-            list.addItem(template.getTemplateId(), ItemMaterials.MATERIAL_MEAT_DRAGON, -1, ql, price);
+            list.addItem(template.getTemplateId(), ItemMaterials.MATERIAL_MEAT_DRAGON, -1, ql, price, 1, acceptsDamage);
             list.savePriceList();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Properties generateProperties(String id, int weight, float ql, int price, int minimumPurchase) {
+    private Properties generateProperties(String id, int weight, float ql, int price, int minimumPurchase, boolean acceptsDamaged) {
         Properties answers = new Properties();
         if (weight != -1)
             answers.setProperty(id+"weight", Integer.toString(weight).replaceFirst("(\\d\\d\\d)$", ".$1"));
@@ -51,23 +55,28 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty(id+"i", Integer.toString((int)new Change(price).getIronCoins()));
         if (minimumPurchase != 1)
             answers.setProperty(id+"p", Integer.toString(minimumPurchase));
+        answers.setProperty(id+"d", Boolean.toString(acceptsDamaged));
         return answers;
     }
 
+    private Properties generateProperties(int id, int weight, float ql, int price, int minimumPurchase, boolean acceptsDamaged) {
+        return generateProperties(Integer.toString(id), weight, ql, price, minimumPurchase, acceptsDamaged);
+    }
+
     private Properties generateProperties(int id, int weight, float ql, int price, int minimumPurchase) {
-        return generateProperties(Integer.toString(id), weight, ql, price, minimumPurchase);
+        return generateProperties(id, weight, ql, price, minimumPurchase, false);
     }
 
     private Properties generateProperties(int weight, float ql, int price, int minimumPurchase) {
-        return generateProperties("1", weight, ql, price, minimumPurchase);
+        return generateProperties(1, weight, ql, price, minimumPurchase);
     }
 
     private Properties generateProperties(int weight, float ql, int price) {
-        return generateProperties("1", weight, ql, price, 1);
+        return generateProperties("1", weight, ql, price, 1, false);
     }
 
     private Properties generateProperties(float ql, int price) {
-        return generateProperties("1", -1, ql, price, 1);
+        return generateProperties("1", -1, ql, price, 1, false);
     }
 
     @Test
@@ -107,7 +116,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         int price = 123456789;
         Properties answers = generateProperties(id, -1, ql, price, 1);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(1,(byte)1,-1,1.0f,1);
+        priceList.addItem(1, (byte)1,-1,1.0f,1);
         priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
 
@@ -122,10 +131,10 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(1,(byte)1,-1,1.0f,1);
+        priceList.addItem(1, (byte)1,-1,1.0f,1);
         priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
-        item.updateItem(7, (byte)0, -1, 1, 1, 1);
+        item.updateItem(7, (byte)0, -1, 1, 1, 1, false);
 
         SetBuyerPricesQuestion.setItemDetails(item, -1, answers, factory.createNewCreature());
         assertEquals(1.0, item.getQualityLevel(), 0.01);
@@ -137,10 +146,10 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(1,(byte)1,-1,1.0f,1);
+        priceList.addItem(1, (byte)1,-1,1.0f,1);
         priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
-        item.updateItem(7, (byte)0, -1, 1, 1, 1);
+        item.updateItem(7, (byte)0, -1, 1, 1, 1, false);
 
         Creature creature = factory.createNewCreature();
         SetBuyerPricesQuestion.setItemDetails(item, 1, answers, creature);
@@ -193,6 +202,52 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         assertTrue(messages[0].contains("Failed to set a negative price"));
 
         assertEquals(PriceList.unauthorised, priceList.getItems().iterator().next().getPrice());
+    }
+
+    @Test
+    void testItemAcceptsDamaged() throws PriceList.NoPriceListOnBuyer {
+        addItemToPriceList(1, 1, 1, true);
+        assert PriceList.getPriceListFromBuyer(buyer).iterator().next().getMinimumPurchase() == 1;
+
+        askQuestion();
+        answers = generateProperties(1, 1, 1, 1, 1, true);
+        answer();
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        PriceList.Entry item = priceList.iterator().next();
+
+        assertTrue(item.acceptsDamaged());
+    }
+
+    @Test
+    void testItemDoesNotAcceptDamaged() throws PriceList.NoPriceListOnBuyer {
+        addItemToPriceList(1, 1, 1, false);
+        assert PriceList.getPriceListFromBuyer(buyer).iterator().next().getMinimumPurchase() == 1;
+
+        askQuestion();
+        answers = generateProperties(-1, 1, 1, 1, 1, false);
+        answer();
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        PriceList.Entry item = priceList.iterator().next();
+
+        assertFalse(item.acceptsDamaged());
+    }
+
+    @Test
+    void testAcceptsDamagedInvalidSetsFalse() throws PriceList.NoPriceListOnBuyer {
+        addItemToPriceList(1, 1, 1, false);
+        assert PriceList.getPriceListFromBuyer(buyer).iterator().next().getMinimumPurchase() == 1;
+
+        askQuestion();
+        answers = generateProperties(-1, 1, 1, 1, 1);
+        answers.setProperty("d", "abc");
+        answer();
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        PriceList.Entry item = priceList.iterator().next();
+
+        assertFalse(item.acceptsDamaged());
     }
 
     @Test

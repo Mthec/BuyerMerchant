@@ -93,12 +93,13 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
     }
 
     static void setItemDetails(PriceList.Entry item, int id, Properties answers, Creature responder) throws PriceList.PriceListFullException {
-        int price = 0;
         boolean badPrice = false;
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplateOrNull(item.getTemplateId());
         int weight = (template != null ? template.getWeightGrams() : -1);
         float ql = -1;
+        int price = 0;
         int minimumPurchase = -1;
+        boolean acceptsDamaged = false;
         String stringId;
         if (id == -1)
             stringId = "";
@@ -189,7 +190,11 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                 minimumPurchase = -1;
             }
         }
-        item.updateItemDetails(weight, ql, price, minimumPurchase);
+
+        val = answers.getProperty(stringId + "d");
+        acceptsDamaged = val != null && val.equals("true");
+
+        item.updateItemDetails(weight, ql, price, minimumPurchase, acceptsDamaged);
     }
 
     public void sendQuestion() {
@@ -208,7 +213,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     if (!BuyerTradingWindow.destroyBoughtItems)
                         buf.append("text{text=\"" + trader.getName() + " has inventory space for " + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + " more items.\"}");
                     buf.append("text{type=\"bold\";text=\"Prices for " + trader.getName() + "\"}text{text=''}");
-                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"9\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Min. Amount\"};label{text=\"Remove?\"}");
+                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"10\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Min. Amount\"};label{text=\"Accept Damaged\"};label{text=\"Remove?\"}");
 
                     for(PriceList.Entry item : priceList) {
                         ++idx;
@@ -221,6 +226,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "c\";text=\"" + change.getCopperCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "i\";text=\"" + change.getIronCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "p\";text=\"" + item.getMinimumPurchase() + "\"};label{text=\" \"}};");
+                        buf.append("harray{checkbox{id=\"" + idx + "d\"};label{text=\" \"}};");
                         buf.append("harray{checkbox{id=\"" + idx + "remove\"};label{text=\" \"}};");
                         this.itemMap.put(item, idx);
                     }
@@ -228,7 +234,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     buf.append("}");
                     buf.append("text{text=\"\"}");
                     buf.append("harray {button{text='Save Prices';id='submit'};label{text=\" \";id=\"spacedlxg\"};button{text='Add New';id='new'}label{text=\" \";id=\"spacedlxg\"};button{text='Sort';id='sort'}}}}null;null;}");
-                    this.getResponder().getCommunicator().sendBml(525, 300, true, true, buf.toString(), 200, 200, 200, this.title);
+                    this.getResponder().getCommunicator().sendBml(600, 300, true, true, buf.toString(), 200, 200, 200, this.title);
                 } else {
                     this.getResponder().getCommunicator().sendNormalServerMessage("You don't own that shop.");
                 }

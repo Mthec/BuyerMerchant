@@ -278,6 +278,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         assertEquals(template7Index, id);
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Test
     void testItemWithCorrectDetailsAddedToPriceList() throws PriceList.NoPriceListOnBuyer, NoSuchTemplateException {
         int templateId = 7;
@@ -286,6 +287,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         float ql = 55.6f;
         int money = 1122334455;
         int minimumPurchase = 100;
+        boolean acceptsDamaged = true;
         Change change = new Change(money);
 
         askQuestion();
@@ -302,6 +304,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty("c", Long.toString(change.copperCoins));
         answers.setProperty("i", Long.toString(change.ironCoins));
         answers.setProperty("p", Integer.toString(minimumPurchase));
+        answers.setProperty("d", Boolean.toString(acceptsDamaged));
         answer();
 
         PriceList.Entry item = PriceList.getPriceListFromBuyer(buyer).iterator().next();
@@ -316,7 +319,8 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
                 () -> assertEquals(change.silverCoins, price.silverCoins, "Silver incorrect"),
                 () -> assertEquals(change.copperCoins, price.copperCoins, "Copper incorrect"),
                 () -> assertEquals(change.ironCoins, price.ironCoins, "Iron incorrect"),
-                () -> assertEquals(minimumPurchase, item.getMinimumPurchase(), "Minimum Purchase incorrect")
+                () -> assertEquals(minimumPurchase, item.getMinimumPurchase(), "Minimum Purchase incorrect"),
+                () -> assertEquals(acceptsDamaged, item.acceptsDamaged(), "Accepts Damaged incorrect")
         );
     }
 

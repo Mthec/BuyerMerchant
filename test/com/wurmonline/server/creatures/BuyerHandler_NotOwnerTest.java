@@ -198,10 +198,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testNoDamagedItems() {
+    void testDoesNotAcceptDamagedItemsIfNotSet() {
         Item item = factory.createNewItem();
         player.getInventory().insertItem(item);
         addOneCopperItemToPriceList(item);
+        item.setQualityLevel(100);
         item.setDamage(50.0f);
 
         createHandler();
@@ -210,6 +211,47 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         handler.balance();
 
         assertThat(player, receivedMessageContaining("don't accept damaged"));
+    }
+
+    @Test
+    void testAcceptsDamagedItemsIfSet() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException {
+        Item item = factory.createNewItem();
+        player.getInventory().insertItem(item);
+        addOneCopperItemToPriceList(item);
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        PriceList.Entry entry = priceList.iterator().next();
+        entry.updateItemDetails(-1, 1, entry.getPrice(),1, true);
+        priceList.savePriceList();
+        item.setDamage(50.0f);
+
+        createHandler();
+        handler.addItemsToTrade();
+        playerOffer.addItem(item);
+        handler.balance();
+
+        assertThat(player, didNotReceiveMessageContaining("don't accept damaged"));
+    }
+
+    @Test
+    void testDoesNotAcceptDamagedItemsIfRepairedQLIsUnderMinimumButUn_repairedIsOver() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException {
+        Item item = factory.createNewItem();
+        player.getInventory().insertItem(item);
+        addOneCopperItemToPriceList(item);
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        PriceList.Entry entry = priceList.iterator().next();
+        entry.updateItemDetails(-1, 20, entry.getPrice(),1, true);
+        priceList.savePriceList();
+        item.setQualityLevel(30);
+        item.setDamage(50.0f);
+        assert item.getCurrentQualityLevel() < 20;
+
+        createHandler();
+        handler.addItemsToTrade();
+        playerOffer.addItem(item);
+        handler.balance();
+
+        assertEquals(1, trade.getTradingWindow(2).getItems().length);
+        assertEquals(0, trade.getTradingWindow(4).getItems().length);
     }
 
     @Test
@@ -450,8 +492,8 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     @Test
     void testMinimumPurchaseItemsAreLabelledSo() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, 1);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, 100);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, 1, false);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, 100, false);
         priceList.savePriceList();
 
         createHandler();
@@ -469,7 +511,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = 20;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
         priceList.savePriceList();
 
         createHandler();
@@ -493,7 +535,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase - 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
         priceList.savePriceList();
 
         createHandler();
@@ -510,7 +552,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase + 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
         priceList.savePriceList();
 
         createHandler();
@@ -534,7 +576,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int numberOfItems = minimumPurchase * 2;
         BuyerHandler.maxPersonalItems = (int)(minimumPurchase * 1.5f);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
         priceList.savePriceList();
 
         createHandler();
@@ -563,7 +605,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
         priceList.savePriceList();
 
         createHandler();
@@ -598,7 +640,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
         priceList.savePriceList();
 
         createHandler();
@@ -640,8 +682,8 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 10;
         int numberOfItems = minimumPurchase * 3;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase * 2);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 25.0f, 20, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase * 2, false);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 25.0f, 20, minimumPurchase, false);
         priceList.savePriceList();
 
         createHandler();
@@ -675,7 +717,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
         priceList.savePriceList();
 
         createHandler();
@@ -725,7 +767,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase + 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase);
+        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
         priceList.savePriceList();
         factory.getShop(buyer).setMoney(100000);
 

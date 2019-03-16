@@ -60,7 +60,7 @@ class DeliveryContractsTest extends WurmTradingTest {
     private void addOneCopperItemToPriceList(int templateId, int minimumRequired) {
         try {
             PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-            priceList.addItem(templateId, (byte)0, -1, 1.0f, MonetaryConstants.COIN_COPPER, minimumRequired);
+            priceList.addItem(templateId, (byte)0, -1, 1.0f, MonetaryConstants.COIN_COPPER, minimumRequired, false);
             priceList.savePriceList();
             Shop shop = factory.getShop(buyer);
             shop.setMoney(shop.getMoney() + (long)(MonetaryConstants.COIN_COPPER * 1.1f));
@@ -297,7 +297,7 @@ class DeliveryContractsTest extends WurmTradingTest {
     void testContractsWithDonationItems() throws IOException, PriceList.PageNotAdded, PriceList.PriceListFullException, NoSuchTemplateException {
         insertItemsIntoContract(factory.createManyItems(ItemList.dirtPile, 10));
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(ItemList.dirtPile, (byte)0, -1, 1.0f, 0, 10);
+        priceList.addItem(ItemList.dirtPile, (byte)0, -1, 1.0f, 0, 10, false);
         priceList.savePriceList();
 
         createHandler();
