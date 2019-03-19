@@ -132,7 +132,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
     private int getTraderBuyPriceForItem(PriceList.Entry entry, Item item) {
         int markedPrice = 0;
 
-        if (item.getDamage() != 0) {
+        if (item.getDamage() != 0 && !entry.acceptsDamaged()) {
             return markedPrice;
         }
 

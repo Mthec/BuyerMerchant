@@ -531,4 +531,20 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         String bml2 = removeSpecialCharacters.matcher(factory.getCommunicator(owner).lastBmlContent).replaceAll("");
         assertTrue(sortedPattern.matcher(bml2).find());
     }
+
+    @Test
+    void testAcceptsDamagedSetInBML() {
+        addItemToPriceList(1, 1, 1, true);
+        addItemToPriceList(2, 1, 1, false);
+
+        askQuestion();
+        Matcher matcher1 = Pattern.compile("checkbox\\{id=\"\\dd\"}").matcher(factory.getCommunicator(owner).lastBmlContent);
+        Matcher matcher2 = Pattern.compile("checkbox\\{id=\"\\dd\";selected=\"true\"}").matcher(factory.getCommunicator(owner).lastBmlContent);
+
+        System.out.println(factory.getCommunicator(owner).lastBmlContent);
+        assertTrue(matcher1.find());
+        assertFalse(matcher1.find());
+        assertTrue(matcher2.find());
+        assertFalse(matcher2.find());
+    }
 }

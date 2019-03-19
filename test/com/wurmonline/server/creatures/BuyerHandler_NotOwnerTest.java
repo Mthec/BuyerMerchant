@@ -393,13 +393,32 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         minimalWeight.setWeight(1, false);
 
         createHandler();
-        handler.getTraderBuyPriceForItem(halfWeight);
+        //handler.getTraderBuyPriceForItem(halfWeight);
 
         assertAll(
                 () -> assertEquals(MonetaryConstants.COIN_COPPER * 2, handler.getTraderBuyPriceForItem(fullWeight)),
                 () -> assertEquals(MonetaryConstants.COIN_COPPER, handler.getTraderBuyPriceForItem(halfWeight)),
                 () -> assertEquals(0, handler.getTraderBuyPriceForItem(minimalWeight))
         );
+    }
+
+    @Test
+    void testPriceForDamagedItemsReturnsCorrectValue() throws IOException, PriceList.PageNotAdded, PriceList.PriceListFullException, NoSuchTemplateException {
+        Item acceptedDamage = factory.createNewItem(1);
+        acceptedDamage.setQualityLevel(2);
+        acceptedDamage.setDamage(50);
+        Item unacceptedDamage = factory.createNewItem(2);
+        unacceptedDamage.setDamage(50);
+        addOneCopperItemToPriceList(unacceptedDamage);
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(acceptedDamage.getTemplateId(), acceptedDamage.getMaterial(), -1, 1, MonetaryConstants.COIN_COPPER, 1, true);
+        priceList.savePriceList();
+        assert priceList.getEntryFor(acceptedDamage) != null;
+
+        createHandler();
+
+        assertEquals(MonetaryConstants.COIN_COPPER, handler.getTraderBuyPriceForItem(acceptedDamage));
+        assertEquals(0, handler.getTraderBuyPriceForItem(unacceptedDamage));
     }
 
     @Test

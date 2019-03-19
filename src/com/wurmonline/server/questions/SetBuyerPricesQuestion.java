@@ -95,11 +95,11 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
     static void setItemDetails(PriceList.Entry item, int id, Properties answers, Creature responder) throws PriceList.PriceListFullException {
         boolean badPrice = false;
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplateOrNull(item.getTemplateId());
-        int weight = (template != null ? template.getWeightGrams() : -1);
+        int weight = -1;
         float ql = -1;
         int price = 0;
         int minimumPurchase = -1;
-        boolean acceptsDamaged = false;
+        boolean acceptsDamaged;
         String stringId;
         if (id == -1)
             stringId = "";
@@ -116,7 +116,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     weight = -1;
             } catch (NumberFormatException var21) {
                 responder.getCommunicator().sendNormalServerMessage("Failed to set the weight for " + item.getName() + ".");
-                weight = -1;
+                weight = item.getWeight();
             }
         }
         val = answers.getProperty(stringId + "q");
@@ -226,7 +226,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "c\";text=\"" + change.getCopperCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "i\";text=\"" + change.getIronCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "p\";text=\"" + item.getMinimumPurchase() + "\"};label{text=\" \"}};");
-                        buf.append("harray{checkbox{id=\"" + idx + "d\"};label{text=\" \"}};");
+                        buf.append("harray{checkbox{id=\"" + idx + "d\"" + (item.acceptsDamaged() ? ";selected=\"true\"" : "") + "};label{text=\" \"}};");
                         buf.append("harray{checkbox{id=\"" + idx + "remove\"};label{text=\" \"}};");
                         this.itemMap.put(item, idx);
                     }
