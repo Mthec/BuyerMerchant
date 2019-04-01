@@ -286,6 +286,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         int weight = 1000;
         float ql = 55.6f;
         int money = 1122334455;
+        int remainingToPurchase = 200;
         int minimumPurchase = 100;
         boolean acceptsDamaged = true;
         Change change = new Change(money);
@@ -303,6 +304,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty("s", Long.toString(change.silverCoins));
         answers.setProperty("c", Long.toString(change.copperCoins));
         answers.setProperty("i", Long.toString(change.ironCoins));
+        answers.setProperty("r", Integer.toString(remainingToPurchase));
         answers.setProperty("p", Integer.toString(minimumPurchase));
         answers.setProperty("d", Boolean.toString(acceptsDamaged));
         answer();
@@ -319,6 +321,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
                 () -> assertEquals(change.silverCoins, price.silverCoins, "Silver incorrect"),
                 () -> assertEquals(change.copperCoins, price.copperCoins, "Copper incorrect"),
                 () -> assertEquals(change.ironCoins, price.ironCoins, "Iron incorrect"),
+                () -> assertEquals(remainingToPurchase, item.getRemainingToPurchase(), "Remaining to Purchase incorrect"),
                 () -> assertEquals(minimumPurchase, item.getMinimumPurchase(), "Minimum Purchase incorrect"),
                 () -> assertEquals(acceptsDamaged, item.acceptsDamaged(), "Accepts Damaged incorrect")
         );

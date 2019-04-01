@@ -37,14 +37,14 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         try {
             PriceList list = PriceList.getPriceListFromBuyer(buyer);
             ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(templateId);
-            list.addItem(template.getTemplateId(), ItemMaterials.MATERIAL_MEAT_DRAGON, -1, ql, price, 1, acceptsDamage);
+            list.addItem(template.getTemplateId(), ItemMaterials.MATERIAL_MEAT_DRAGON, -1, ql, price, 0, 1, acceptsDamage);
             list.savePriceList();
-        } catch (Exception e) {
+        } catch (NoSuchTemplateException | IOException | PriceList.PageNotAdded | PriceList.PriceListFullException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private Properties generateProperties(String id, int weight, float ql, int price, int minimumPurchase, boolean acceptsDamaged) {
+    private Properties generateProperties(String id, int weight, float ql, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) {
         Properties answers = new Properties();
         if (weight != -1)
             answers.setProperty(id+"weight", Integer.toString(weight).replaceFirst("(\\d\\d\\d)$", ".$1"));
@@ -53,6 +53,8 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty(id+"s", Integer.toString((int)new Change(price).getSilverCoins()));
         answers.setProperty(id+"c", Integer.toString((int)new Change(price).getCopperCoins()));
         answers.setProperty(id+"i", Integer.toString((int)new Change(price).getIronCoins()));
+        if (remainingToPurchase != 0)
+            answers.setProperty(id+"r", Integer.toString(remainingToPurchase));
         if (minimumPurchase != 1)
             answers.setProperty(id+"p", Integer.toString(minimumPurchase));
         answers.setProperty(id+"d", Boolean.toString(acceptsDamaged));
@@ -60,7 +62,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     private Properties generateProperties(int id, int weight, float ql, int price, int minimumPurchase, boolean acceptsDamaged) {
-        return generateProperties(Integer.toString(id), weight, ql, price, minimumPurchase, acceptsDamaged);
+        return generateProperties(Integer.toString(id), weight, ql, price, 0, minimumPurchase, acceptsDamaged);
     }
 
     private Properties generateProperties(int id, int weight, float ql, int price, int minimumPurchase) {
@@ -72,11 +74,11 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     private Properties generateProperties(int weight, float ql, int price) {
-        return generateProperties("1", weight, ql, price, 1, false);
+        return generateProperties("1", weight, ql, price, 0, 1, false);
     }
 
     private Properties generateProperties(float ql, int price) {
-        return generateProperties("1", -1, ql, price, 1, false);
+        return generateProperties("1", -1, ql, price, 0, 1, false);
     }
 
     @Test
@@ -134,7 +136,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         priceList.addItem(1, (byte)1,-1,1.0f,1);
         priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
-        item.updateItem(7, (byte)0, -1, 1, 1, 1, false);
+        item.updateItem(7, (byte)0, -1, 1, 1, 0, 1, false);
 
         SetBuyerPricesQuestion.setItemDetails(item, -1, answers, factory.createNewCreature());
         assertEquals(1.0, item.getQualityLevel(), 0.01);
@@ -149,7 +151,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         priceList.addItem(1, (byte)1,-1,1.0f,1);
         priceList.savePriceList();
         PriceList.Entry item = priceList.iterator().next();
-        item.updateItem(7, (byte)0, -1, 1, 1, 1, false);
+        item.updateItem(7, (byte)0, -1, 1, 1, 0, 1, false);
 
         Creature creature = factory.createNewCreature();
         SetBuyerPricesQuestion.setItemDetails(item, 1, answers, creature);
@@ -258,7 +260,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         SetBuyerPricesQuestion question = new SetBuyerPricesQuestion(player, buyer.getWurmId());
         question.sendQuestion();
         assertNotEquals("No shop registered for that creature.", factory.getCommunicator(player).lastNormalServerMessage);
-        assertTrue(!factory.getCommunicator(player).lastBmlContent.equals(FakeCommunicator.empty));
+        assertNotEquals(FakeCommunicator.empty, factory.getCommunicator(player).lastBmlContent);
     }
 
     @Test
@@ -420,13 +422,16 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         int weight = 1234;
         float ql = 96.0f;
         int money = 123456789;
+        int remainingToPurchase = 234;
         int minimumPurchase = 100;
         int templateId = factory.getIsMetalId();
         addItemToPriceList(templateId, ql, money);
         assert PriceList.getPriceListFromBuyer(buyer).iterator().next().getMinimumPurchase() == 1;
+        assert PriceList.getPriceListFromBuyer(buyer).iterator().next().getRemainingToPurchase() == 0;
+        assert !PriceList.getPriceListFromBuyer(buyer).iterator().next().acceptsDamaged();
 
         askQuestion();
-        answers = generateProperties(weight, ql, money, minimumPurchase);
+        answers = generateProperties(String.valueOf(1), weight, ql, money, remainingToPurchase, minimumPurchase, true);
         answer();
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -435,7 +440,9 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         assertEquals(weight, item.getWeight());
         assertEquals(ql, item.getQualityLevel(), 0.01f);
         assertEquals(money, item.getPrice());
+        assertEquals(remainingToPurchase, item.getRemainingToPurchase());
         assertEquals(minimumPurchase, item.getMinimumPurchase());
+        assertTrue(item.acceptsDamaged());
     }
 
     @Test

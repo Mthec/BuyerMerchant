@@ -7,6 +7,7 @@ import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
 import mod.wurmunlimited.WurmTradingTest;
+import mod.wurmunlimited.buyermerchant.EntryBuilder;
 import mod.wurmunlimited.buyermerchant.PriceList;
 import org.junit.jupiter.api.Test;
 
@@ -214,13 +215,13 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testAcceptsDamagedItemsIfSet() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException {
+    void testAcceptsDamagedItemsIfSet() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
         Item item = factory.createNewItem();
         player.getInventory().insertItem(item);
         addOneCopperItemToPriceList(item);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         PriceList.Entry entry = priceList.iterator().next();
-        entry.updateItemDetails(-1, 1, entry.getPrice(),1, true);
+        EntryBuilder.update(entry).acceptsDamaged().build();
         priceList.savePriceList();
         item.setDamage(50.0f);
 
@@ -233,13 +234,13 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testDoesNotAcceptDamagedItemsIfRepairedQLIsUnderMinimumButUn_repairedIsOver() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException {
+    void testDoesNotAcceptDamagedItemsIfRepairedQLIsUnderMinimumButUn_repairedIsOver() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
         Item item = factory.createNewItem();
         player.getInventory().insertItem(item);
         addOneCopperItemToPriceList(item);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         PriceList.Entry entry = priceList.iterator().next();
-        entry.updateItemDetails(-1, 20, entry.getPrice(),1, true);
+        EntryBuilder.update(entry).ql(20).acceptsDamaged().build();
         priceList.savePriceList();
         item.setQualityLevel(30);
         item.setDamage(50.0f);
@@ -378,12 +379,12 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testPriceOnLowWeightItemsWithCustomWeight() throws PriceList.NoPriceListOnBuyer, PriceList.PriceListFullException, PriceList.PageNotAdded {
+    void testPriceOnLowWeightItemsWithCustomWeight() throws PriceList.NoPriceListOnBuyer, PriceList.PriceListFullException, PriceList.PageNotAdded, EntryBuilder.EntryBuilderException {
         Item fullWeight = factory.createNewItem();
         addOneCopperItemToPriceList(fullWeight);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         PriceList.Entry entry = priceList.iterator().next();
-        entry.updateItemDetails(fullWeight.getWeightGrams() / 2, entry.getQualityLevel(), entry.getPrice(), 1);
+        EntryBuilder.update(entry).weight(fullWeight.getWeightGrams() / 2).build();
         priceList.savePriceList();
 
         Item halfWeight = factory.createNewItem();
@@ -403,7 +404,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testPriceForDamagedItemsReturnsCorrectValue() throws IOException, PriceList.PageNotAdded, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testPriceForDamagedItemsReturnsCorrectValue() throws IOException, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
         Item acceptedDamage = factory.createNewItem(1);
         acceptedDamage.setQualityLevel(2);
         acceptedDamage.setDamage(50);
@@ -411,7 +412,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         unacceptedDamage.setDamage(50);
         addOneCopperItemToPriceList(unacceptedDamage);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(acceptedDamage.getTemplateId(), acceptedDamage.getMaterial(), -1, 1, MonetaryConstants.COIN_COPPER, 1, true);
+        EntryBuilder.addEntry(priceList).templateId(acceptedDamage.getTemplateId()).material(acceptedDamage.getMaterial()).price(MonetaryConstants.COIN_COPPER).acceptsDamaged().build();
         priceList.savePriceList();
         assert priceList.getEntryFor(acceptedDamage) != null;
 
@@ -422,7 +423,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testNegativePriceAlwaysReturns0() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
+    void testNegativePriceAlwaysReturns0() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, EntryBuilder.EntryBuilderException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item = factory.createNewItem(factory.getIsWoodId());
         priceList.addItem(item.getTemplateId(), item.getMaterial());
@@ -430,7 +431,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         // Skip -1 as that value is used in PriceList as an invalid price string.
         for (int i = -2; i > -100; --i) {
-            priceList.iterator().next().updateItemDetails(-1,1.0f, i, 1);
+            EntryBuilder.update(priceList.iterator().next()).price(i).build();
             priceList.savePriceList();
             createHandler();
             assertEquals(0, handler.getTraderBuyPriceForItem(item));
@@ -509,10 +510,10 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseItemsAreLabelledSo() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
+    void testMinimumPurchaseItemsAreLabelledSo() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, EntryBuilder.EntryBuilderException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, 1, false);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, 100, false);
+        EntryBuilder.addEntry(priceList).price(10).minimumRequired(1).build();
+        EntryBuilder.addEntry(priceList).price(10).minimumRequired(100).build();
         priceList.savePriceList();
 
         createHandler();
@@ -526,11 +527,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseReached() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
+    void testMinimumPurchaseReached() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 20;
         int numberOfItems = 20;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
 
         createHandler();
@@ -550,11 +551,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseNotReached() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
+    void testMinimumPurchaseNotReached() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase - 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
 
         createHandler();
@@ -567,11 +568,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseExceeded() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
+    void testMinimumPurchaseExceeded() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase + 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
 
         createHandler();
@@ -590,12 +591,12 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumPurchaseExceedsSpaceButPurchasesSome() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
+    void testMinimumPurchaseExceedsSpaceButPurchasesSome() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         BuyerHandler.maxPersonalItems = (int)(minimumPurchase * 1.5f);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
 
         createHandler();
@@ -620,11 +621,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testOverMaximumAddedSeparately() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
+    void testOverMaximumAddedSeparately() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
 
         createHandler();
@@ -655,11 +656,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testSomeMinimumPurchaseItemsRemovedFromTrade() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, IllegalAccessException, NoSuchFieldException {
+    void testSomeMinimumPurchaseItemsRemovedFromTrade() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, IllegalAccessException, NoSuchFieldException, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
 
         createHandler();
@@ -697,12 +698,12 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMultipleMinimumPurchasesAtDifferentQLs() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
+    void testMultipleMinimumPurchasesAtDifferentQLs() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 10;
         int numberOfItems = minimumPurchase * 3;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase * 2, false);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 25.0f, 20, minimumPurchase, false);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase * 2).build();
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).ql(25).price(20).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
 
         createHandler();
@@ -732,11 +733,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testNoMessageSentAfterAllMinimumPurchaseEntryItemsRemoved() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, NoSuchFieldException, IllegalAccessException {
+    void testNoMessageSentAfterAllMinimumPurchaseEntryItemsRemoved() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchFieldException, IllegalAccessException, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
 
         createHandler();
@@ -782,11 +783,11 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testMinimumRequirementItemsMustBeFullWeight() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded {
+    void testMinimumRequirementItemsMustBeFullWeight() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase + 1;
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, 10, minimumPurchase, false);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
         factory.getShop(buyer).setMoney(100000);
 

@@ -6,13 +6,13 @@
 
 package com.wurmonline.server.items;
 
+import com.wurmonline.server.creatures.BuyerHandler;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.players.Player;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class BuyerTrade extends Trade {
@@ -130,6 +130,8 @@ public class BuyerTrade extends Trade {
                     if (ok) {
                         this.creatureOneRequestWindow.swapOwners();
                         this.creatureTwoRequestWindow.swapOwners();
+                        ((BuyerHandler)creatureTwo.getTradeHandler()).setTradeSuccessful();
+
                         this.creatureTwoOfferWindow.endTrade();
                         this.creatureOneOfferWindow.endTrade();
                         Shop shop;
@@ -177,26 +179,22 @@ public class BuyerTrade extends Trade {
 
     @Override
     public void end(Creature creature, boolean closed) {
-        try {
-            if (creature.equals(this.creatureOne)) {
-                this.creatureTwo.getCommunicator().sendCloseTradeWindow();
-                if (!closed) {
-                    this.creatureOne.getCommunicator().sendCloseTradeWindow();
-                }
-
-                this.creatureTwo.getCommunicator().sendNormalServerMessage(this.creatureOne.getName() + " withdrew from the trade.", (byte)2);
-                this.creatureOne.getCommunicator().sendNormalServerMessage("You withdraw from the trade.", (byte)2);
-            } else {
+        if (creature.equals(this.creatureOne)) {
+            this.creatureTwo.getCommunicator().sendCloseTradeWindow();
+            if (!closed) {
                 this.creatureOne.getCommunicator().sendCloseTradeWindow();
-                if (!closed || !this.creatureTwo.isPlayer()) {
-                    this.creatureTwo.getCommunicator().sendCloseTradeWindow();
-                }
-
-                this.creatureOne.getCommunicator().sendNormalServerMessage(this.creatureTwo.getName() + " withdrew from the trade.", (byte)2);
-                this.creatureTwo.getCommunicator().sendNormalServerMessage("You withdraw from the trade.", (byte)2);
             }
-        } catch (Exception var4) {
-            logger.log(Level.WARNING, var4.getMessage(), var4);
+
+            this.creatureTwo.getCommunicator().sendNormalServerMessage(this.creatureOne.getName() + " withdrew from the trade.", (byte)2);
+            this.creatureOne.getCommunicator().sendNormalServerMessage("You withdraw from the trade.", (byte)2);
+        } else {
+            this.creatureOne.getCommunicator().sendCloseTradeWindow();
+            if (!closed || !this.creatureTwo.isPlayer()) {
+                this.creatureTwo.getCommunicator().sendCloseTradeWindow();
+            }
+
+            this.creatureOne.getCommunicator().sendNormalServerMessage(this.creatureTwo.getName() + " withdrew from the trade.", (byte)2);
+            this.creatureTwo.getCommunicator().sendNormalServerMessage("You withdraw from the trade.", (byte)2);
         }
 
         this.creatureTwoOfferWindow.endTrade();

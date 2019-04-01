@@ -34,6 +34,8 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
     private static int deliveryContractId = -10;
     private static final int unauthorisedItem = 1;
     private static final int notFullWeight = 2;
+    private Map<PriceList.Entry, Set<Item>> remainingToPurchaseMap = new HashMap<>();
+    private boolean tradeSuccessful;
 
     public BuyerHandler(Creature aCreature, Trade _trade) throws PriceList.NoPriceListOnBuyer {
         this.creature = aCreature;
@@ -58,6 +60,27 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
 
     @Override
     void end() {
+        if (tradeSuccessful) {
+            for (Map.Entry<PriceList.Entry, Set<Item>> pair : remainingToPurchaseMap.entrySet()) {
+                try {
+                    PriceList.Entry entry = pair.getKey();
+                    int count = pair.getValue().size();
+                    //  Relying on validation in the trade, removing negatives as a precaution.
+                    if (entry.getRemainingToPurchase() <= count) {
+                        priceList.removeItem(entry);
+                        priceList.savePriceList();
+                    } else {
+                        entry.subtractRemainingToPurchase(count);
+                    }
+                } catch (PriceList.PriceListFullException | PriceList.PageNotAdded e) {
+                    logger.warning("Could not update Price List when updating Remaining to Purchase for some reason.");
+                    e.printStackTrace();
+                }
+            }
+        }
+        minimumRequiredMap.clear();
+        remainingToPurchaseMap.clear();
+
         this.creature = null;
         this.trade = null;
         priceList.destroyItems();
@@ -201,6 +224,20 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
             }
 
             minimumRequiredMap.clear();
+
+            // Only remove these if there may be conflicts with minimumRequired.
+            if (!remainingToPurchaseMap.isEmpty()) {
+                for (Set<Item> itemSet : remainingToPurchaseMap.values()) {
+                    for (Item item : itemSet) {
+                        if (items.contains(item)) {
+                            targetWindow.removeItem(item);
+                            offeredWindow.addItem(item);
+                        }
+                    }
+                }
+
+                remainingToPurchaseMap.clear();
+            }
         }
 
         Item[] offeredItems = offeredWindow.getItems();
@@ -241,6 +278,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                 boolean anyNotAuthorised = false;
                 boolean anyDamaged = false;
                 boolean anyLocked = false;
+                Set<PriceList.Entry> anyOverLimit = new HashSet<>();
                 boolean anyMinimumNotFullWeight = false;
                 boolean personalItemsFull = false;
                 targetWindow.startReceivingItems();
@@ -281,6 +319,21 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                                             anyMinimumNotFullWeight = true;
                                         }
                                     } else {
+                                        int remaining = entry.getRemainingToPurchase();
+                                        if (remaining != 0) {
+                                            Set<Item> alreadyAccepted = remainingToPurchaseMap.get(entry);
+                                            if (alreadyAccepted != null && alreadyAccepted.size() + 1 > entry.getRemainingToPurchase()) {
+                                                anyOverLimit.add(entry);
+                                                continue;
+                                            } else {
+                                                if (alreadyAccepted == null) {
+                                                    alreadyAccepted = new HashSet<>();
+                                                    remainingToPurchaseMap.put(entry, alreadyAccepted);
+                                                }
+                                                alreadyAccepted.add(offeredItem);
+                                            }
+                                        }
+
                                         if (price == 0) {
                                             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I will not pay you anything, but will accept the " + offeredItem.getName() + " as a donation.'");
                                         }
@@ -324,7 +377,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
 
                         int count = minimumRequired.count();
 
-                        if (count >= entry.getMinimumPurchase()) {
+                        if (count >= entry.getMinimumPurchase() && (entry.getRemainingToPurchase() == 0 || count <= entry.getRemainingToPurchase())) {
                             confirmed.add(entry);
                         } else if (count != 0) { // Prevent entries with removed sets from sending messages.
                             Set<PriceList.Entry> toReevaluate = minimumRequired.getLinked();
@@ -392,6 +445,11 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                                 else
                                     addedContracts.add(offeredItem);
                             }
+                            if (entry.getRemainingToPurchase() != 0) {
+                                Set<Item> alreadyAccepted = remainingToPurchaseMap.computeIfAbsent(entry, k -> new HashSet<>());
+                                alreadyAccepted.add(offeredItem);
+                            }
+
                             offeredWindow.removeItem(offeredItem);
                             targetWindow.addItem(offeredItem);
                             ++size;
@@ -406,6 +464,10 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept damaged items of that type.'");
                 if (anyLocked)
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept locked items any more. Sorry for the inconvenience.'");
+                if (!anyOverLimit.isEmpty()) {
+                    for (PriceList.Entry entry : anyOverLimit)
+                        this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I can only accept " + entry.getRemainingToPurchase() + " more" + entry.getName() + ".'");
+                }
                 if (anyMinimumNotFullWeight)
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I can only accept full weight items when there is a minimum required amount.'");
                 if (anyNotAuthorised)
@@ -460,5 +522,9 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                 }
             }
         }
+    }
+
+    public void setTradeSuccessful() {
+        tradeSuccessful = true;
     }
 }

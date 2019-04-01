@@ -4,6 +4,7 @@ import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
 import mod.wurmunlimited.WurmTradingTest;
+import mod.wurmunlimited.buyermerchant.EntryBuilder;
 import mod.wurmunlimited.buyermerchant.PriceList;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.gotti.wurmunlimited.modsupport.ItemTemplateBuilder;
@@ -60,7 +61,7 @@ class DeliveryContractsTest extends WurmTradingTest {
     private void addOneCopperItemToPriceList(int templateId, int minimumRequired) {
         try {
             PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-            priceList.addItem(templateId, (byte)0, -1, 1.0f, MonetaryConstants.COIN_COPPER, minimumRequired, false);
+            priceList.addItem(templateId, (byte)0, -1, 1.0f, MonetaryConstants.COIN_COPPER, 0, minimumRequired, false);
             priceList.savePriceList();
             Shop shop = factory.getShop(buyer);
             shop.setMoney(shop.getMoney() + (long)(MonetaryConstants.COIN_COPPER * 1.1f));
@@ -294,10 +295,10 @@ class DeliveryContractsTest extends WurmTradingTest {
     }
 
     @Test
-    void testContractsWithDonationItems() throws IOException, PriceList.PageNotAdded, PriceList.PriceListFullException, NoSuchTemplateException {
+    void testContractsWithDonationItems() throws IOException, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
         insertItemsIntoContract(factory.createManyItems(ItemList.dirtPile, 10));
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        priceList.addItem(ItemList.dirtPile, (byte)0, -1, 1.0f, 0, 10, false);
+        EntryBuilder.addEntry(priceList).templateId(ItemList.dirtPile).minimumRequired(10).build();
         priceList.savePriceList();
 
         createHandler();

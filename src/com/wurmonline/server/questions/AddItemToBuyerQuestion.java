@@ -361,8 +361,9 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
     private void sendQLPriceQuestion() {
         StringBuilder buf = new StringBuilder(this.getBmlHeader());
         DecimalFormat df = new DecimalFormat("#.##");
+        buf.append("text{text=\"Only purchase n restricts the Buyer from purchasing more than that number of items in a single trade.  Leave as 0 to accept any amount.\"}");
         buf.append("text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}");
-        buf.append("table{rows=\"1\"; cols=\"10\";label{text=\"Item type\"};label{text=\"Material\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"}");
+        buf.append("table{rows=\"1\"; cols=\"11\";label{text=\"Item type\"};label{text=\"Material\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"};label{text=\"Only purchase n\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"}");
 
         // New item row
         buf.append("harray{label{text=\"" + itemTemplate.getName() + "\"}};");
@@ -373,6 +374,7 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
         buf.append("harray{input{maxchars=\"2\"; id=\"s\";text=\"0\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"2\"; id=\"c\";text=\"0\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"2\"; id=\"i\";text=\"0\"};label{text=\" \"}}");
+        buf.append("harray{input{maxchars=\"3\"; id=\"p\";text=\"0\"};label{text=\" \"}}");
         buf.append("harray{input{maxchars=\"3\"; id=\"p\";text=\"1\"};label{text=\" \"}}");
         buf.append("harray{checkbox{id=\"d\"};label{text=\" \"}};");
 

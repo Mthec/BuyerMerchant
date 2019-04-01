@@ -56,7 +56,7 @@ public class PriceListTest {
     @Test
     void testLoadPriceListItem() {
         PriceList priceList = new PriceList(createPriceList(one));
-        assertEquals(priceList.new Entry(1, (byte)1, -1, 1.0f, 10, 1, false).toString(), priceList.iterator().next().toString());
+        assertEquals(priceList.new Entry(1, (byte)1, -1, 1.0f, 10, 0, 1, false).toString(), priceList.iterator().next().toString());
     }
 
     @Test
@@ -144,15 +144,15 @@ public class PriceListTest {
     void testUpdate() throws PriceList.PriceListFullException {
         PriceList priceList = new PriceList(createPriceList(one));
         String oldString = priceList.iterator().next().toString();
-        priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 1, false);
+        priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 0, 1, false);
         assertNotEquals(oldString, priceList.iterator().next().toString());
     }
 
     @Test
-    void testUpdateDetails() throws PriceList.PriceListFullException {
+    void testUpdateDetails() throws EntryBuilder.EntryBuilderException {
         PriceList priceList = new PriceList(createPriceList(one));
         String oldString = priceList.iterator().next().toString();
-        priceList.iterator().next().updateItemDetails(-1, 2, 10000000, 1);
+        EntryBuilder.update(priceList.iterator().next()).ql(2).price(10).build();
         assertNotEquals(oldString, priceList.iterator().next().toString());
     }
 
@@ -164,7 +164,7 @@ public class PriceListTest {
         String str = stringBuilder.toString();
         assert str.length() <= 500;
         PriceList priceList = new PriceList(createPriceList(str));
-        assertThrows(PriceList.PriceListFullException.class, () -> priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 1, true));
+        assertThrows(PriceList.PriceListFullException.class, () -> priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 0, 1, true));
     }
 
     @Test
@@ -231,14 +231,14 @@ public class PriceListTest {
     }
 
     @Test
-    void testPriceItemUsesMinQLOnInvalidValue() throws PriceList.PriceListFullException {
+    void testPriceItemUsesMinQLOnInvalidValue() throws EntryBuilder.EntryBuilderException {
         PriceList priceList = new PriceList(createPriceList(one));
         PriceList.Entry item = priceList.iterator().next();
         float ql = item.minQL;
 
-        item.updateItem(item.template, item.material, -1, 101, item.price, 1, false);
+        EntryBuilder.update(item).ql(101).build();
         assertEquals(ql, item.minQL);
-        item.updateItem(item.template, item.material, -1, -0.1f, item.price, 1, false);
+        EntryBuilder.update(item).ql(-0.1f).build();
         assertEquals(ql, item.minQL);
     }
 
@@ -459,7 +459,7 @@ public class PriceListTest {
     void testMinimumRequirementAddItem() {
         PriceList priceList = new PriceList(createPriceList(""));
 
-        assertDoesNotThrow(() -> priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, 1, 100, false));
+        assertDoesNotThrow(() -> EntryBuilder.addEntry(priceList).minimumRequired(100).build());
         assertDoesNotThrow(priceList::savePriceList);
 
         assertEquals(100, priceList.iterator().next().minimumPurchase);
@@ -942,5 +942,52 @@ public class PriceListTest {
         PriceList priceList = new PriceList(priceListItem);
 
         assertFalse(priceList.iterator().next().acceptsDamaged());
+    }
+
+    @Test
+    void testRemainingToPurchase() {
+        Item priceListItem = createPriceList(one + ",r10");
+        PriceList priceList = new PriceList(priceListItem);
+
+        assertEquals(10, priceList.iterator().next().getRemainingToPurchase());
+    }
+
+    @Test
+    void testRemainingToPurchaseDefaultsToZero() {
+        Item priceListItem = createPriceList(one);
+        PriceList priceList = new PriceList(priceListItem);
+
+        assertEquals(0, priceList.iterator().next().getRemainingToPurchase());
+    }
+
+    @Test
+    void testSubtractRemainingToPurchase() throws PriceList.PageNotAdded, PriceList.PriceListFullException {
+        Item priceListItem = createPriceList(one + ",r10");
+        PriceList priceList = new PriceList(priceListItem);
+        priceList.iterator().next().subtractRemainingToPurchase(5);
+
+        assertEquals(5, priceList.iterator().next().getRemainingToPurchase());
+    }
+
+    @Test
+    void testSubtractRemainingToPurchaseRemovesWhenZero() throws PriceList.PageNotAdded, PriceList.PriceListFullException {
+        Item priceListItem = createPriceList(one + ",r10");
+        PriceList priceList = new PriceList(priceListItem);
+
+        assertEquals(1, priceList.getItems().size());
+        priceList.iterator().next().subtractRemainingToPurchase(10);
+        assertEquals(0, priceList.getItems().size());
+    }
+
+    @Test
+    void testPriceListDoesNotRemoveRemainingToPurchaseWhenSetToZero() throws PriceList.PriceListFullException {
+        Item priceListItem = createPriceList(one + ",r10");
+        PriceList priceList = new PriceList(priceListItem);
+
+        assertEquals(1, priceList.getItems().size());
+        PriceList.Entry entry = priceList.iterator().next();
+        entry.updateItem(entry.template, entry.material, entry.weight, entry.minQL, entry.price, 0, entry.minimumPurchase, entry.acceptsDamaged);
+        assertEquals(1, priceList.getItems().size());
+        assertEquals(0, priceList.iterator().next().getRemainingToPurchase());
     }
 }

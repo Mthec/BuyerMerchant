@@ -1,5 +1,6 @@
 package com.wurmonline.server.items;
 
+import com.wurmonline.server.creatures.BuyerHandler;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.FakeCommunicator;
 import com.wurmonline.server.creatures.TradeHandler;
@@ -8,6 +9,7 @@ import com.wurmonline.server.economy.MonetaryConstants;
 import mod.wurmunlimited.WurmTradingTest;
 import mod.wurmunlimited.buyermerchant.PriceList;
 import mod.wurmunlimited.buyermerchant.PriceListTest;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +37,7 @@ class BuyerTradingWindowTest extends WurmTradingTest {
         trade = new BuyerTrade(player, buyer);
         player.setTrade(trade);
         buyer.setTrade(trade);
+        ReflectionUtil.setPrivateField(buyer, Creature.class.getDeclaredField("tradeHandler"), new BuyerHandler(buyer, trade));
         buyerWindow = (BuyerTradingWindow)trade.getCreatureOneRequestWindow();
         playerWindow =(BuyerTradingWindow)trade.getCreatureTwoRequestWindow();
     }

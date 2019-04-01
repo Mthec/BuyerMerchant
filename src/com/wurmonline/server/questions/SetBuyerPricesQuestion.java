@@ -98,6 +98,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
         int weight = -1;
         float ql = -1;
         int price = 0;
+        int remainingToPurchase = 0;
         int minimumPurchase = -1;
         boolean acceptsDamaged;
         String stringId;
@@ -179,6 +180,19 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
             price = PriceList.unauthorised;
         }
 
+        // TODO - Warning if purchase limit less than minimum purchase?
+        val = answers.getProperty(stringId + "r");
+        if (val != null && val.length() > 0) {
+            try {
+                remainingToPurchase = Integer.parseInt(val);
+                if (remainingToPurchase < 0)
+                    throw new NumberFormatException("Remaining amount to purchase cannot be less than 0.");
+            } catch (NumberFormatException var21) {
+                responder.getCommunicator().sendNormalServerMessage("Failed to set the remaining to purchase amount for " + item.getName() + ".");
+                remainingToPurchase = 0;
+            }
+        }
+
         val = answers.getProperty(stringId + "p");
         if (val != null && val.length() > 0) {
             try {
@@ -194,7 +208,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
         val = answers.getProperty(stringId + "d");
         acceptsDamaged = val != null && val.equals("true");
 
-        item.updateItemDetails(weight, ql, price, minimumPurchase, acceptsDamaged);
+        item.updateItemDetails(weight, ql, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
     }
 
     public void sendQuestion() {
@@ -213,7 +227,9 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     if (!BuyerTradingWindow.destroyBoughtItems)
                         buf.append("text{text=\"" + trader.getName() + " has inventory space for " + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + " more items.\"}");
                     buf.append("text{type=\"bold\";text=\"Prices for " + trader.getName() + "\"}text{text=''}");
-                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"10\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"};label{text=\"Remove?\"}");
+                    buf.append("text{text=\"Only n more shows how many more of that type of item the Buyer will purchase before they stop accepting any.  Set to 0 to accept any amount.\"}");
+                    buf.append("text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}");
+                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"11\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Only n more\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"};label{text=\"Remove?\"}");
 
                     for(PriceList.Entry item : priceList) {
                         ++idx;
@@ -225,6 +241,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "s\";text=\"" + change.getSilverCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "c\";text=\"" + change.getCopperCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "i\";text=\"" + change.getIronCoins() + "\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "r\";text=\"" + item.getRemainingToPurchase() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "p\";text=\"" + item.getMinimumPurchase() + "\"};label{text=\" \"}};");
                         buf.append("harray{checkbox{id=\"" + idx + "d\"" + (item.acceptsDamaged() ? ";selected=\"true\"" : "") + "};label{text=\" \"}};");
                         buf.append("harray{checkbox{id=\"" + idx + "remove\"};label{text=\" \"}};");
