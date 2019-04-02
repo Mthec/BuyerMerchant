@@ -227,9 +227,9 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     if (!BuyerTradingWindow.destroyBoughtItems)
                         buf.append("text{text=\"" + trader.getName() + " has inventory space for " + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + " more items.\"}");
                     buf.append("text{type=\"bold\";text=\"Prices for " + trader.getName() + "\"}text{text=''}");
-                    buf.append("text{text=\"Only n more shows how many more of that type of item the Buyer will purchase before they stop accepting any.  Set to 0 to accept any amount.\"}");
+                    buf.append("text{text=\"Limit restricts the Buyer from purchasing more than that number of items.  Entry will be removed once it reaches 0.  Set to 0 to accept any amount.\"}");
                     buf.append("text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}");
-                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"11\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Only n more\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"};label{text=\"Remove?\"}");
+                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"11\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Limit\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"};label{text=\"Remove?\"}");
 
                     for(PriceList.Entry item : priceList) {
                         ++idx;
@@ -251,7 +251,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     buf.append("}");
                     buf.append("text{text=\"\"}");
                     buf.append("harray {button{text='Save Prices';id='submit'};label{text=\" \";id=\"spacedlxg\"};button{text='Add New';id='new'}label{text=\" \";id=\"spacedlxg\"};button{text='Sort';id='sort'}}}}null;null;}");
-                    this.getResponder().getCommunicator().sendBml(625, 300, true, true, buf.toString(), 200, 200, 200, this.title);
+                    this.getResponder().getCommunicator().sendBml(650, 300, true, true, buf.toString(), 200, 200, 200, this.title);
                 } else {
                     this.getResponder().getCommunicator().sendNormalServerMessage("You don't own that shop.");
                 }

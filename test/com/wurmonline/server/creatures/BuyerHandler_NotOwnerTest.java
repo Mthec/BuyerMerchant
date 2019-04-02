@@ -802,4 +802,142 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         assertSame(underweight, playerOffer.getItems()[0]);
         assertThat(player, receivedMessageContaining("full weight"));
     }
+
+    @Test
+    void testRemainingToPurchaseDoesNotTakeAllWhenTooMany() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
+        int remainingToPurchase = 20;
+        int numberOfItems = remainingToPurchase + 1;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).remainingToPurchase(remainingToPurchase).build();
+        priceList.savePriceList();
+        factory.getShop(buyer).setMoney(100000);
+
+        createHandler();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).forEach(playerOffer::addItem);
+        handler.balance();
+
+        assertEquals(1, playerOffer.getItems().length);
+        assertEquals(numberOfItems - 1, playerToTrade.getItems().length);
+        assertThat(player, receivedMessageContaining("only accept " + remainingToPurchase + " more"));
+    }
+
+    @Test
+    void testRemainingToPurchaseAcceptsAllIfUnderValue() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
+        int remainingToPurchase = 20;
+        int numberOfItems = remainingToPurchase - 1;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).remainingToPurchase(remainingToPurchase).build();
+        priceList.savePriceList();
+        factory.getShop(buyer).setMoney(100000);
+
+        createHandler();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).forEach(playerOffer::addItem);
+        handler.balance();
+
+        assertEquals(0, playerOffer.getItems().length);
+        assertEquals(numberOfItems, playerToTrade.getItems().length);
+        assertThat(player, didNotReceiveMessageContaining("only accept"));
+    }
+
+    @Test
+    void testRemainingToPurchaseReducesOnSuccessfulTrade() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
+        int remainingToPurchase = 20;
+        int numberOfItems = remainingToPurchase - 1;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).remainingToPurchase(remainingToPurchase).build();
+        priceList.savePriceList();
+        factory.getShop(buyer).setMoney(100000);
+
+        createHandler();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).forEach(player.getInventory()::insertItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
+        handler.balance();
+        setSatisfied(player);
+
+        priceList = PriceList.getPriceListFromBuyer(buyer);
+        assertEquals(1, priceList.iterator().next().getRemainingToPurchase());
+    }
+
+    @Test
+    void testRemainingToPurchaseEntryRemovedWhenExceeded() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
+        int remainingToPurchase = 20;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).remainingToPurchase(remainingToPurchase).build();
+        priceList.savePriceList();
+        factory.getShop(buyer).setMoney(100000);
+
+        createHandler();
+        factory.createManyItems(factory.getIsWoodId(), remainingToPurchase).forEach(player.getInventory()::insertItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
+        handler.balance();
+        setSatisfied(player);
+
+        priceList = PriceList.getPriceListFromBuyer(buyer);
+        assertEquals(0, priceList.size());
+    }
+
+    @Test
+    void testRemainingToPurchaseAcrossMultipleTrades() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
+        int remainingToPurchase = 20;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).remainingToPurchase(remainingToPurchase).build();
+        priceList.savePriceList();
+        factory.getShop(buyer).setMoney(100000);
+
+        while (remainingToPurchase > 0) {
+            createHandler();
+            player.getInventory().insertItem(factory.createNewItem(factory.getIsWoodId()));
+            playerOffer.addItem(player.getInventory().getFirstContainedItem());
+            handler.balance();
+
+            assertEquals(0, playerOffer.getItems().length);
+            assertEquals(1, playerToTrade.getItems().length);
+            assertThat(player, didNotReceiveMessageContaining("only accept"));
+
+            setSatisfied(player);
+
+            for (Item item : player.getInventory().getItemsAsArray()) {
+                if (item.isCoin())
+                    ItemsPackageFactory.removeItem(player, item);
+                else
+                    throw new RuntimeException(item.getName());
+            }
+            --remainingToPurchase;
+        }
+
+        createHandler();
+        player.getInventory().insertItem(factory.createNewItem(factory.getIsWoodId()));
+        playerOffer.addItem(player.getInventory().getFirstContainedItem());
+        handler.balance();
+        setSatisfied(player);
+
+        priceList = PriceList.getPriceListFromBuyer(buyer);
+        assertEquals(0, priceList.size());
+
+        createHandler();
+        player.getInventory().insertItem(factory.createNewItem(factory.getIsWoodId()));
+        playerOffer.addItem(player.getInventory().getFirstContainedItem());
+        handler.balance();
+
+        assertEquals(1, playerOffer.getItems().length);
+        assertEquals(0, playerToTrade.getItems().length);
+    }
+
+    @Test
+    void testRemainingToPurchaseDefaultValueNotRemoved() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
+        int numberOfItems = 20;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).build();
+        priceList.savePriceList();
+        factory.getShop(buyer).setMoney(100000);
+
+        createHandler();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).forEach(playerOffer::addItem);
+        handler.balance();
+
+        assertEquals(0, playerOffer.getItems().length);
+        assertEquals(numberOfItems, playerToTrade.getItems().length);
+        assertThat(player, didNotReceiveMessageContaining("only accept"));
+        assertEquals(1, priceList.size());
+    }
 }

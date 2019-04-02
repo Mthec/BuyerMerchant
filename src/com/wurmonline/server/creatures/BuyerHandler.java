@@ -68,10 +68,10 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                     //  Relying on validation in the trade, removing negatives as a precaution.
                     if (entry.getRemainingToPurchase() <= count) {
                         priceList.removeItem(entry);
-                        priceList.savePriceList();
                     } else {
                         entry.subtractRemainingToPurchase(count);
                     }
+                    priceList.savePriceList();
                 } catch (PriceList.PriceListFullException | PriceList.PageNotAdded e) {
                     logger.warning("Could not update Price List when updating Remaining to Purchase for some reason.");
                     e.printStackTrace();
@@ -465,8 +465,10 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                 if (anyLocked)
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I don't accept locked items any more. Sorry for the inconvenience.'");
                 if (!anyOverLimit.isEmpty()) {
-                    for (PriceList.Entry entry : anyOverLimit)
-                        this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I can only accept " + entry.getRemainingToPurchase() + " more" + entry.getName() + ".'");
+                    for (PriceList.Entry entry : anyOverLimit) {
+                        int remaining = entry.getRemainingToPurchase();
+                        this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I can only accept " + remaining + " more " + (remaining == 1 ? entry.getName() : entry.getPluralName()) + ".'");
+                    }
                 }
                 if (anyMinimumNotFullWeight)
                     this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " says, 'I can only accept full weight items when there is a minimum required amount.'");

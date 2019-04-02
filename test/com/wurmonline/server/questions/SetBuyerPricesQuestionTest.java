@@ -7,6 +7,7 @@ import com.wurmonline.server.economy.Change;
 import com.wurmonline.server.items.*;
 import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.WurmTradingQuestionTest;
+import mod.wurmunlimited.buyermerchant.EntryBuilder;
 import mod.wurmunlimited.buyermerchant.PriceList;
 import org.junit.jupiter.api.Test;
 
@@ -53,8 +54,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty(id+"s", Integer.toString((int)new Change(price).getSilverCoins()));
         answers.setProperty(id+"c", Integer.toString((int)new Change(price).getCopperCoins()));
         answers.setProperty(id+"i", Integer.toString((int)new Change(price).getIronCoins()));
-        if (remainingToPurchase != 0)
-            answers.setProperty(id+"r", Integer.toString(remainingToPurchase));
+        answers.setProperty(id+"r", Integer.toString(remainingToPurchase));
         if (minimumPurchase != 1)
             answers.setProperty(id+"p", Integer.toString(minimumPurchase));
         answers.setProperty(id+"d", Boolean.toString(acceptsDamaged));
@@ -553,5 +553,37 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         assertFalse(matcher1.find());
         assertTrue(matcher2.find());
         assertFalse(matcher2.find());
+    }
+
+    @Test
+    void testRemainingToPurchaseNotRemovedWhenSettingToZero() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException {
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).remainingToPurchase(10).build();
+        priceList.savePriceList();
+        PriceList.Entry entry = priceList.iterator().next();
+
+        askQuestion();
+        answers = generateProperties(String.valueOf(1), entry.getWeight(), entry.getQualityLevel(), entry.getPrice(), 0, entry.getMinimumPurchase(), entry.acceptsDamaged());
+        answer();
+
+        priceList = PriceList.getPriceListFromBuyer(buyer);
+        assertEquals(1, priceList.size());
+        assertEquals(0, priceList.iterator().next().getRemainingToPurchase());
+    }
+
+    @Test
+    void testAllIdsAddedToItemDetailsCorrectly() {
+        addItemToPriceList(ItemList.backPack,1.0f,10);
+        askQuestion();
+
+        Matcher matcher = Pattern.compile("input\\{maxchars=\"\\d\"; id=\"\\d(\\w+)\"").matcher(com.lastBmlContent);
+
+        String[] ids = { "weight", "q", "g", "s", "c", "i", "r", "p" };
+        for (String str : ids) {
+            assertTrue(matcher.find(), str + "\n" + com.lastBmlContent + "\n");
+            assertEquals(str, matcher.group(1));
+        }
+
+        assertTrue(com.lastBmlContent.contains("checkbox{id=\"1d\"}"), com.lastBmlContent + "\n");
     }
 }

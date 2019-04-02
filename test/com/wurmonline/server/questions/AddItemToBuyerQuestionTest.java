@@ -676,4 +676,23 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
 
         System.out.println(counter + " combinations processed.");
     }
+
+    @Test
+    void testAllIdsAddedToItemDetailsCorrectly() {
+        askQuestion();
+        answers.setProperty("templateId", getElementPositionInOptions(com.lastBmlContent, 1));
+        answer();
+        answers.setProperty("material", "0");
+        answer();
+
+        Matcher matcher = Pattern.compile("input\\{maxchars=\"\\d\"; id=\"(\\w+)\"").matcher(com.lastBmlContent);
+
+        String[] ids = { "weight", "q", "g", "s", "c", "i", "r", "p" };
+        for (String str : ids) {
+            assertTrue(matcher.find(), str + "\n" + com.lastBmlContent + "\n");
+            assertEquals(str, matcher.group(1));
+        }
+
+        assertTrue(com.lastBmlContent.contains("checkbox{id=\"d\"}"));
+    }
 }

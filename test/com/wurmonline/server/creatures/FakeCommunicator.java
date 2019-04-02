@@ -1,6 +1,8 @@
 package com.wurmonline.server.creatures;
 
 import com.wurmonline.server.items.Item;
+import com.wurmonline.server.players.Player;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,8 +75,14 @@ public class FakeCommunicator extends Communicator {
 
     @Override
     public void sendCloseTradeWindow() {
-        tradeWindowClosed = true;
-        System.out.println("Trade window closed.");
+        try {
+            if (!(me instanceof Player) && ReflectionUtil.getPrivateField(me, Creature.class.getDeclaredField("tradeHandler")) != null)
+                me.endTrade();
+            tradeWindowClosed = true;
+            System.out.println("Trade window closed.");
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

@@ -104,14 +104,21 @@ public class PriceList implements Iterable<PriceList.Entry> {
         }
 
         Entry(int template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) {
-            update(template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
+            this.template = template;
+            this.material = material;
+            this.weight = weight;
+            this.minQL = minQL;
+            this.price = price;
+            this.remainingToPurchase = remainingToPurchase;
+            this.minimumPurchase = minimumPurchase;
+            this.acceptsDamaged = acceptsDamaged;
         }
 
         private void update(int template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) {
             // Mutable keys issue.
-            // TODO - Re-enable.
-//            TempItem item = prices.get(this);
-//            prices.remove(this);
+            TempItem item = prices.get(this);
+            // TODo - Destroy item or is there a better way?
+            prices.remove(this);
 
             this.template = template;
             this.material = material;
@@ -122,7 +129,11 @@ public class PriceList implements Iterable<PriceList.Entry> {
             this.minimumPurchase = minimumPurchase;
             this.acceptsDamaged = acceptsDamaged;
 
-//            prices.put(this, item);
+            prices.put(this, item);
+            if (item != null) {
+
+                item.setPrice(price);
+            }
         }
 
         public Item getItem() {
@@ -138,6 +149,16 @@ public class PriceList implements Iterable<PriceList.Entry> {
             } catch (NoSuchTemplateException e) {
                 e.printStackTrace();
                 return "UnknownItem";
+            }
+        }
+
+        public String getPluralName() {
+            try {
+                ItemTemplate temp = ItemTemplateFactory.getInstance().getTemplate(template);
+                return temp.getPlural();
+            } catch (NoSuchTemplateException e) {
+                e.printStackTrace();
+                return "UnknownItems";
             }
         }
 
@@ -488,6 +509,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
     public Entry addItem(int templateId, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) throws PriceListFullException, IOException, NoSuchTemplateException {
         Entry item = new Entry(templateId, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
         if (prices.containsKey(item)) {
+            // TODO - Change to update.
             Entry alreadyListed = prices.keySet().stream().filter(entry -> entry.equals(item)).findAny().orElse(null);
             if (alreadyListed != null) {
                 alreadyListed.price = price;
