@@ -117,7 +117,8 @@ public class PriceList implements Iterable<PriceList.Entry> {
         private void update(int template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) {
             // Mutable keys issue.
             TempItem item = prices.get(this);
-            // TODo - Destroy item or is there a better way?
+            if (item != null)
+                Items.destroyItem(item.getWurmId());
             prices.remove(this);
 
             this.template = template;
@@ -129,17 +130,22 @@ public class PriceList implements Iterable<PriceList.Entry> {
             this.minimumPurchase = minimumPurchase;
             this.acceptsDamaged = acceptsDamaged;
 
-            prices.put(this, item);
-            if (item != null) {
-
-                item.setPrice(price);
-            }
+            prices.put(this, null);
         }
 
         public Item getItem() {
             if (!createdItems)
                 getItems();
-            return prices.get(this);
+            TempItem item = prices.get(this);
+            if (item == null) {
+                try {
+                    item = createItem(this);
+                } catch (NoSuchTemplateException | IOException e) {
+                    logger.warning("Error when creating TempItem that was null.");
+                    e.printStackTrace();
+                }
+            }
+            return item;
         }
 
         public String getName() {
@@ -508,8 +514,8 @@ public class PriceList implements Iterable<PriceList.Entry> {
     }
     public Entry addItem(int templateId, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) throws PriceListFullException, IOException, NoSuchTemplateException {
         Entry item = new Entry(templateId, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
+        // TODO - Not sure if I should remove this and fix whatever it was preventing.
         if (prices.containsKey(item)) {
-            // TODO - Change to update.
             Entry alreadyListed = prices.keySet().stream().filter(entry -> entry.equals(item)).findAny().orElse(null);
             if (alreadyListed != null) {
                 alreadyListed.price = price;

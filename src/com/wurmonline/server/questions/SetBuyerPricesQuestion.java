@@ -180,7 +180,6 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
             price = PriceList.unauthorised;
         }
 
-        // TODO - Warning if purchase limit less than minimum purchase?
         val = answers.getProperty(stringId + "r");
         if (val != null && val.length() > 0) {
             try {
@@ -204,6 +203,9 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                 minimumPurchase = -1;
             }
         }
+
+        if (remainingToPurchase < minimumPurchase)
+            responder.getCommunicator().sendNormalServerMessage("Purchase limit is less than minimum purchase amount.  Players will not be able to sell any " + item.getPluralName() + ".");
 
         val = answers.getProperty(stringId + "d");
         acceptsDamaged = val != null && val.equals("true");

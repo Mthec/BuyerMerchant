@@ -990,6 +990,4 @@ public class PriceListTest {
         assertEquals(1, priceList.getItems().size());
         assertEquals(0, priceList.iterator().next().getRemainingToPurchase());
     }
-
-    // TODO - Test item updated.
 }
