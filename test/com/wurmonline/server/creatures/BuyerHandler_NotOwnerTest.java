@@ -9,6 +9,7 @@ import com.wurmonline.server.items.*;
 import mod.wurmunlimited.WurmTradingTest;
 import mod.wurmunlimited.buyermerchant.EntryBuilder;
 import mod.wurmunlimited.buyermerchant.PriceList;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -939,5 +940,42 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         assertEquals(numberOfItems, playerToTrade.getItems().length);
         assertThat(player, didNotReceiveMessageContaining("only accept"));
         assertEquals(1, priceList.size());
+    }
+
+    @Test
+    void testRemainingToPurchaseAddedRemovedThenReAddedDoesNotLockTheTrade() throws PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException, EntryBuilder.EntryBuilderException, NoSuchFieldException, IllegalAccessException {
+        int remainingToPurchase = 20;
+        int numberOfItems = 21;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).remainingToPurchase(remainingToPurchase).build();
+        priceList.savePriceList();
+        factory.getShop(buyer).setMoney(100000);
+
+        createHandler();
+        factory.createManyItems(factory.getIsWoodId(), numberOfItems).forEach(player.getInventory()::insertItem);
+        player.getInventory().getItems().forEach(playerOffer::addItem);
+        handler.balance();
+
+        assertEquals(1, playerOffer.getItems().length);
+        assertEquals(numberOfItems - 1, playerToTrade.getItems().length);
+        assertThat(player, receivedMessageContaining("only accept " + remainingToPurchase));
+
+        Arrays.asList(playerToTrade.getItems()).forEach(playerToTrade::removeItem);
+        factory.getCommunicator(player).clear();
+        int underLimit = remainingToPurchase - 1;
+        for (Item item : player.getInventory().getItems()) {
+            if (playerOffer.getItems().length == underLimit)
+                break;
+
+            playerOffer.addItem(item);
+        }
+
+        handler.tradeChanged();
+        handler.balance();
+
+        assertEquals(0, playerOffer.getItems().length);
+        assertEquals(underLimit, playerToTrade.getItems().length);
+        assertThat(player, didNotReceiveMessageContaining("only accept " + remainingToPurchase));
+        assertTrue((boolean)ReflectionUtil.getPrivateField(trade, BuyerTrade.class.getDeclaredField("creatureTwoSatisfied")));
     }
 }

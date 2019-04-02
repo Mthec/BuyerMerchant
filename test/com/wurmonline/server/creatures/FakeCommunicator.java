@@ -106,4 +106,16 @@ public class FakeCommunicator extends Communicator {
     public void sendStartTrading(Creature opponent) {
         sentStartTrading = true;
     }
+
+    public void clear() {
+        lastNormalServerMessage = empty;
+        messages.clear();
+        lastBmlContent = empty;
+        bml.clear();
+        tradeWindowClosed = false;
+        tradeAgreed = null;
+        sentToInventory = null;
+        sentToInventoryPrice = 0;
+        sentStartTrading = false;
+    }
 }

@@ -224,20 +224,21 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
             }
 
             minimumRequiredMap.clear();
+        }
 
-            // Only remove these if there may be conflicts with minimumRequired.
-            if (!remainingToPurchaseMap.isEmpty()) {
-                for (Set<Item> itemSet : remainingToPurchaseMap.values()) {
-                    for (Item item : itemSet) {
-                        if (items.contains(item)) {
-                            targetWindow.removeItem(item);
-                            offeredWindow.addItem(item);
-                        }
+        if (!remainingToPurchaseMap.isEmpty()) {
+            Set<Item> items = new HashSet<>(Arrays.asList(targetWindow.getItems()));
+
+            for (Set<Item> itemSet : remainingToPurchaseMap.values()) {
+                for (Item item : itemSet) {
+                    if (items.contains(item)) {
+                        targetWindow.removeItem(item);
+                        offeredWindow.addItem(item);
                     }
                 }
-
-                remainingToPurchaseMap.clear();
             }
+
+            remainingToPurchaseMap.clear();
         }
 
         Item[] offeredItems = offeredWindow.getItems();
