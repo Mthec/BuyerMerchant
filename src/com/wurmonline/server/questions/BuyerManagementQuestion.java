@@ -23,6 +23,7 @@ import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.buyermerchant.PriceList;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
@@ -35,6 +36,7 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
     private static final Logger logger = Logger.getLogger(BuyerManagementQuestion.class.getName());
     private static final String BUYER_NAME_PREFIX = "Buyer_";
     private final boolean isDismissing;
+    private static Field moneySpentLife = null;
 
     // Contract
     public BuyerManagementQuestion(Creature aResponder, long aTarget) {
@@ -321,6 +323,21 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
 
     }
 
+    private long getMoneySpentLife(Shop shop) {
+        try {
+            if (moneySpentLife == null) {
+                moneySpentLife = Shop.class.getDeclaredField("moneySpentLife");
+                moneySpentLife.setAccessible(true);
+            }
+
+            return moneySpentLife.getLong(shop);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            logger.warning("Error when attempting to get MoneySpentLife.");
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
     private String contractQuestion() {
         StringBuilder buf = new StringBuilder();
         Item contract = null;
@@ -360,10 +377,9 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
         buf.append("text{text=\"If you are away for several months the buyer may leave or be forced to leave with all the items and coins in his inventory.\"}");
         if (shop != null) {
             buf.append("text{type=\"bold\";text=\"Last sold\"};text{text=\"is the number of days, hours and minutes since a personal buyer last bought an item.\"}");
-            long timeleft = 0L;
             if (trader != null) {
-                buf.append("table{rows=\"2\";cols=\"6\";label{text=\"name\"};label{text=\"Last bought\"};label{text=\"Bought month\"};label{text=\"Bought life\"};label{text=\"Ratio\"};label{text=\"Free slots\"}");
-                timeleft = System.currentTimeMillis() - shop.getLastPolled();
+                buf.append("table{rows=\"2\";cols=\"5\";label{text=\"name\"};label{text=\"Last bought\"};label{text=\"Bought month\"};label{text=\"Bought life\"};label{text=\"Free slots\"}");
+                long timeleft = System.currentTimeMillis() - shop.getLastPolled();
                 long daysleft = timeleft / DAY_MILLIS;
                 long hoursleft = (timeleft - daysleft * DAY_MILLIS) / HOUR_MILLIS;
                 long minutesleft = (timeleft - daysleft * DAY_MILLIS - hoursleft * HOUR_MILLIS) / MINUTE_MILLIS;
@@ -393,9 +409,8 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
 
                 buf.append("label{text=\"" + trader.getName() + "\"};");
                 buf.append("label{text=\"" + times + "\"}");
-                buf.append("label{text=\"" + (new Change(shop.getMoneyEarnedMonth())).getChangeShortString() + "\"}");
-                buf.append("label{text=\"" + (new Change(shop.getMoneyEarnedLife())).getChangeShortString() + "\"}");
-                buf.append("label{text=\"" + shop.getSellRatio() + "\"}");
+                buf.append("label{text=\"" + (new Change(shop.getMoneySpentMonth())).getChangeShortString() + "\"}");
+                buf.append("label{text=\"" + (new Change(getMoneySpentLife(shop))).getChangeShortString() + "\"}");
                 if (BuyerTradingWindow.destroyBoughtItems)
                     buf.append("label{text=\"N/A\"}}");
                 else
