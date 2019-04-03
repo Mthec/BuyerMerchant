@@ -374,7 +374,7 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
         buf.append("harray{input{maxchars=\"2\"; id=\"s\";text=\"0\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"2\"; id=\"c\";text=\"0\"};label{text=\" \"}};");
         buf.append("harray{input{maxchars=\"2\"; id=\"i\";text=\"0\"};label{text=\" \"}}");
-        buf.append("harray{input{maxchars=\"3\"; id=\"r\";text=\"0\"};label{text=\" \"}}");
+        buf.append("harray{input{maxchars=\"4\"; id=\"r\";text=\"0\"};label{text=\" \"}}");
         buf.append("harray{input{maxchars=\"3\"; id=\"p\";text=\"1\"};label{text=\" \"}}");
         buf.append("harray{checkbox{id=\"d\"};label{text=\" \"}};");
 

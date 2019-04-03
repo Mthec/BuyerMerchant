@@ -204,7 +204,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
             }
         }
 
-        if (remainingToPurchase < minimumPurchase)
+        if (remainingToPurchase != 0 && remainingToPurchase < minimumPurchase)
             responder.getCommunicator().sendNormalServerMessage("Purchase limit is less than minimum purchase amount.  Players will not be able to sell any " + item.getPluralName() + ".");
 
         val = answers.getProperty(stringId + "d");
@@ -243,7 +243,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "s\";text=\"" + change.getSilverCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "c\";text=\"" + change.getCopperCoins() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "i\";text=\"" + change.getIronCoins() + "\"};label{text=\" \"}};");
-                        buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "r\";text=\"" + item.getRemainingToPurchase() + "\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"4\"; id=\"" + idx + "r\";text=\"" + item.getRemainingToPurchase() + "\"};label{text=\" \"}};");
                         buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "p\";text=\"" + item.getMinimumPurchase() + "\"};label{text=\" \"}};");
                         buf.append("harray{checkbox{id=\"" + idx + "d\"" + (item.acceptsDamaged() ? ";selected=\"true\"" : "") + "};label{text=\" \"}};");
                         buf.append("harray{checkbox{id=\"" + idx + "remove\"};label{text=\" \"}};");
