@@ -258,17 +258,10 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
 
             return 0;
         } else {
-            int size = 0;
-            int totalPrice;
-
             // This is correct for buyer as TradeHandler gets current total from window 1.
-            for (Item item : this.creature.getInventory().getItems()) {
-                // Removed PriceList check to save doing it on every item.
-                // Also with the max_items option it already accounts for it.
-                if (!item.isCoin()) {
-                    ++size;
-                }
-            }
+            // With the max_items option PriceList is already accounted for.
+            int size = creature.getNumberOfShopItems();
+            int totalPrice;
 
             size += alreadyAcceptedItems.length;
             totalPrice = Arrays.stream(alreadyAcceptedItems).mapToInt(this::getTraderBuyPriceForItem).sum();

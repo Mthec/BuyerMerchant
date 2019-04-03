@@ -224,7 +224,7 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                 } else if (shop.getOwnerId() == this.getResponder().getWurmId()) {
                     priceList = PriceList.getPriceListFromBuyer(trader);
 
-                    StringBuilder buf = new StringBuilder(this.getBmlHeader());
+                    StringBuilder buf = new StringBuilder(this.getBmlHeaderWithScrollAndQuestion());
                     DecimalFormat df = new DecimalFormat("#.##");
                     if (!BuyerTradingWindow.destroyBoughtItems)
                         buf.append("text{text=\"" + trader.getName() + " has inventory space for " + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + " more items.\"}");

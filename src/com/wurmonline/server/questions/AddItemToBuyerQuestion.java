@@ -334,7 +334,7 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
 
     private void sendMaterialTypeQuestion() {
         assert itemTemplate != null;
-        StringBuilder buf = new StringBuilder(this.getBmlHeader());
+        StringBuilder buf = new StringBuilder(this.getBmlHeaderWithScrollAndQuestion());
         buf.append("text{text=\"You can change the material type if necessary (e.g. wooden items to specific wood type)\"}");
         buf.append("text{text=\"\"}");
         if (usingCustomMaterial)

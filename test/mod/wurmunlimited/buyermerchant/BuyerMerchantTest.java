@@ -17,6 +17,7 @@ import com.wurmonline.server.kingdom.Kingdom;
 import com.wurmonline.server.questions.Questions;
 import com.wurmonline.server.skills.SkillList;
 import mod.wurmunlimited.WurmTradingTest;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.internal.util.reflection.FieldSetter;
@@ -788,5 +789,30 @@ class BuyerMerchantTest extends WurmTradingTest {
 
         assertEquals(1, trader.getInventory().getItemCount());
         assertSame(contract, trader.getInventory().getFirstContainedItem());
+    }
+
+    @Test
+    void testMaxItemsOnBuyerOver1000() throws PriceList.NoPriceListOnBuyer, EntryBuilder.EntryBuilderException, PriceList.PageNotAdded, PriceList.PriceListFullException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        int maxItems = 1500;
+        Properties properties = new Properties();
+        properties.setProperty("max_items", String.valueOf(maxItems));
+        buyerMerchant.configure(properties);
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).templateId(ItemList.rake).price(1).build();
+        priceList.savePriceList();
+
+        buyerMerchant.onServerStarted();
+        assertEquals(maxItems + 1, BuyerHandler.getMaxNumPersonalItems());
+
+        factory.getShop(buyer).setMoney(Integer.MAX_VALUE);
+        factory.createManyItems(ItemList.rake, maxItems).forEach(player.getInventory()::insertItem);
+
+        makeBuyerTrade();
+        player.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
+        BuyerHandler handler = (BuyerHandler)buyer.getTradeHandler();
+        ReflectionUtil.callPrivateMethod(handler, BuyerHandler.class.getDeclaredMethod("balance"));
+
+        assertEquals(maxItems, trade.getTradingWindow(4).getItems().length);
     }
 }
