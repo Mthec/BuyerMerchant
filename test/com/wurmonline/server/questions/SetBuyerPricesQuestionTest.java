@@ -586,4 +586,36 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
 
         assertTrue(com.lastBmlContent.contains("checkbox{id=\"1d\"}"), com.lastBmlContent + "\n");
     }
+
+    @Test
+    void testRemainingLessThanMinimumMessage() throws EntryBuilder.EntryBuilderException, PriceList.PageNotAdded, PriceList.PriceListFullException, PriceList.NoPriceListOnBuyer {
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).build();
+        priceList.savePriceList();
+        PriceList.Entry entry = priceList.iterator().next();
+
+        askQuestion();
+        answers = generateProperties(String.valueOf(1), entry.getWeight(), entry.getQualityLevel(), entry.getPrice(), 10, 20, entry.acceptsDamaged());
+        answer();
+
+        priceList = PriceList.getPriceListFromBuyer(buyer);
+        assertEquals(1, priceList.size());
+        assertThat(owner, receivedMessageContaining("Purchase limit is less"));
+    }
+
+    @Test
+    void testRemainingLessThanMinimumMessageNotSentAtDefaultLevels() throws EntryBuilder.EntryBuilderException, PriceList.PageNotAdded, PriceList.PriceListFullException, PriceList.NoPriceListOnBuyer {
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        EntryBuilder.addEntry(priceList).build();
+        priceList.savePriceList();
+        PriceList.Entry entry = priceList.iterator().next();
+
+        askQuestion();
+        answers = generateProperties(String.valueOf(1), entry.getWeight(), entry.getQualityLevel(), entry.getPrice(), 0, 1, entry.acceptsDamaged());
+        answer();
+
+        priceList = PriceList.getPriceListFromBuyer(buyer);
+        assertEquals(1, priceList.size());
+        assertThat(owner, didNotReceiveMessageContaining("Purchase limit is less"));
+    }
 }
