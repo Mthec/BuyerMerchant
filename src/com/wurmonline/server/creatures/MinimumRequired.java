@@ -1,7 +1,7 @@
 package com.wurmonline.server.creatures;
 
 import com.wurmonline.server.items.Item;
-import javafx.util.Pair;
+import mod.wurmunlimited.Pair;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.util.HashSet;

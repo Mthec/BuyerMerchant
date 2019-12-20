@@ -13,7 +13,7 @@ import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
-import javafx.util.Pair;
+import mod.wurmunlimited.Pair;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.util.*;
@@ -432,7 +432,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                         }
 
                         for (Pair<Item, Integer> itemPrice : minimumRequired.getItemsAndPrices()) {
-                            Item offeredItem = itemPrice.getKey();
+                            Item offeredItem = itemPrice.one;
                             if (offeredItem.getTemplateId() == deliveryContractId) {
                                 if (addedContracts.contains(offeredItem))
                                     continue;
@@ -447,7 +447,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                             offeredWindow.removeItem(offeredItem);
                             targetWindow.addItem(offeredItem);
                             ++size;
-                            totalPrice += itemPrice.getValue();
+                            totalPrice += itemPrice.two;
                         }
                     }
                 }

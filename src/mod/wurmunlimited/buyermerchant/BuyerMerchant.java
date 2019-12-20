@@ -279,7 +279,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             if (contractsOnTraders) {
                 for (Shop shop : Economy.getTraders()) {
                     Creature creature = Creatures.getInstance().getCreatureOrNull(shop.getWurmId());
-                    if (!shop.isPersonal() && creature != null && creature.getInventory().getItems().stream().noneMatch(i -> i.getTemplateId() == templateId)) {
+                    if (!shop.isPersonal() && creature != null && creature.isSalesman() && creature.getInventory().getItems().stream().noneMatch(i -> i.getTemplateId() == templateId)) {
                         try {
                             creature.getInventory().insertItem(Creature.createItem(templateId, (float) (10 + Server.rand.nextInt(80))));
                             shop.setMerchantData(shop.getNumberOfItems() + 1);
