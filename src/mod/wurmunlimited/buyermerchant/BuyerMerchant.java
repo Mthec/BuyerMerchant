@@ -254,27 +254,42 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
 
         BuyerTradingWindow.freeMoney = freeMoney;
         BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;
-        if (destroyBoughtItems)
+        if (destroyBoughtItems) {
             BuyerHandler.maxPersonalItems = Integer.MAX_VALUE;
-        else if (maxItems != defaultMaxItems) {
-            // Plus one for PriceList.
-            if (maxItems != Integer.MAX_VALUE)
-                BuyerHandler.maxPersonalItems = maxItems + 1;
-            else
-                BuyerHandler.maxPersonalItems = Integer.MAX_VALUE;
-            boolean merchantsSet = false;
+        }
+
+        if (maxItems != defaultMaxItems) {
+            if (!destroyBoughtItems) {
+                // Plus one for PriceList.
+                if (maxItems != Integer.MAX_VALUE)
+                    BuyerHandler.maxPersonalItems = maxItems + 1;
+                else
+                    BuyerHandler.maxPersonalItems = Integer.MAX_VALUE;
+            }
             if (applyMaxToMerchants) {
                 try {
                     Field maxPersonalItems = TradeHandler.class.getDeclaredField("maxPersonalItems");
                     maxPersonalItems.setAccessible(true);
                     maxPersonalItems.set(null, maxItems);
-                    merchantsSet = true;
                 } catch (NoSuchFieldException | IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
             }
-            logger.info("Buyer " + (merchantsSet ? "and merchant " : "") + "max items set to " + maxItems);
+
+            StringBuilder sb = new StringBuilder();
+            if (destroyBoughtItems && applyMaxToMerchants) {
+                sb.append("Merchant ");
+            } else if (!destroyBoughtItems && applyMaxToMerchants) {
+                sb.append("Buyer and merchant ");
+            } else if (!destroyBoughtItems) {
+                sb.append("Buyer ");
+            }
+
+            if (sb.length() > 0) {
+                logger.info(sb.append("max items set to ").append(maxItems).toString());
+            }
         }
+
         if (updateTraders) {
             if (contractsOnTraders) {
                 for (Shop shop : Economy.getTraders()) {

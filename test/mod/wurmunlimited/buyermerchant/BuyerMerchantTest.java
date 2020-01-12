@@ -8,10 +8,7 @@ import com.wurmonline.server.behaviours.Action;
 import com.wurmonline.server.behaviours.Actions;
 import com.wurmonline.server.behaviours.CreatureBehaviour;
 import com.wurmonline.server.behaviours.ItemBehaviour;
-import com.wurmonline.server.creatures.BuyerHandler;
-import com.wurmonline.server.creatures.Creature;
-import com.wurmonline.server.creatures.FakeCommunicator;
-import com.wurmonline.server.creatures.NoSuchCreatureException;
+import com.wurmonline.server.creatures.*;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.kingdom.Kingdom;
 import com.wurmonline.server.questions.Questions;
@@ -814,5 +811,19 @@ class BuyerMerchantTest extends WurmTradingTest {
         ReflectionUtil.callPrivateMethod(handler, BuyerHandler.class.getDeclaredMethod("balance"));
 
         assertEquals(maxItems, trade.getTradingWindow(4).getItems().length);
+    }
+
+    @Test
+    void testDestroyBoughtItemsStillSetsMerchantMaxItems() throws PriceList.NoPriceListOnBuyer, EntryBuilder.EntryBuilderException, PriceList.PageNotAdded, PriceList.PriceListFullException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        int maxItems = 1500;
+        Properties properties = new Properties();
+        properties.setProperty("max_items", String.valueOf(maxItems));
+        properties.setProperty("apply_max_to_merchants", "true");
+        properties.setProperty("destroy_bought_items", "true");
+        buyerMerchant.configure(properties);
+
+        buyerMerchant.onServerStarted();
+        assertEquals(Integer.MAX_VALUE, BuyerHandler.getMaxNumPersonalItems());
+        assertEquals(maxItems, TradeHandler.getMaxNumPersonalItems());
     }
 }
