@@ -7,8 +7,8 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.*;
 import com.wurmonline.shared.exceptions.WurmServerException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -482,7 +482,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
     private TempItem createItem(Entry item) throws IOException, NoSuchTemplateException {
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(item.template);
-        TempItem newItem = new TempItem(ItemFactory.generateName(template, item.material) + (item.material == (byte)0 ? ", any" : "") + (item.minimumPurchase != 1 ? " - minimum " + item.minimumPurchase : ""), template, item.minQL, "PriceList");
+        TempItem newItem = new TempItem(ItemFactory.generateName(template, item.material) + (item.material == (byte)0 ? ", any" : "") + (item.minimumPurchase != 1 ? " - minimum " + item.minimumPurchase : "") + (item.remainingToPurchase != 0 ? " - limit " + item.remainingToPurchase : ""), template, item.minQL, "PriceList");
         newItem.setMaterial(item.material);
         int weight = item.weight;
         if (item.weight == -1)

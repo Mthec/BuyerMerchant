@@ -990,4 +990,38 @@ public class PriceListTest {
         assertEquals(1, priceList.getItems().size());
         assertEquals(0, priceList.iterator().next().getRemainingToPurchase());
     }
+
+    @Test
+    void testRemainingToPurchaseItemStrings() {
+        int hatchetId = 7;
+        String str = ",0,1.0,1";
+        PriceList priceList = new PriceList(createPriceList(Joiner.on("\n").join(hatchetId + str, factory.getIsWoodId() + str + ",r100", ItemList.pickAxe + str + ",r100,100")));
+
+        Item first = null;
+        Item second = null;
+        Item third = null;
+        List<PriceList.Entry> entries = new ArrayList<>(2);
+        priceList.iterator().forEachRemaining(entries::add);
+        for (PriceList.Entry entry : entries) {
+            switch (entry.template) {
+                case ItemList.hatchet:
+                    first = entry.getItem();
+                    break;
+                case ItemList.log:
+                    second = entry.getItem();
+                    break;
+                case ItemList.pickAxe:
+                    third = entry.getItem();
+                    break;
+            }
+        }
+
+        if (first == null || second == null || third == null) {
+            throw new RuntimeException("Items not assigned correctly.");
+        }
+
+        assertEquals("hatchet, any", first.getName());
+        assertEquals("log, any - limit 100", second.getName());
+        assertEquals("pickaxe, any - minimum 100 - limit 100", third.getName());
+    }
 }

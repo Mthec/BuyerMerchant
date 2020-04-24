@@ -2,13 +2,8 @@ package com.wurmonline.server.zones;
 
 import com.wurmonline.math.TilePos;
 import com.wurmonline.server.creatures.Creature;
-import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.Item;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import org.jetbrains.annotations.Nullable;
 
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;

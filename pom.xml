@@ -6,7 +6,7 @@
 
     <groupId>mod.wurmunlimited.buyermerchant</groupId>
     <artifactId>BuyerMerchant</artifactId>
-    <version>0.5.21</version>
+    <version>0.5.22</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -41,16 +41,51 @@
         <dependency>
             <groupId>org.gotti.wurmunlimited</groupId>
             <artifactId>server-modlauncher</artifactId>
-            <version>1.0</version>
+            <version>0.43</version>
             <scope>system</scope>
-            <systemPath>${folder.server}/modlauncher.jar</systemPath>
+            <systemPath>${folder.server}/lib/ServerLauncher-0.43.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>javassist</groupId>
             <artifactId>javassist</artifactId>
+            <version>3.23.1</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/lib/javassist-3.23.1.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.google</groupId>
+            <artifactId>common</artifactId>
+            <version>18.0</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/lib/guava-18.0.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>16.0.2</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/lib/annotations-16.0.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>java.sql</groupId>
+            <artifactId>sqlite</artifactId>
+            <version>3.8.11.2</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/lib/sqlite-jdbc-3.8.11.2.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway</artifactId>
+            <version>4.0.3</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/lib/flyway-core-4.0.3.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>com.wurmonline</groupId>
+            <artifactId>common</artifactId>
             <version>1.0</version>
             <scope>system</scope>
-            <systemPath>${folder.server}/javassist.jar</systemPath>
+            <systemPath>${folder.server}/common.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>com.wurmonline</groupId>

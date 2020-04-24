@@ -2,8 +2,8 @@ package com.wurmonline.server.players;
 
 import com.wurmonline.server.deities.Deity;
 import com.wurmonline.server.steam.SteamId;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 
 public class FakePlayerInfo extends PlayerInfo {
