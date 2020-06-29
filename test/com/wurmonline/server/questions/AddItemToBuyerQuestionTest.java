@@ -351,7 +351,8 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
 
     @Test
     void testMaterialSelectionOptions_Wood() {
-        testMaterialSelectionOptions(factory.getIsWoodId(), MethodsItems.getAllNormalWoodTypes().length);
+        // + 2 for orange and lingonberry wood.
+        testMaterialSelectionOptions(factory.getIsWoodId(), MethodsItems.getAllNormalWoodTypes().length + 2);
     }
 
     @Test

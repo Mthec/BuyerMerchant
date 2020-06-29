@@ -287,6 +287,14 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
                     materialsList.add(materialString);
                 }
             }
+
+            // Missing wood types from getAllNormalWoodTypes.
+            for (byte mat : Arrays.asList(ItemMaterials.MATERIAL_WOOD_ORANGE, ItemMaterials.MATERIAL_WOOD_LINGONBERRY)) {
+                String materialString = Item.getMaterialString(mat);
+                if (!materialString.equals("unknown") && PlayerInfoFactory.wildCardMatch(materialString.toLowerCase(), this.filter.toLowerCase())) {
+                    materialsList.add(materialString);
+                }
+            }
         } else if (itemTemplate.isMetal()) {
             // Ignore scrap, ore, lump, altar as their metal types are already set on the template.
             if (!itemTemplate.getName().equals("ore") && !itemTemplate.getName().equals("scrap") && !itemTemplate.getName().equals("lump") && !itemTemplate.getName().equals("altar")) {
