@@ -255,6 +255,8 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         CopyPriceListAction.contractTemplateId = templateId;
         ModActions.registerAction(new CopyBuyerPriceListAction());
         ModActions.registerAction(new CopyContractPriceListAction());
+        new PlaceBuyerAction();
+        PlaceNpcMenu.registerAction();
 
         BuyerTradingWindow.freeMoney = freeMoney;
         BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;

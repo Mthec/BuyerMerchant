@@ -2,6 +2,7 @@ package mod.wurmunlimited;
 
 import com.wurmonline.math.TilePos;
 import com.wurmonline.server.*;
+import com.wurmonline.server.behaviours.CopyPriceListAction;
 import com.wurmonline.server.creatures.*;
 import com.wurmonline.server.economy.*;
 import com.wurmonline.server.items.*;
@@ -37,6 +38,7 @@ public class WurmObjectsFactory {
             ItemTemplateCreator.initialiseItemTemplates();
             new BuyerMerchant().onItemTemplatesCreated();
             buyerContractId = ItemTemplateFactory.getInstance().getTemplate("personal buyer contract").getTemplateId();
+            CopyPriceListAction.contractTemplateId = buyerContractId;
 
             Method createCreatureTemplate = CreatureTemplateCreator.class.getDeclaredMethod("createCreatureTemplate", int.class, String.class, String.class, String.class);
             createCreatureTemplate.setAccessible(true);
@@ -168,6 +170,7 @@ public class WurmObjectsFactory {
             ServerPackageFactory.addPlayer(player);
             creatures.put(player.getWurmId(), player);
             FieldSetter.setField(player, Creature.class.getDeclaredField("status"), new FakeCreatureStatus(player, 1, 1, 0.0f, 1));
+            player.getBody().createBodyParts();
             FieldSetter.setField(player, Player.class.getDeclaredField("saveFile"), new FakePlayerInfo(player.getName()));
             player.createPossessions();
             attachFakeCommunicator(player);
