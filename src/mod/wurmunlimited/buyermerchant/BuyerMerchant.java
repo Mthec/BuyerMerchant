@@ -235,6 +235,8 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetBuyerPricesQuestion.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerQuestion.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyPriceListAction.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyBuyerPriceListAction.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyContractPriceListAction.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("ContractMinimum.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$1.class"));
@@ -250,7 +252,9 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
 
     @Override
     public void onServerStarted() {
-        ModActions.registerAction(new CopyPriceListAction(templateId));
+        CopyPriceListAction.contractTemplateId = templateId;
+        ModActions.registerAction(new CopyBuyerPriceListAction());
+        ModActions.registerAction(new CopyContractPriceListAction());
 
         BuyerTradingWindow.freeMoney = freeMoney;
         BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;

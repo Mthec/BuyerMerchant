@@ -23,9 +23,9 @@ import static org.mockito.Mockito.*;
 class CopyPriceListActionTest extends WurmTradingTest {
 
     private Item contract;
-    private Creature copyToBuyer;
-    private CopyPriceListAction action;
-    private short id;
+    private Creature targetBuyer;
+    private CopyBuyerPriceListAction copyBuyerAction;
+    private CopyContractPriceListAction copyContractAction;
     private Action act;
 
     @Override
@@ -33,11 +33,13 @@ class CopyPriceListActionTest extends WurmTradingTest {
     protected void setUp() throws Throwable {
         super.setUp();
         contract = factory.createBuyerContract();
-        copyToBuyer = factory.createNewBuyer(owner);
-        contract.setData(copyToBuyer.getWurmId());
+        targetBuyer = factory.createNewBuyer(owner);
+        contract.setData(targetBuyer.getWurmId());
         ActionEntryBuilder.init();
-        action = new CopyPriceListAction(contract.getTemplateId());
-        id = action.getActionId();
+        CopyPriceListAction.contractTemplateId = contract.getTemplateId();
+        CopyPriceListAction.actionEntries.clear();
+        copyBuyerAction = new CopyBuyerPriceListAction();
+        copyContractAction = new CopyContractPriceListAction();
         act = mock(Action.class);
         when(act.getSubjectId()).thenReturn(contract.getWurmId());
     }
@@ -53,48 +55,59 @@ class CopyPriceListActionTest extends WurmTradingTest {
 
     @Test
     void testGetBehaviourForIsContract() {
-        assertNotNull(action.getBehavioursFor(owner, contract, buyer));
-        assertNull(action.getBehavioursFor(owner, createNotContract(), buyer));
+        assertNotNull(copyBuyerAction.getBehavioursFor(owner, contract, buyer));
+        assertNull(copyBuyerAction.getBehavioursFor(owner, createNotContract(), buyer));
     }
 
     @Test
     void testGetBehaviourForIsBuyer() {
-        assertNotNull(action.getBehavioursFor(owner, contract, buyer));
-        assertNull(action.getBehavioursFor(owner, contract, player));
+        assertNotNull(copyBuyerAction.getBehavioursFor(owner, contract, buyer));
+        assertNull(copyBuyerAction.getBehavioursFor(owner, contract, player));
     }
 
     @Test
     void testGetBehaviourForIsOwner() {
-        assertNotNull(action.getBehavioursFor(owner, contract, buyer));
-        assertNull(action.getBehavioursFor(player, contract, buyer));
+        assertNotNull(copyBuyerAction.getBehavioursFor(owner, contract, buyer));
+        assertNull(copyBuyerAction.getBehavioursFor(player, contract, buyer));
     }
 
     @Test
     void testGetBehaviourForIsSameBuyer() {
-        assertNotNull(action.getBehavioursFor(owner, contract, buyer));
-        assertNull(action.getBehavioursFor(player, contract, copyToBuyer));
+        assertNotNull(copyBuyerAction.getBehavioursFor(owner, contract, buyer));
+        assertNull(copyBuyerAction.getBehavioursFor(player, contract, targetBuyer));
+    }
+
+    @Test
+    void testBothActionsIncluded() {
+        List<ActionEntry> entries = copyBuyerAction.getBehavioursFor(owner, contract, buyer);
+        assertEquals(-2, entries.get(0).getNumber());
+        assertEquals(copyBuyerAction.getActionId(), entries.get(1).getNumber());
+        assertEquals(copyContractAction.getActionId(), entries.get(2).getNumber());
     }
 
     // action
 
     @Test
     void testActionWrongActionId() {
-        assertFalse(action.action(act, owner, contract, buyer, (short)(id + 1), 0));
+        short wrongId = (short)(copyBuyerAction.getActionId() + 10);
+        assert wrongId != copyContractAction.getActionId();
+        assertFalse(copyBuyerAction.action(act, owner, buyer, wrongId, 0));
     }
 
     @Test
     void testActionIsNotContract() {
-        assertFalse(action.action(act, owner, createNotContract(), buyer, id, 0));
+        createNotContract();
+        assertFalse(copyBuyerAction.action(act, owner, buyer, copyBuyerAction.getActionId(), 0));
     }
 
     @Test
     void testActionIsNotBuyer() {
-        assertFalse(action.action(act, owner, contract, player, id, 0));
+        assertFalse(copyBuyerAction.action(act, owner, player, copyBuyerAction.getActionId(), 0));
     }
 
     @Test
     void testActionIsSameBuyer() {
-        assertFalse(action.action(act, owner, contract, copyToBuyer, id, 0));
+        assertFalse(copyBuyerAction.action(act, owner, targetBuyer, copyBuyerAction.getActionId(), 0));
     }
 
     @Test
@@ -104,14 +117,14 @@ class CopyPriceListActionTest extends WurmTradingTest {
         newBuyer.getInventory().insertItem(factory.createPriceList());
         assert newBuyer.getShop() == null;
 
-        assertTrue(action.action(act, owner, contract, newBuyer, id, 0));
+        assertTrue(copyBuyerAction.action(act, owner, newBuyer, copyBuyerAction.getActionId(), 0));
 
         assertThat(owner, receivedMessageContaining("does not have a shop"));
     }
 
     @Test
     void testActionIsNotOwner() {
-        assertTrue(action.action(act, player, contract, buyer, id, 0));
+        assertTrue(copyBuyerAction.action(act, player, buyer, copyBuyerAction.getActionId(), 0));
 
         assertThat(player, receivedMessageContaining("the owner"));
     }
@@ -120,7 +133,7 @@ class CopyPriceListActionTest extends WurmTradingTest {
     void testActionIsNotContractBuyerOwner() {
         Creature notOwnedBuyer = factory.createNewBuyer(player);
         contract.setData(notOwnedBuyer.getWurmId());
-        assertTrue(action.action(act, owner, contract, buyer, id, 0));
+        assertTrue(copyBuyerAction.action(act, owner, buyer, copyBuyerAction.getActionId(), 0));
 
         assertThat(owner, receivedMessageContaining("the owner"));
     }
@@ -128,15 +141,15 @@ class CopyPriceListActionTest extends WurmTradingTest {
     @Test
     void testActionContractDataNotSet() {
         contract.setData(-10);
-        assertTrue(action.action(act, owner, contract, buyer, id, 0));
+        assertTrue(copyBuyerAction.action(act, owner, buyer, copyBuyerAction.getActionId(), 0));
 
         assertThat(owner, receivedMessageContaining("does not know who"));
     }
 
     @Test
     void testActionContractBuyerHasNoPriceList() {
-        ItemsPackageFactory.removeItem(copyToBuyer, copyToBuyer.getInventory().getFirstContainedItem());
-        assertTrue(action.action(act, owner, contract, buyer, id, 0));
+        ItemsPackageFactory.removeItem(targetBuyer, targetBuyer.getInventory().getFirstContainedItem());
+        assertTrue(copyBuyerAction.action(act, owner, buyer, copyBuyerAction.getActionId(), 0));
 
         assertThat(owner, receivedMessageContaining("does not know who"));
     }
@@ -145,48 +158,93 @@ class CopyPriceListActionTest extends WurmTradingTest {
     void testActionTargetBuyerHasNoPriceList() {
         ItemsPackageFactory.removeItem(buyer, buyer.getInventory().getFirstContainedItem());
 
-        assertTrue(action.action(act, owner, contract, buyer, id, 0));
+        assertTrue(copyBuyerAction.action(act, owner, buyer, copyBuyerAction.getActionId(), 0));
         assertThat(owner, receivedMessageContaining("does not know who"));
     }
 
+    // copyToBuyer action
+
     @Test
-    void testActionCopiedSuccessfully() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded {
+    void testBuyerActionCopiedSuccessfully() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         for (int i = 1; i < 100; i++) {
             priceList.addItem(i, (byte)1);
         }
         priceList.savePriceList();
-        Item oldPriceList = copyToBuyer.getInventory().getFirstContainedItem();
+        Item oldPriceList = targetBuyer.getInventory().getFirstContainedItem();
 
         assertEquals(3, buyer.getInventory().getFirstContainedItem().getItemCount());
 
-        assertTrue(action.action(act, owner, contract, buyer, id, 0));
+        assertTrue(copyBuyerAction.action(act, owner, buyer, copyBuyerAction.getActionId(), 0));
         assertThat(owner, receivedMessageContaining("successfully copied"));
 
-        PriceList copiedList = PriceList.getPriceListFromBuyer(copyToBuyer);
+        PriceList copiedList = PriceList.getPriceListFromBuyer(targetBuyer);
         List<PriceList.Entry> sortedEntries = new ArrayList<>();
         copiedList.iterator().forEachRemaining(sortedEntries::add);
         for (int i = 0; i < 99; i++) {
             assertEquals(i + 1, sortedEntries.get(i).getTemplateId());
         }
 
-        assertFalse(copyToBuyer.getInventory().getItems().contains(oldPriceList));
+        assertFalse(targetBuyer.getInventory().getItems().contains(oldPriceList));
     }
 
     @Test
-    void testActionFailedCopyHandling() {
+    void testBuyerActionFailedCopyHandling() {
         Item priceList = spy(factory.createPriceList());
         int templateId = buyer.getInventory().getFirstContainedItem().getTemplateId();
         ItemsPackageFactory.removeItem(buyer, buyer.getInventory().getFirstContainedItem());
         buyer.getInventory().insertItem(priceList);
-        Item oldPriceList = copyToBuyer.getInventory().getFirstContainedItem();
+        Item oldPriceList = targetBuyer.getInventory().getFirstContainedItem();
         when(priceList.getTemplateId()).thenReturn(templateId, -1);
 
-        assertTrue(action.action(act, owner, contract, buyer, id, 0));
+        assertTrue(copyBuyerAction.action(act, owner, buyer, copyBuyerAction.getActionId(), 0));
         assertThat(owner, receivedMessageContaining("looks confused"));
 
-        assertTrue(copyToBuyer.getInventory().getItems().contains(oldPriceList));
+        assertTrue(targetBuyer.getInventory().getItems().contains(oldPriceList));
     }
+
+    // copyToContract action
+
+    @Test
+    void testContractActionCopiedSuccessfully() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded {
+        PriceList priceList = PriceList.getPriceListFromBuyer(targetBuyer);
+        for (int i = 1; i < 100; i++) {
+            priceList.addItem(i, (byte)1);
+        }
+        priceList.savePriceList();
+        Item oldPriceList = buyer.getInventory().getFirstContainedItem();
+
+        assertEquals(3, targetBuyer.getInventory().getFirstContainedItem().getItemCount());
+
+        assertTrue(copyContractAction.action(act, owner, buyer, copyContractAction.getActionId(), 0));
+        assertThat(owner, receivedMessageContaining("successfully copied"));
+
+        PriceList copiedList = PriceList.getPriceListFromBuyer(targetBuyer);
+        List<PriceList.Entry> sortedEntries = new ArrayList<>();
+        copiedList.iterator().forEachRemaining(sortedEntries::add);
+        for (int i = 0; i < 99; i++) {
+            assertEquals(i + 1, sortedEntries.get(i).getTemplateId());
+        }
+
+        assertFalse(buyer.getInventory().getItems().contains(oldPriceList));
+    }
+
+    @Test
+    void testContractActionFailedCopyHandling() {
+        Item priceList = spy(factory.createPriceList());
+        int templateId = targetBuyer.getInventory().getFirstContainedItem().getTemplateId();
+        ItemsPackageFactory.removeItem(targetBuyer, targetBuyer.getInventory().getFirstContainedItem());
+        targetBuyer.getInventory().insertItem(priceList);
+        Item oldPriceList = buyer.getInventory().getFirstContainedItem();
+        when(priceList.getTemplateId()).thenReturn(templateId, -1);
+
+        assertTrue(copyContractAction.action(act, owner, buyer, copyContractAction.getActionId(), 0));
+        assertThat(owner, receivedMessageContaining("looks confused"));
+
+        assertTrue(buyer.getInventory().getItems().contains(oldPriceList));
+    }
+
+    // isBuyer
 
     @Test
     void testIsBuyer() {
