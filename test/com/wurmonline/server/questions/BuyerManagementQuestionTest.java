@@ -3,6 +3,7 @@ package com.wurmonline.server.questions;
 import com.wurmonline.server.Items;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.FakeCommunicator;
+import com.wurmonline.server.creatures.FakeCreatureStatus;
 import com.wurmonline.server.creatures.NoSuchCreatureException;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.WurmMail;
@@ -127,6 +128,39 @@ public class BuyerManagementQuestionTest extends WurmTradingTest {
 
         assertTrue(factory.getCommunicator(owner).lastBmlContent.contains("no other creatures"));
         assertThrows(NoSuchCreatureException.class, () -> factory.getCreature("Buyer_" + name));
+    }
+
+    @Test
+    void testNameChange() throws NoSuchCreatureException {
+        placeBuyer();
+        Creature buyer = factory.getCreature("Buyer_" + name);
+        assert buyer != null;
+        String newName = "Bob";
+
+        question = new BuyerManagementQuestion(owner, contract.getWurmId());
+        question.sendQuestion();
+        answers.setProperty("ptradername", newName);
+        answers.setProperty("submit", "true");
+        question.answer(answers);
+
+        assertEquals("Buyer_" + newName, factory.getCreature(contract.getData()).getName());
+        assertEquals("Buyer_" + newName, ((FakeCreatureStatus)buyer.getStatus()).savedCreatureName);
+    }
+
+    @Test
+    void testNameChangeNotSentOnSameName() throws NoSuchCreatureException {
+        placeBuyer();
+        Creature buyer = factory.getCreature("Buyer_" + name);
+        assert buyer != null;
+
+        question = new BuyerManagementQuestion(owner, contract.getWurmId());
+        question.sendQuestion();
+        answers.setProperty("ptradername", name);
+        answers.setProperty("submit", "true");
+        question.answer(answers);
+
+        assertEquals("Buyer_" + name, factory.getCreature(contract.getData()).getName());
+        assertEquals("UNSET", ((FakeCreatureStatus)buyer.getStatus()).savedCreatureName);
     }
 
     @Test

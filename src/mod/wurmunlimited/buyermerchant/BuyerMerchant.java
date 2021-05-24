@@ -30,13 +30,13 @@ import java.util.stream.Stream;
 
 public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, Initable, ServerStartedListener, ItemTemplatesCreatedListener {
     private static final Logger logger = Logger.getLogger(BuyerMerchant.class.getName());
-    private static final String BUYER_NAME_PREFIX = "Buyer_";
+    public static final String BUYER_NAME_PREFIX = "Buyer_";
     private int templateId;
     private boolean updateTraders = false;
     private boolean contractsOnTraders = true;
     private boolean freeMoney = false;
     private boolean destroyBoughtItems = false;
-    private int defaultMaxItems = 50;
+    private final int defaultMaxItems = 50;
     private int maxItems = defaultMaxItems;
     private boolean applyMaxToMerchants = false;
     private int maximumPowerTurn = 1;
@@ -413,6 +413,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         } finally {
             contracts.forEach(item -> item.setTemplateId(templateId));
         }
+        //noinspection SuspiciousInvocationHandlerImplementation
         return null;
     }
 

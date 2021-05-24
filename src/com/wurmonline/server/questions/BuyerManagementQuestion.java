@@ -23,6 +23,7 @@ import com.wurmonline.shared.util.StringUtilities;
 import mod.wurmunlimited.buyermerchant.PriceList;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,11 +31,12 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.wurmonline.server.creatures.CreaturePackageCaller.saveCreatureName;
 import static com.wurmonline.server.questions.QuestionParser.*;
+import static mod.wurmunlimited.buyermerchant.BuyerMerchant.BUYER_NAME_PREFIX;
 
 public class BuyerManagementQuestion extends QuestionExtension implements TimeConstants {
     private static final Logger logger = Logger.getLogger(BuyerManagementQuestion.class.getName());
-    private static final String BUYER_NAME_PREFIX = "Buyer_";
     private final boolean isDismissing;
     private static Field moneySpentLife = null;
 
@@ -293,7 +295,30 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
                 this.getResponder().getCommunicator().sendNormalServerMessage("You decide not to dismiss the buyer.");
             }
         } else {
-            if (wasSelected("add")) {
+            if (wasSelected("submit")) {
+                String name = getStringProp("ptradername");
+                if (name != null && !name.isEmpty()) {
+                    try {
+                        Creature buyer = Creatures.getInstance().getCreature(Items.getItem(target).getData());
+
+                        String fullName = BUYER_NAME_PREFIX + StringUtilities.raiseFirstLetter(name);
+                        if (QuestionParser.containsIllegalCharacters(name)) {
+                            getResponder().getCommunicator().sendNormalServerMessage("The buyer didn't like that name, so they shall remain " + buyer.getName() + ".");
+                        } else if (!fullName.equals(buyer.getName())) {
+                            try {
+                                saveCreatureName(buyer, fullName);
+                                buyer.refreshVisible();
+                                getResponder().getCommunicator().sendNormalServerMessage("The buyer will now be known as " + buyer.getName() + ".");
+                            } catch (IOException e) {
+                                logger.warning("Failed to set name (" + fullName + ") for creature (" + buyer.getWurmId() + ").");
+                                getResponder().getCommunicator().sendNormalServerMessage("The buyer looks confused, what exactly is a database?");
+                                e.printStackTrace();
+                            }
+                        }
+                    } catch (NoSuchItemException | NoSuchCreatureException ignored) {}
+
+                }
+            } else if (wasSelected("add")) {
                 try {
                     AddItemToBuyerQuestion addItem = new AddItemToBuyerQuestion(this.getResponder(), Items.getItem(target).getData());
                     addItem.sendQuestion();
@@ -407,7 +432,12 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
                     times = times + minutesleft + " minutes";
                 }
 
-                buf.append("label{text=\"" + trader.getName() + "\"};");
+                String name = trader.getName();
+                if (name.startsWith(BUYER_NAME_PREFIX)) {
+                    buf.append("harray{label{text=\"" + BUYER_NAME_PREFIX + "\"};input{text=\"" + name.substring(BUYER_NAME_PREFIX.length()) + "\"id=\"ptradername\";maxchars=\"20\"}}");
+                } else {
+                    buf.append("label{text=\"" + trader.getName() + "\"};");
+                }
                 buf.append("label{text=\"" + times + "\"}");
                 buf.append("label{text=\"" + (new Change(shop.getMoneySpentMonth())).getChangeShortString() + "\"}");
                 buf.append("label{text=\"" + (new Change(getMoneySpentLife(shop))).getChangeShortString() + "\"}");
@@ -438,7 +468,7 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
                 buf.append("radio{ group=\"gender\"; id=\"female\";text=\"Female\"}");
             }
 
-            buf.append("harray{label{text=\"The buyer shalt be called \"};input{id=\"ptradername\";maxchars=\"20\"};label{text=\"!\"}}");
+            buf.append("harray{label{text=\"The buyer shalt be called " + BUYER_NAME_PREFIX + "\"};input{id=\"ptradername\";maxchars=\"20\"};label{text=\"!\"}}");
             buf.append(this.createAnswerButton3());
         }
 

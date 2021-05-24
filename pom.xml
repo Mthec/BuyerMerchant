@@ -6,7 +6,7 @@
 
     <groupId>mod.wurmunlimited.buyermerchant</groupId>
     <artifactId>BuyerMerchant</artifactId>
-    <version>0.5.23</version>
+    <version>0.5.24</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -38,7 +38,7 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
+        <!--<dependency>
             <groupId>org.gotti.wurmunlimited</groupId>
             <artifactId>server-modlauncher</artifactId>
             <version>0.43</version>
@@ -86,13 +86,27 @@
             <version>1.0</version>
             <scope>system</scope>
             <systemPath>${folder.server}/common.jar</systemPath>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>com.wurmonline</groupId>
             <artifactId>wurmunlimited-server</artifactId>
             <version>1.0</version>
             <scope>system</scope>
             <systemPath>${folder.server}/server.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.gotti.wurmunlimited</groupId>
+            <artifactId>server-modlauncher</artifactId>
+            <version>0.45</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/modlauncher.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>javassist</artifactId>
+            <version>3.23.1-GA</version>
+            <scope>system</scope>
+            <systemPath>${folder.server}/javassist.jar</systemPath>
         </dependency>
     </dependencies>
 
