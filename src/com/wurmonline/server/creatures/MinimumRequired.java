@@ -13,7 +13,7 @@ public class MinimumRequired {
 
     public final PriceList.Entry entry;
     private Set<Item> individualItems = new HashSet<>();
-    private Set<MinimumSet> otherItems = new HashSet<>();
+    private final Set<MinimumSet> otherItems = new HashSet<>();
     private boolean isOptimal;
 
     MinimumRequired(PriceList.Entry entry) {
@@ -31,8 +31,8 @@ public class MinimumRequired {
 
     public Iterable<Item> getItems() {
         return () -> new Iterator<Item>() {
-            Iterator<Item> items = individualItems.iterator();
-            Iterator<MinimumSet> others = otherItems.iterator();
+            final Iterator<Item> items = individualItems.iterator();
+            final Iterator<MinimumSet> others = otherItems.iterator();
 
             @Override
             public boolean hasNext() {
@@ -52,8 +52,8 @@ public class MinimumRequired {
 
     public Iterable<Pair<Item, Integer>> getItemsAndPrices() {
         return () -> new Iterator<Pair<Item, Integer>>() {
-            Iterator<Item> items = individualItems.iterator();
-            Iterator<MinimumSet> others = otherItems.iterator();
+            final Iterator<Item> items = individualItems.iterator();
+            final Iterator<MinimumSet> others = otherItems.iterator();
             final int price = entry.getPrice();
 
             @Override

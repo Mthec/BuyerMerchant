@@ -405,6 +405,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             method.invoke(o, args);
 
             if (contracts.size() > 0) {
+                //noinspection SpellCheckingInspection
                 Field windowOwner = TradingWindow.class.getDeclaredField("windowowner");
                 windowOwner.setAccessible(true);
                 Creature trader = (Creature)windowOwner.get(o);

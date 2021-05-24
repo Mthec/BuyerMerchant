@@ -30,7 +30,7 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
     private byte material = 0;
     private boolean usingCustomMaterial = false;
     private String filter = "*";
-    private ArrayList<ItemTemplate> itemTemplates = new ArrayList<>();
+    private final ArrayList<ItemTemplate> itemTemplates = new ArrayList<>();
     private List<String> materialsList;
     static final byte[] allMeat = new byte[] {
         ItemMaterials.MATERIAL_FLESH,
@@ -151,6 +151,7 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
             }
         }
 
+        //noinspection SimplifiableConditionalExpression
         AddItemToBuyerQuestion question = new AddItemToBuyerQuestion(this.getResponder(), this.target, itemTemplate, material, stage, filter, stage < 1 ? false : usingCustomMaterial, materialsList);
         question.sendQuestion();
     }
@@ -251,10 +252,10 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
                 defaultId = Integer.toString(x);
             buf.append(getTemplateString(tp));
         }
-        buf.append("\";default=\"" + defaultId + "\";}};");
+        buf.append("\";default=\"").append(defaultId).append("\";}};");
         buf.append("text{text=\"\"}");
         buf.append("text{text=\"* is a wildcard that stands in for one or more characters.\ne.g. *clay* to find all clay items or lump* to find all types of lump.\"}");
-        buf.append("harray{button{text=\"Filter list\";id=\"filterme\"};label{text=\" using \"};input{maxchars=\"30\";id=\"filtertext\";text=\"" + this.filter + "\";onenter=\"filterme\"}}");
+        buf.append("harray{button{text=\"Filter list\";id=\"filterme\"};label{text=\" using \"};input{maxchars=\"30\";id=\"filtertext\";text=\"").append(this.filter).append("\";onenter=\"filterme\"}}");
         buf.append("text{text=\"\"}");
         buf.append("harray {button{text=\"Next\";id=\"submit\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Cancel\";id=\"cancel\"}}}};null;null;}");
         this.getResponder().getCommunicator().sendBml(400, 300, true, true, buf.toString(), 200, 200, 200, this.title);
@@ -356,39 +357,38 @@ public class AddItemToBuyerQuestion extends QuestionExtension {
 
         buf.append("harray{label{text=\"Material:  \"};dropdown{id=\"material\";options=\"");
         String defaultId = appendMaterialTypes(buf);
-        buf.append("\";default=\"" + defaultId + "\";}};");
+        buf.append("\";default=\"").append(defaultId).append("\";}};");
         buf.append("text{text=\"\"}");
 
         buf.append("text{text=\"* is a wildcard that stands in for one or more characters.\ne.g. *wood to find all types of wood.\"}");
-        buf.append("harray{button{text=\"Filter list\";id=\"filterme\"};label{text=\" using \"};input{maxchars=\"30\";id=\"filtertext\";text=\"" + this.filter + "\";onenter=\"filterme\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"List All Materials\";id=\"list_all_materials\"};}");
+        buf.append("harray{button{text=\"Filter list\";id=\"filterme\"};label{text=\" using \"};input{maxchars=\"30\";id=\"filtertext\";text=\"").append(this.filter).append("\";onenter=\"filterme\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"List All Materials\";id=\"list_all_materials\"};}");
         buf.append("text{text=\"\"}");
         buf.append("harray {button{text=\"Next\";id=\"submit\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Back\";id=\"back\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Cancel\";id=\"cancel\"};}}}null;null;};");
         this.getResponder().getCommunicator().sendBml(400, 300, true, true, buf.toString(), 200, 200, 200, this.title);
     }
 
     private void sendQLPriceQuestion() {
-        StringBuilder buf = new StringBuilder(this.getBmlHeader());
         DecimalFormat df = new DecimalFormat("#.##");
-        buf.append("text{text=\"Limit restricts the Buyer from purchasing more than that number of items.  Entry will be removed once it reaches 0.  Leave as 0 to accept any amount.\"}");
-        buf.append("text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}");
-        buf.append("table{rows=\"1\"; cols=\"11\";label{text=\"Item type\"};label{text=\"Material\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"};label{text=\"Limit\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"}");
 
-        // New item row
-        buf.append("harray{label{text=\"" + itemTemplate.getName() + "\"}};");
-        buf.append("harray{label{text=\"" + (material == 0 ? "Any" : MaterialUtilities.getMaterialString(material)) + "\"}};");
-        buf.append("harray{input{maxchars=\"8\"; id=\"weight\";text=\"" + WeightString.toString(itemTemplate.getWeightGrams()) + "\"};label{text=\"kg \"}};");
-        buf.append("harray{input{maxchars=\"3\"; id=\"q\";text=\"" + df.format(1) + "\"};label{text=\" \"}};");
-        buf.append("harray{input{maxchars=\"3\"; id=\"g\";text=\"0\"};label{text=\" \"}};");
-        buf.append("harray{input{maxchars=\"2\"; id=\"s\";text=\"0\"};label{text=\" \"}};");
-        buf.append("harray{input{maxchars=\"2\"; id=\"c\";text=\"0\"};label{text=\" \"}};");
-        buf.append("harray{input{maxchars=\"2\"; id=\"i\";text=\"0\"};label{text=\" \"}}");
-        buf.append("harray{input{maxchars=\"4\"; id=\"r\";text=\"0\"};label{text=\" \"}}");
-        buf.append("harray{input{maxchars=\"3\"; id=\"p\";text=\"1\"};label{text=\" \"}}");
-        buf.append("harray{checkbox{id=\"d\"};label{text=\" \"}};");
+        String bml = this.getBmlHeader() + "text{text=\"Limit restricts the Buyer from purchasing more than that number of items.  Entry will be removed once it reaches 0.  Leave as 0 to accept any amount.\"}" +
+                             "text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}" +
+                             "table{rows=\"1\"; cols=\"11\";label{text=\"Item type\"};label{text=\"Material\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"};label{text=\"Limit\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"}" +
 
-        buf.append("}");
-        buf.append("text{text=\"\"}");
-        buf.append("harray {button{text=\"Add Item\";id=\"submit\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Back\";id=\"back\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Cancel\";id=\"cancel\"};}}}null;null;};");
-        this.getResponder().getCommunicator().sendBml(650, 300, true, true, buf.toString(), 200, 200, 200, this.title);
+                             // New item row
+                             "harray{label{text=\"" + itemTemplate.getName() + "\"}};" +
+                             "harray{label{text=\"" + (material == 0 ? "Any" : MaterialUtilities.getMaterialString(material)) + "\"}};" +
+                             "harray{input{maxchars=\"8\"; id=\"weight\";text=\"" + WeightString.toString(itemTemplate.getWeightGrams()) + "\"};label{text=\"kg \"}};" +
+                             "harray{input{maxchars=\"3\"; id=\"q\";text=\"" + df.format(1) + "\"};label{text=\" \"}};" +
+                             "harray{input{maxchars=\"3\"; id=\"g\";text=\"0\"};label{text=\" \"}};" +
+                             "harray{input{maxchars=\"2\"; id=\"s\";text=\"0\"};label{text=\" \"}};" +
+                             "harray{input{maxchars=\"2\"; id=\"c\";text=\"0\"};label{text=\" \"}};" +
+                             "harray{input{maxchars=\"2\"; id=\"i\";text=\"0\"};label{text=\" \"}}" +
+                             "harray{input{maxchars=\"4\"; id=\"r\";text=\"0\"};label{text=\" \"}}" +
+                             "harray{input{maxchars=\"3\"; id=\"p\";text=\"1\"};label{text=\" \"}}" +
+                             "harray{checkbox{id=\"d\"};label{text=\" \"}};" +
+                             "}" +
+                             "text{text=\"\"}" +
+                             "harray {button{text=\"Add Item\";id=\"submit\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Back\";id=\"back\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Cancel\";id=\"cancel\"};}}}null;null;};";
+        this.getResponder().getCommunicator().sendBml(650, 300, true, true, bml, 200, 200, 200, this.title);
     }
 }

@@ -3,7 +3,7 @@ package com.wurmonline.server.questions;
 import java.math.BigDecimal;
 
 class WeightString {
-    private static BigDecimal mod = new BigDecimal(1000);
+    private static final BigDecimal mod = new BigDecimal(1000);
 
     static String toString(int weight) {
         BigDecimal bd = new BigDecimal(weight).setScale(3, BigDecimal.ROUND_UNNECESSARY);

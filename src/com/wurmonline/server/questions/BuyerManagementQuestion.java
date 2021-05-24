@@ -26,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -80,17 +79,13 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
         } catch (NoSuchPlayerException var21) {
             logger.log(Level.WARNING, "Trader for " + responder.getName() + " is a player? Well it can't be found. Contract ID: " + question.getTarget());
             responder.getCommunicator().sendNormalServerMessage("The contract has been damaged by water. You can't read the letters!");
-            if (contract != null) {
-                contract.setData(-1, -1);
-            }
+            contract.setData(-1, -1);
 
             return;
         } catch (NoSuchCreatureException var22) {
             logger.log(Level.WARNING, "Trader for " + responder.getName() + " can't be found. Contract ID: " + question.getTarget());
             responder.getCommunicator().sendNormalServerMessage("The contract has been damaged by water. You can't read the letters!");
-            if (contract != null) {
-                contract.setData(-1, -1);
-            }
+            contract.setData(-1, -1);
 
             return;
         } catch (NotOwnedException var23) {
@@ -98,29 +93,25 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
             return;
         }
 
-        String tname;
+        String idName;
         String val;
         boolean stall;
         if (shop != null) {
-            tname = traderId + "dismiss";
-            val = props.getProperty(tname);
+            idName = traderId + "dismiss";
+            val = props.getProperty(idName);
             if (Boolean.parseBoolean(val)) {
-                if (trader != null) {
-                    if (!trader.isTrading()) {
-                        Server.getInstance().broadCastAction(trader.getName() + " grunts, packs " + trader.getHisHerItsString() + " things and is off.", trader, 5);
-                        responder.getCommunicator().sendNormalServerMessage("You dismiss " + trader.getName() + " from " + trader.getHisHerItsString() + " post.");
-                        logger.log(Level.INFO, responder.getName() + " dismisses trader " + trader.getName() + " with Contract ID: " + question.getTarget());
-                        trader.destroy();
-                        contract.setData(-1, -1);
-                    } else {
-                        responder.getCommunicator().sendNormalServerMessage(trader.getName() + " is trading. Try later.");
-                    }
+                if (!trader.isTrading()) {
+                    Server.getInstance().broadCastAction(trader.getName() + " grunts, packs " + trader.getHisHerItsString() + " things and is off.", trader, 5);
+                    responder.getCommunicator().sendNormalServerMessage("You dismiss " + trader.getName() + " from " + trader.getHisHerItsString() + " post.");
+                    logger.log(Level.INFO, responder.getName() + " dismisses trader " + trader.getName() + " with Contract ID: " + question.getTarget());
+                    trader.destroy();
+                    contract.setData(-1, -1);
                 } else {
-                    responder.getCommunicator().sendNormalServerMessage("An error occurred on the server while dismissing the trader.");
+                    responder.getCommunicator().sendNormalServerMessage(trader.getName() + " is trading. Try later.");
                 }
             } else {
-                tname = traderId + "manage";
-                val = props.getProperty(tname);
+                idName = traderId + "manage";
+                val = props.getProperty(idName);
                 stall = Boolean.parseBoolean(val);
                 if (stall) {
                     SetBuyerPricesQuestion mpm = new SetBuyerPricesQuestion(responder, traderId);
@@ -128,25 +119,25 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
                 }
             }
         } else {
-            tname = props.getProperty("ptradername");
+            idName = props.getProperty("ptradername");
             byte sex = 0;
             if (props.getProperty("gender").equals("female")) {
                 sex = 1;
             }
 
-            if (tname != null && tname.length() > 0) {
-                if (tname.length() < 3 || tname.length() > 20 || containsIllegalCharacters(tname)) {
+            if (idName != null && idName.length() > 0) {
+                if (idName.length() < 3 || idName.length() > 20 || containsIllegalCharacters(idName)) {
                     if (sex == 0) {
-                        tname = generateGuardMaleName();
+                        idName = generateGuardMaleName();
                         responder.getCommunicator().sendSafeServerMessage("The name didn't fit the trader, so he chose another one.");
                     } else {
                         responder.getCommunicator().sendSafeServerMessage("The name didn't fit the trader, so she chose another one.");
-                        tname = generateGuardFemaleName();
+                        idName = generateGuardFemaleName();
                     }
                 }
 
-                tname = StringUtilities.raiseFirstLetter(tname);
-                tname = BUYER_NAME_PREFIX + tname;
+                idName = StringUtilities.raiseFirstLetter(idName);
+                idName = BUYER_NAME_PREFIX + idName;
                 VolaTile tile = responder.getCurrentTile();
                 if (tile != null) {
                     stall = false;
@@ -166,21 +157,21 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
                     if (!stall && (struct == null || !struct.isFinished()) && responder.getPower() <= 1) {
                         responder.getCommunicator().sendNormalServerMessage("The trader will only set up shop inside a finished building or by a market stall.");
                     } else {
-                        boolean notok = false;
+                        boolean notOk = false;
 
                         for (Creature creature : tile.getCreatures()) {
                             if (!creature.isPlayer()) {
-                                notok = true;
+                                notOk = true;
                                 break;
                             }
                         }
 
-                        if (!notok) {
+                        if (!notOk) {
                             if (struct != null && !struct.mayPlaceMerchants(responder)) {
                                 responder.getCommunicator().sendNormalServerMessage("You do not have permission to place a trader in this building.");
                             } else {
                                 try {
-                                    trader = Creature.doNew(9, (float)(tile.getTileX() << 2) + 2.0F, (float)(tile.getTileY() << 2) + 2.0F, 180.0F, responder.getLayer(), tname, sex, responder.getKingdomId());
+                                    trader = Creature.doNew(9, (float)(tile.getTileX() << 2) + 2.0F, (float)(tile.getTileY() << 2) + 2.0F, 180.0F, responder.getLayer(), idName, sex, responder.getKingdomId());
                                     if (responder.getFloorLevel(true) != 0) {
                                         trader.pushToFloorLevel(responder.getFloorLevel());
                                     }
@@ -232,11 +223,8 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
                             Item backPack = ItemFactory.createItem(1, 10.0F + Server.rand.nextFloat() * 10.0F, trader.getName());
                             backPack.setDescription("Due to poor business I have moved on. Thank you for your time. " + trader.getName());
                             ArrayList<Item> largeItems = new ArrayList<>();
-                            Item[] var8 = trader.getInventory().getAllItems(false);
-                            int var9 = var8.length;
 
-                            for(int var10 = 0; var10 < var9; ++var10) {
-                                Item realItem = var8[var10];
+                            for (Item realItem : trader.getInventory().getAllItems(false)) {
                                 if (!backPack.insertItem(realItem, false)) {
                                     largeItems.add(realItem);
                                 } else if (PriceList.isPriceList(realItem)) {
@@ -244,24 +232,12 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
                                 }
                             }
 
-                            WurmMail mail = new WurmMail((byte)0, backPack.getWurmId(), shop.getOwnerId(), shop.getOwnerId(), 0L, System.currentTimeMillis() + 60000L, System.currentTimeMillis() + (Servers.isThisATestServer() ? 3600000L : 14515200000L), Servers.localServer.id, false, false);
-                            WurmMail.addWurmMail(mail);
-                            mail.createInDatabase();
-                            backPack.putInVoid();
-                            backPack.setMailed(true);
-                            backPack.setMailTimes((byte)(backPack.getMailTimes() + 1));
-                            Iterator var16 = largeItems.iterator();
+                            createMailFor(shop, backPack);
 
-                            while(var16.hasNext()) {
-                                Item i = (Item)var16.next();
-                                WurmMail largeMail = new WurmMail((byte)0, i.getWurmId(), shop.getOwnerId(), shop.getOwnerId(), 0L, System.currentTimeMillis() + 60000L, System.currentTimeMillis() + (Servers.isThisATestServer() ? 3600000L : 14515200000L), Servers.localServer.id, false, false);
-                                WurmMail.addWurmMail(largeMail);
-                                largeMail.createInDatabase();
-                                i.putInVoid();
-                                i.setMailed(true);
-                                i.setMailTimes((byte)(i.getMailTimes() + 1));
+                            for (Item i : largeItems) {
+                                createMailFor(shop, i);
                             }
-                        } catch (Exception var12) {
+                        } catch (FailedException | NoSuchTemplateException var12) {
                             logger.log(Level.WARNING, var12.getMessage() + " " + trader.getName() + " at " + trader.getTileX() + ", " + trader.getTileY(), var12);
                         }
                     } else {
@@ -281,6 +257,15 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
             }
         }
 
+    }
+
+    private static void createMailFor(Shop shop, Item item) {
+        WurmMail mail = new WurmMail((byte)0, item.getWurmId(), shop.getOwnerId(), shop.getOwnerId(), 0L, System.currentTimeMillis() + 60000L, System.currentTimeMillis() + (Servers.isThisATestServer() ? 3600000L : 14515200000L), Servers.localServer.id, false, false);
+        WurmMail.addWurmMail(mail);
+        mail.createInDatabase();
+        item.putInVoid();
+        item.setMailed(true);
+        item.setMailTimes((byte)(item.getMailTimes() + 1));
     }
 
     public void answer(Properties answers) {
@@ -402,57 +387,52 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
         buf.append("text{text=\"If you are away for several months the buyer may leave or be forced to leave with all the items and coins in his inventory.\"}");
         if (shop != null) {
             buf.append("text{type=\"bold\";text=\"Last sold\"};text{text=\"is the number of days, hours and minutes since a personal buyer last bought an item.\"}");
-            if (trader != null) {
-                buf.append("table{rows=\"2\";cols=\"5\";label{text=\"name\"};label{text=\"Last bought\"};label{text=\"Bought month\"};label{text=\"Bought life\"};label{text=\"Free slots\"}");
-                long timeleft = System.currentTimeMillis() - shop.getLastPolled();
-                long daysleft = timeleft / DAY_MILLIS;
-                long hoursleft = (timeleft - daysleft * DAY_MILLIS) / HOUR_MILLIS;
-                long minutesleft = (timeleft - daysleft * DAY_MILLIS - hoursleft * HOUR_MILLIS) / MINUTE_MILLIS;
-                String times = "";
-                if (daysleft > 0L) {
-                    times = times + daysleft + " days";
-                }
-
-                String aft;
-                if (hoursleft > 0L) {
-                    aft = "";
-                    if (daysleft > 0L && minutesleft > 0L) {
-                        times = times + ", ";
-                        aft = aft + " and ";
-                    } else if (daysleft > 0L) {
-                        times = times + " and ";
-                    } else if (minutesleft > 0L) {
-                        aft = aft + " and ";
-                    }
-
-                    times = times + hoursleft + " hours" + aft;
-                }
-
-                if (minutesleft > 0L) {
-                    times = times + minutesleft + " minutes";
-                }
-
-                String name = trader.getName();
-                if (name.startsWith(BUYER_NAME_PREFIX)) {
-                    buf.append("harray{label{text=\"" + BUYER_NAME_PREFIX + "\"};input{text=\"" + name.substring(BUYER_NAME_PREFIX.length()) + "\"id=\"ptradername\";maxchars=\"20\"}}");
-                } else {
-                    buf.append("label{text=\"" + trader.getName() + "\"};");
-                }
-                buf.append("label{text=\"" + times + "\"}");
-                buf.append("label{text=\"" + (new Change(shop.getMoneySpentMonth())).getChangeShortString() + "\"}");
-                buf.append("label{text=\"" + (new Change(getMoneySpentLife(shop))).getChangeShortString() + "\"}");
-                if (BuyerTradingWindow.destroyBoughtItems)
-                    buf.append("label{text=\"N/A\"}}");
-                else
-                    buf.append("label{text=\"" + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + "\"}}");
-                buf.append("text{type=\"bold\";text=\"Dismissing\"};text{text=\"if you dismiss a buyer they will take all items with them!\"}");
-                buf.append("harray{label{text=\"Dismiss\"};checkbox{id=\"" + traderId + "dismiss\";selected=\"false\";text=\" \"}}");
-
-                buf.append("harray {button{text='Confirm';id='submit'};label{text=' ';id='spacedlxg'};button{text='Manage Prices';id='" + traderId + "manage'};label{text=' ';id='spacedlxg'};button{text='Add Item To List';id='add'}}}};null;null;null;null;}");
-            } else {
-                buf.append("label{text=\"A buyer that should be here is missing. The id is " + traderId + "\"}");
-                buf.append(this.createAnswerButton3());
+            buf.append("table{rows=\"2\";cols=\"5\";label{text=\"name\"};label{text=\"Last bought\"};label{text=\"Bought month\"};label{text=\"Bought life\"};label{text=\"Free slots\"}");
+            long timeLeft = System.currentTimeMillis() - shop.getLastPolled();
+            long daysLeft = timeLeft / DAY_MILLIS;
+            long hoursLeft = (timeLeft - daysLeft * DAY_MILLIS) / HOUR_MILLIS;
+            long minutesLeft = (timeLeft - daysLeft * DAY_MILLIS - hoursLeft * HOUR_MILLIS) / MINUTE_MILLIS;
+            String times = "";
+            if (daysLeft > 0L) {
+                times = times + daysLeft + " days";
             }
+
+            String aft;
+            if (hoursLeft > 0L) {
+                aft = "";
+                if (daysLeft > 0L && minutesLeft > 0L) {
+                    times = times + ", ";
+                    aft = aft + " and ";
+                } else if (daysLeft > 0L) {
+                    times = times + " and ";
+                } else if (minutesLeft > 0L) {
+                    aft = aft + " and ";
+                }
+
+                times = times + hoursLeft + " hours" + aft;
+            }
+
+            if (minutesLeft > 0L) {
+                times = times + minutesLeft + " minutes";
+            }
+
+            String name = trader.getName();
+            if (name.startsWith(BUYER_NAME_PREFIX)) {
+                buf.append("harray{label{text=\"" + BUYER_NAME_PREFIX + "\"};input{text=\"").append(name.substring(BUYER_NAME_PREFIX.length())).append("\"id=\"ptradername\";maxchars=\"20\"}}");
+            } else {
+                buf.append("label{text=\"").append(trader.getName()).append("\"};");
+            }
+            buf.append("label{text=\"").append(times).append("\"}");
+            buf.append("label{text=\"").append((new Change(shop.getMoneySpentMonth())).getChangeShortString()).append("\"}");
+            buf.append("label{text=\"").append((new Change(getMoneySpentLife(shop))).getChangeShortString()).append("\"}");
+            if (BuyerTradingWindow.destroyBoughtItems)
+                buf.append("label{text=\"N/A\"}}");
+            else
+                buf.append("label{text=\"").append(BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()).append("\"}}");
+            buf.append("text{type=\"bold\";text=\"Dismissing\"};text{text=\"if you dismiss a buyer they will take all items with them!\"}");
+            buf.append("harray{label{text=\"Dismiss\"};checkbox{id=\"").append(traderId).append("dismiss\";selected=\"false\";text=\" \"}}");
+
+            buf.append("harray {button{text='Confirm';id='submit'};label{text=' ';id='spacedlxg'};button{text='Manage Prices';id='").append(traderId).append("manage'};label{text=' ';id='spacedlxg'};button{text='Add Item To List';id='add'}}}};null;null;null;null;}");
         } else {
             buf.append("text{type=\"bold\";text=\"Hire personal buyer:\"}");
             buf.append("text{text=\"By using this contract a personal buyer will appear.\"}");

@@ -31,10 +31,10 @@ public class PriceList implements Iterable<PriceList.Entry> {
     // PapyrusBehaviour line 191 says 500 max chars for paper.
     private static final int MAX_INSCRIPTION_LENGTH = 500;
     private static final int MAX_PAGES_IN_BOOK = 10;
-    private Item priceListItem;
+    private final Item priceListItem;
     private int pageCount = 1;
-    private Map<Entry, TempItem> prices = new HashMap<>();
-    private List<Entry> pricesOrder = new ArrayList<>();
+    private final Map<Entry, TempItem> prices = new HashMap<>();
+    private final List<Entry> pricesOrder = new ArrayList<>();
     private boolean createdItems = false;
     private int lastInscriptionLength;
     public static final String noPriceListFoundPlayerMessage = "The buyer fumbles in their pockets but fails to find their price list.";
@@ -43,6 +43,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
     public static int unauthorised = -1;
     private static final Pattern pageName = Pattern.compile("[\\w\\s]*(Buy|Sell) List Page (\\d+)");
     // Causes testIncorrectPriceListInscriptionRemovesEntry to fail if final.
+    @SuppressWarnings("FieldMayBeFinal")
     private static Logger logger = Logger.getLogger(PriceList.class.getName());
 
     public class Entry implements Comparable<Entry> {
@@ -104,6 +105,10 @@ public class PriceList implements Iterable<PriceList.Entry> {
         }
 
         Entry(int template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) {
+            setValues(template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
+        }
+
+        private void setValues(int template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) {
             this.template = template;
             this.material = material;
             this.weight = weight;
@@ -121,14 +126,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
                 Items.destroyItem(item.getWurmId());
             prices.remove(this);
 
-            this.template = template;
-            this.material = material;
-            this.weight = weight;
-            this.minQL = minQL;
-            this.price = price;
-            this.remainingToPurchase = remainingToPurchase;
-            this.minimumPurchase = minimumPurchase;
-            this.acceptsDamaged = acceptsDamaged;
+            setValues(template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
 
             prices.put(this, null);
         }

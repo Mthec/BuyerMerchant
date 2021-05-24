@@ -227,26 +227,26 @@ public class SetBuyerPricesQuestion extends QuestionExtension {
                     StringBuilder buf = new StringBuilder(this.getBmlHeaderWithScrollAndQuestion());
                     DecimalFormat df = new DecimalFormat("#.##");
                     if (!BuyerTradingWindow.destroyBoughtItems)
-                        buf.append("text{text=\"" + trader.getName() + " has inventory space for " + (BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()) + " more items.\"}");
-                    buf.append("text{type=\"bold\";text=\"Prices for " + trader.getName() + "\"}text{text=''}");
+                        buf.append("text{text=\"").append(trader.getName()).append(" has inventory space for ").append(BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()).append(" more items.\"}");
+                    buf.append("text{type=\"bold\";text=\"Prices for ").append(trader.getName()).append("\"}text{text=''}");
                     buf.append("text{text=\"Limit restricts the Buyer from purchasing more than that number of items.  Entry will be removed once it reaches 0.  Set to 0 to accept any amount.\"}");
                     buf.append("text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}");
-                    buf.append("table{rows=\"" + (priceList.size() + 1) + "\"; cols=\"11\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Limit\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"};label{text=\"Remove?\"}");
+                    buf.append("table{rows=\"").append(priceList.size() + 1).append("\"; cols=\"11\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Limit\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"};label{text=\"Remove?\"}");
 
                     for(PriceList.Entry item : priceList) {
                         ++idx;
-                        Change change = Economy.getEconomy().getChangeFor((long)item.getPrice());
+                        Change change = Economy.getEconomy().getChangeFor(item.getPrice());
                         buf.append(itemNameWithColorByRarity(item.getItem()).replaceFirst(" - minimum [\\d]+", ""));
-                        buf.append("harray{input{maxchars=\"8\"; id=\"" + idx + "weight\";text=\"").append(WeightString.toString(item.getWeight())).append("\"};label{text=\"kg \"}};");
-                        buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "q\";text=\"" + df.format((double)item.getQualityLevel()) + "\"};label{text=\" \"}};");
-                        buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "g\";text=\"" + change.getGoldCoins() + "\"};label{text=\" \"}};");
-                        buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "s\";text=\"" + change.getSilverCoins() + "\"};label{text=\" \"}};");
-                        buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "c\";text=\"" + change.getCopperCoins() + "\"};label{text=\" \"}};");
-                        buf.append("harray{input{maxchars=\"2\"; id=\"" + idx + "i\";text=\"" + change.getIronCoins() + "\"};label{text=\" \"}};");
-                        buf.append("harray{input{maxchars=\"4\"; id=\"" + idx + "r\";text=\"" + item.getRemainingToPurchase() + "\"};label{text=\" \"}};");
-                        buf.append("harray{input{maxchars=\"3\"; id=\"" + idx + "p\";text=\"" + item.getMinimumPurchase() + "\"};label{text=\" \"}};");
-                        buf.append("harray{checkbox{id=\"" + idx + "d\"" + (item.acceptsDamaged() ? ";selected=\"true\"" : "") + "};label{text=\" \"}};");
-                        buf.append("harray{checkbox{id=\"" + idx + "remove\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"8\"; id=\"").append(idx).append("weight\";text=\"").append(WeightString.toString(item.getWeight())).append("\"};label{text=\"kg \"}};");
+                        buf.append("harray{input{maxchars=\"3\"; id=\"").append(idx).append("q\";text=\"").append(df.format(item.getQualityLevel())).append("\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"3\"; id=\"").append(idx).append("g\";text=\"").append(change.getGoldCoins()).append("\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"2\"; id=\"").append(idx).append("s\";text=\"").append(change.getSilverCoins()).append("\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"2\"; id=\"").append(idx).append("c\";text=\"").append(change.getCopperCoins()).append("\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"2\"; id=\"").append(idx).append("i\";text=\"").append(change.getIronCoins()).append("\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"4\"; id=\"").append(idx).append("r\";text=\"").append(item.getRemainingToPurchase()).append("\"};label{text=\" \"}};");
+                        buf.append("harray{input{maxchars=\"3\"; id=\"").append(idx).append("p\";text=\"").append(item.getMinimumPurchase()).append("\"};label{text=\" \"}};");
+                        buf.append("harray{checkbox{id=\"").append(idx).append("d\"").append(item.acceptsDamaged() ? ";selected=\"true\"" : "").append("};label{text=\" \"}};");
+                        buf.append("harray{checkbox{id=\"").append(idx).append("remove\"};label{text=\" \"}};");
                         this.itemMap.put(item, idx);
                     }
 

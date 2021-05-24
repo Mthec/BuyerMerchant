@@ -13,8 +13,6 @@ import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.players.Player;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
-import java.util.logging.Logger;
-
 public class BuyerTrade extends Trade {
     private final BuyerTradingWindow creatureOneOfferWindow;
     private final BuyerTradingWindow creatureTwoOfferWindow;
@@ -23,7 +21,6 @@ public class BuyerTrade extends Trade {
     private boolean creatureOneSatisfied = false;
     private boolean creatureTwoSatisfied = false;
     private int currentCounter = -1;
-    private static final Logger logger = Logger.getLogger(Trade.class.getName());
     private long tax = 0L;
 
     public BuyerTrade(Creature playerCreature, Creature buyerCreature) throws PriceList.NoPriceListOnBuyer {
@@ -130,6 +127,7 @@ public class BuyerTrade extends Trade {
                     if (ok) {
                         this.creatureOneRequestWindow.swapOwners();
                         this.creatureTwoRequestWindow.swapOwners();
+                        //noinspection ConstantConditions
                         ((BuyerHandler)creatureTwo.getTradeHandler()).setTradeSuccessful();
 
                         this.creatureTwoOfferWindow.endTrade();

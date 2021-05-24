@@ -30,11 +30,12 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
     private final Shop shop;
     private final boolean ownerTrade;
     private PriceList priceList;
-    private Map<PriceList.Entry, MinimumRequired> minimumRequiredMap = new HashMap<>();
+    private final Map<PriceList.Entry, MinimumRequired> minimumRequiredMap = new HashMap<>();
+    @SuppressWarnings("FieldMayBeFinal")
     private static int deliveryContractId = -10;
     private static final int unauthorisedItem = 1;
     private static final int notFullWeight = 2;
-    private Map<PriceList.Entry, Set<Item>> remainingToPurchaseMap = new HashMap<>();
+    private final Map<PriceList.Entry, Set<Item>> remainingToPurchaseMap = new HashMap<>();
     private boolean tradeSuccessful;
 
     public BuyerHandler(Creature aCreature, Trade _trade) throws PriceList.NoPriceListOnBuyer {
@@ -93,18 +94,18 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         if (this.trade != null) {
             if (inventoryWindow == 2L) {
                 this.tradeChanged();
-                if (logger.isLoggable(Level.FINEST) && item != null) {
+                if (logger.isLoggable(Level.FINEST)) {
                     logger.finest("Added " + item.getName() + " to his offer window.");
                 }
             } else if (inventoryWindow == 1L) {
-                if (logger.isLoggable(Level.FINEST) && item != null) {
+                if (logger.isLoggable(Level.FINEST)) {
                     logger.finest("Added " + item.getName() + " to my offer window.");
                 }
             } else if (inventoryWindow == 3L) {
-                if (logger.isLoggable(Level.FINEST) && item != null) {
+                if (logger.isLoggable(Level.FINEST)) {
                     logger.finest("Added " + item.getName() + " to his request window.");
                 }
-            } else if (inventoryWindow == 4L && logger.isLoggable(Level.FINEST) && item != null) {
+            } else if (inventoryWindow == 4L && logger.isLoggable(Level.FINEST)) {
                 logger.finest("Added " + item.getName() + " to my request window.");
             }
         }
@@ -406,14 +407,13 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                             if (minimumRequired.shrinkToFit(maxPersonalItems - itemCount)) {
                                 accepted.add(entry);
                                 itemCount += minimumRequired.itemCount();
-                                personalItemsFull = true;
                             } else {
                                 Set<PriceList.Entry> toReevaluate = minimumRequired.getLinked();
                                 accepted.removeAll(toReevaluate);
                                 confirmed.addAll(toReevaluate);
                                 invalidSets.addAll(minimumRequired.getMinimumSets());
-                                personalItemsFull = true;
                             }
+                            personalItemsFull = true;
                         }
 
                         confirmed.remove(entry);

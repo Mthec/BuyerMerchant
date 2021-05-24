@@ -9,14 +9,13 @@ import java.util.List;
 public class CopyContractPriceListAction implements ModAction, ActionPerformer, BehaviourProvider {
 
     private final short actionId;
-    private final ActionEntry actionEntry;
 
     public CopyContractPriceListAction() {
         actionId = (short)ModActions.getNextActionId();
 
-        actionEntry = new ActionEntryBuilder(actionId, "To This Buyer", "copying price list",
-                new int[] { ActionTypes.ACTION_TYPE_ALWAYS_USE_ACTIVE_ITEM,
-                            ActionTypes.ACTION_TYPE_QUICK
+        ActionEntry actionEntry = new ActionEntryBuilder(actionId, "To This Buyer", "copying price list",
+                new int[] {ActionTypes.ACTION_TYPE_ALWAYS_USE_ACTIVE_ITEM,
+                        ActionTypes.ACTION_TYPE_QUICK
                 }).build();
 
         ModActions.registerAction(actionEntry);
