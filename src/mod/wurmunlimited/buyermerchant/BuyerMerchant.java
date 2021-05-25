@@ -34,6 +34,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     private int templateId;
     private boolean updateTraders = false;
     private boolean contractsOnTraders = true;
+    private byte gmManagePowerRequired = 10;
     private boolean freeMoney = false;
     private boolean destroyBoughtItems = false;
     private final int defaultMaxItems = 50;
@@ -82,6 +83,17 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         val = properties.getProperty("contracts_on_traders");
         if (val != null && val.equals("false"))
             contractsOnTraders = false;
+        val = properties.getProperty("gm_manage_power_required");
+        if (val != null && !val.isEmpty()) {
+            try {
+                gmManagePowerRequired = Byte.parseByte(val);
+                if (gmManagePowerRequired < 1)
+                    throw new NumberFormatException();
+            } catch (NumberFormatException e) {
+                logger.warning("Invalid gm_manage_power_required option, falling back to default (10).");
+                gmManagePowerRequired = 10;
+            }
+        }
         val = properties.getProperty("free_money");
         if (val != null && val.equals("true"))
             freeMoney = true;
@@ -237,6 +249,10 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyPriceListAction.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyBuyerPriceListAction.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyContractPriceListAction.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PlaceNpcMenu.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("NpcMenuEntry.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ManageBuyerAction.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PlaceBuyerAction.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("ContractMinimum.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$1.class"));
@@ -253,10 +269,12 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     @Override
     public void onServerStarted() {
         CopyPriceListAction.contractTemplateId = templateId;
+        ManageBuyerAction.gmManagePowerRequired = gmManagePowerRequired;
         ModActions.registerAction(new CopyBuyerPriceListAction());
         ModActions.registerAction(new CopyContractPriceListAction());
+        ModActions.registerAction(new ManageBuyerAction());
         new PlaceBuyerAction();
-        PlaceNpcMenu.registerAction();
+        PlaceNpcMenu.register();
 
         BuyerTradingWindow.freeMoney = freeMoney;
         BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;

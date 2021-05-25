@@ -280,7 +280,7 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
                 this.getResponder().getCommunicator().sendNormalServerMessage("You decide not to dismiss the buyer.");
             }
         } else {
-            if (wasSelected("submit")) {
+            if (wasSelected("confirm")) {
                 String name = getStringProp("ptradername");
                 if (name != null && !name.isEmpty()) {
                     try {
@@ -387,7 +387,7 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
         buf.append("text{text=\"If you are away for several months the buyer may leave or be forced to leave with all the items and coins in his inventory.\"}");
         if (shop != null) {
             buf.append("text{type=\"bold\";text=\"Last sold\"};text{text=\"is the number of days, hours and minutes since a personal buyer last bought an item.\"}");
-            buf.append("table{rows=\"2\";cols=\"5\";label{text=\"name\"};label{text=\"Last bought\"};label{text=\"Bought month\"};label{text=\"Bought life\"};label{text=\"Free slots\"}");
+            buf.append("table{rows=\"2\";cols=\"5\";label{text=\"Name\"};label{text=\"Last bought\"};label{text=\"Bought month\"};label{text=\"Bought life\"};label{text=\"Free slots\"}");
             long timeLeft = System.currentTimeMillis() - shop.getLastPolled();
             long daysLeft = timeLeft / DAY_MILLIS;
             long hoursLeft = (timeLeft - daysLeft * DAY_MILLIS) / HOUR_MILLIS;
@@ -432,7 +432,7 @@ public class BuyerManagementQuestion extends QuestionExtension implements TimeCo
             buf.append("text{type=\"bold\";text=\"Dismissing\"};text{text=\"if you dismiss a buyer they will take all items with them!\"}");
             buf.append("harray{label{text=\"Dismiss\"};checkbox{id=\"").append(traderId).append("dismiss\";selected=\"false\";text=\" \"}}");
 
-            buf.append("harray {button{text='Confirm';id='submit'};label{text=' ';id='spacedlxg'};button{text='Manage Prices';id='").append(traderId).append("manage'};label{text=' ';id='spacedlxg'};button{text='Add Item To List';id='add'}}}};null;null;null;null;}");
+            buf.append("harray {button{text='Confirm';id='confirm'};label{text=' ';id='spacedlxg'};button{text='Manage Prices';id='").append(traderId).append("manage'};label{text=' ';id='spacedlxg'};button{text='Add Item To List';id='add'}}}};null;null;null;null;}");
         } else {
             buf.append("text{type=\"bold\";text=\"Hire personal buyer:\"}");
             buf.append("text{text=\"By using this contract a personal buyer will appear.\"}");

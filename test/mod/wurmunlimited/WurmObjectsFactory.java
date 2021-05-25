@@ -253,6 +253,13 @@ public class WurmObjectsFactory {
         return createNewItem(buyerContractId);
     }
 
+    public Item createWritFor(Player owner, Creature buyer) {
+        Item writ = createBuyerContract();
+        writ.setData(buyer.getWurmId());
+        owner.getInventory().insertItem(writ);
+        return writ;
+    }
+
     public Creature getCreature(long id) throws NoSuchCreatureException {
         if (!creatures.containsKey(id))
             throw new NoSuchCreatureException("");

@@ -319,7 +319,7 @@ public class Assert {
 
         @Override
         public void describeTo(Description description) {
-            description.appendText(" No BML sent to match,");
+            description.appendText(" BML to match,");
         }
 
         @Override

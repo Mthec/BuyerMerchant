@@ -19,12 +19,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class BuyerManagementQuestionTest extends WurmTradingTest {
-
     private Item contract;
     private Item placedContract;
     private Properties answers;
     private BuyerManagementQuestion question;
-    private String name = "George";
+    private final String name = "George";
 
     @Override
     @BeforeEach
@@ -140,7 +139,7 @@ public class BuyerManagementQuestionTest extends WurmTradingTest {
         question = new BuyerManagementQuestion(owner, contract.getWurmId());
         question.sendQuestion();
         answers.setProperty("ptradername", newName);
-        answers.setProperty("submit", "true");
+        answers.setProperty("confirm", "true");
         question.answer(answers);
 
         assertEquals("Buyer_" + newName, factory.getCreature(contract.getData()).getName());

@@ -8,7 +8,6 @@ import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.server.zones.Zones;
 import org.gotti.wurmunlimited.modsupport.actions.ActionPerformer;
 import org.gotti.wurmunlimited.modsupport.actions.BehaviourProvider;
-import org.gotti.wurmunlimited.modsupport.actions.ModAction;
 import org.gotti.wurmunlimited.modsupport.actions.ModActions;
 
 import java.util.ArrayList;
@@ -17,35 +16,56 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class PlaceNpcMenu implements ModAction, ActionPerformer, BehaviourProvider {
+public class PlaceNpcMenu implements BehaviourProvider {
     private static final Logger logger = Logger.getLogger(PlaceNpcMenu.class.getName());
     private static final List<ActionEntry> actionEntries = new ArrayList<>();
-    private static final Map<String, NpcMenuEntry> npcs = new HashMap<>();
-    private static final short actionId = (short)ModActions.getNextActionId();
+    private static final Map<Short, NpcMenuEntry> npcs = new HashMap<>();
     private static PlaceNpcMenu menu = null;
 
     private PlaceNpcMenu() {}
 
-    public static PlaceNpcMenu registerAction() {
+    public static PlaceNpcMenu register() {
         if (menu == null) {
             menu = new PlaceNpcMenu();
-            ActionEntry actionEntry = new ActionEntry(actionId, "Place Npc", "placing npcs");
-            ModActions.registerAction(actionEntry);
-            ModActions.registerAction(menu);
+            ModActions.registerBehaviourProvider(menu);
         }
 
         return menu;
     }
 
     static void addNpcAction(NpcMenuEntry entry) {
-        npcs.put(entry.getName(), entry);
+        short newActionId = (short)ModActions.getNextActionId();
+        npcs.put(newActionId, entry);
         if (actionEntries.size() == 0)
             actionEntries.add(null);
         actionEntries.set(0, new ActionEntry((short)-npcs.size(),
                 "Place Npc",
                 "placing npcs",
                 ItemBehaviour.emptyIntArr));
-        actionEntries.add(new ActionEntry(actionId, entry.getName(), "placing " + entry.getName()));
+        ActionEntry actionEntry = new ActionEntry(newActionId, entry.getName(), "placing " + entry.getName());
+        actionEntries.add(actionEntry);
+        ModActions.registerAction(actionEntry);
+        ModActions.registerActionPerformer(new ActionPerformer() {
+            @Override
+            public boolean action(Action action, Creature performer, Item source, int tilex, int tiley, boolean onSurface, int floorLevel, int tile, short num, float counter) {
+                return register().action(action, performer, source, tilex, tiley, onSurface, floorLevel, tile, num, counter);
+            }
+
+            @Override
+            public boolean action(Action action, Creature performer, Item source, boolean onSurface, Floor floor, int encodedTile, short num, float counter) {
+                return register().action(action, performer, source, onSurface, floor, encodedTile, num, counter);
+            }
+
+            @Override
+            public boolean action(Action action, Creature performer, Item source, boolean onSurface, BridgePart bridgePart, int encodedTile, short num, float counter) {
+                return register().action(action, performer, source, onSurface, bridgePart, encodedTile, num, counter);
+            }
+
+            @Override
+            public short getActionId() {
+                return newActionId;
+            }
+        });
     }
 
     static List<ActionEntry> getBehaviours(Creature performer, Item item) {
@@ -78,8 +98,8 @@ public class PlaceNpcMenu implements ModAction, ActionPerformer, BehaviourProvid
     }
 
     private boolean doAction(Action action, short num, Creature performer, Item source, VolaTile tile, int floorLevel) {
-        if (num == actionId && source.isWand() && performer.getPower() >= 2) {
-            NpcMenuEntry entry = npcs.get(action.getActionString());
+        if (source.isWand() && performer.getPower() >= 2) {
+            NpcMenuEntry entry = npcs.get(num);
 
             if (entry == null)
                 return true;
@@ -90,7 +110,6 @@ public class PlaceNpcMenu implements ModAction, ActionPerformer, BehaviourProvid
         return true;
     }
 
-    @Override
     public boolean action(Action action, Creature performer, Item source, int tilex, int tiley, boolean onSurface, int floorLevel, int tile, short num, float counter) {
         VolaTile volaTile = Zones.getOrCreateTile(tilex, tiley, onSurface);
         if (volaTile == null) {
@@ -105,18 +124,11 @@ public class PlaceNpcMenu implements ModAction, ActionPerformer, BehaviourProvid
         return doAction(action, num, performer, source, volaTile, floorLevel);
     }
 
-    @Override
     public boolean action(Action action, Creature performer, Item source, boolean onSurface, Floor floor, int encodedTile, short num, float counter) {
         return doAction(action, num, performer, source, floor.getTile(), floor.getFloorLevel());
     }
 
-    @Override
     public boolean action(Action action, Creature performer, Item source, boolean onSurface, BridgePart bridgePart, int encodedTile, short num, float counter) {
         return doAction(action, num, performer, source, bridgePart.getTile(), bridgePart.getFloorLevel());
-    }
-
-    @Override
-    public short getActionId() {
-        return actionId;
     }
 }

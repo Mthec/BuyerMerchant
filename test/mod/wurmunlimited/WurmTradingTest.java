@@ -32,7 +32,7 @@ public abstract class WurmTradingTest {
     protected Creature buyer;
     protected Trade trade;
     protected WurmObjectsFactory factory;
-    protected static final Pattern passthrough = Pattern.compile("passthrough\\{id=\"id\";text=\"([\\d]+)\"}");
+    protected static final Pattern passthrough = Pattern.compile("passthrough\\{id=[\"']id[\"'];text=[\"']([\\d]+)[\"']}");
     protected static final Pattern defaultOption = Pattern.compile("default=\"([\\d]+)\";");
     protected static final Pattern itemAndMaterial = Pattern.compile("harray\\{label\\{text=\"([\\w\\s]+)\"}};harray\\{label\\{text=\"([\\w\\s]+)\"}};");
 

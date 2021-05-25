@@ -33,6 +33,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
     private void createHandler() {
         makeBuyerTrade();
+        //noinspection ConstantConditions
         handler = (BuyerHandler)buyer.getTradeHandler();
         buyerOffer = trade.getTradingWindow(1);
         buyerToTrade = trade.getTradingWindow(3);
@@ -83,7 +84,6 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         assertEquals(1, trade.getTradingWindow(1).getAllItems().length);
     }
 
-    @SuppressWarnings("DuplicateExpressions")
     @Test
     void testPriceListItemsDestroyedOnEnd() throws NoSuchFieldException, IllegalAccessException {
         Item item1 = factory.createNewItem();
@@ -121,8 +121,9 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     @Test
     void tesDoesNotSucksCoins() {
         createHandler();
-        int items = 5;
-        factory.createManyCopperCoins(items).forEach(player.getInventory()::insertItem);
+        Item[] coins = Economy.getEconomy().getCoinsFor(66);
+        int items = coins.length;
+        Arrays.stream(coins).forEach(player.getInventory()::insertItem);
         player.getInventory().getItems().forEach(playerOffer::addItem);
         handler.balance();
 
@@ -291,8 +292,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     @Test
     void testOldCoinsRemovedFromBuyerOffer() {
         createHandler();
-        int items = 5;
-        factory.createManyCopperCoins(items).forEach(buyerToTrade::addItem);
+        Arrays.stream(Economy.getEconomy().getCoinsFor(15)).forEach(buyerToTrade::addItem);
 
         handler.balance();
 
