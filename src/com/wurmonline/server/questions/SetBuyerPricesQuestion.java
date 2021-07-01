@@ -27,7 +27,7 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class SetBuyerPricesQuestion extends QuestionExtension {
+public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
     private static final Logger logger = Logger.getLogger(SetBuyerPricesQuestion.class.getName());
     private final Map<PriceList.Entry, Integer> itemMap = new HashMap<>();
     private PriceList priceList;

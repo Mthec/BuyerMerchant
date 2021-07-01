@@ -19,7 +19,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.logging.Level;
 
-public class AddItemToBuyerQuestion extends QuestionExtension {
+public class AddItemToBuyerQuestion extends BuyerQuestionExtension {
     private int stage = 0;
     private static final String[] questionTitles = new String[] {
             "Add a new item to the buyers list:",

@@ -207,21 +207,25 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     public void preInit() {
         ClassPool pool = HookManager.getInstance().getClassPool();
         try {
-            // Remove final from TradeHandler and TradingWindow.
+            // Remove final and add empty constructor to TradeHandler.
             CtClass tradeHandler = pool.get("com.wurmonline.server.creatures.TradeHandler");
             tradeHandler.defrost();
             tradeHandler.setModifiers(Modifier.clear(tradeHandler.getModifiers(), Modifier.FINAL));
-            // Add empty constructor.
-            tradeHandler.addConstructor(CtNewConstructor.make(tradeHandler.getSimpleName() + "(){}", tradeHandler));
+            if (tradeHandler.getConstructors().length == 1)
+                tradeHandler.addConstructor(CtNewConstructor.make(tradeHandler.getSimpleName() + "(){}", tradeHandler));
 
+            // Remove final and add empty constructor to TradingWindow.
             CtClass tradingWindow = pool.get("com.wurmonline.server.items.TradingWindow");
             tradingWindow.defrost();
             tradingWindow.setModifiers(Modifier.clear(tradingWindow.getModifiers(), Modifier.FINAL));
+            if (tradingWindow.getConstructors().length == 1)
+                tradingWindow.addConstructor(CtNewConstructor.make(tradingWindow.getSimpleName() + "(){}", tradingWindow));
 
-            // Add empty constructor.
+            // Remove final and add empty constructor to Trade.
             CtClass trade = pool.get("com.wurmonline.server.items.Trade");
             trade.defrost();
-            trade.addConstructor(CtNewConstructor.make(trade.getSimpleName() + "(){}", trade));
+            if (trade.getConstructors().length == 1)
+                trade.addConstructor(CtNewConstructor.make(trade.getSimpleName() + "(){}", trade));
             // Remove final from public fields.
             CtField creatureOne = trade.getDeclaredField("creatureOne");
             creatureOne.setModifiers(Modifier.clear(creatureOne.getModifiers(), Modifier.FINAL));
@@ -242,7 +246,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerHandler.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTradingWindow.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTrade.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("QuestionExtension.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerQuestionExtension.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerManagementQuestion.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetBuyerPricesQuestion.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerQuestion.class"));

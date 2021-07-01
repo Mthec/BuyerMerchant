@@ -34,7 +34,7 @@ import static com.wurmonline.server.creatures.CreaturePackageCaller.saveCreature
 import static com.wurmonline.server.questions.QuestionParser.*;
 import static mod.wurmunlimited.buyermerchant.BuyerMerchant.BUYER_NAME_PREFIX;
 
-public class BuyerManagementQuestion extends QuestionExtension implements TimeConstants {
+public class BuyerManagementQuestion extends BuyerQuestionExtension implements TimeConstants {
     private static final Logger logger = Logger.getLogger(BuyerManagementQuestion.class.getName());
     private final boolean isDismissing;
     private static Field moneySpentLife = null;

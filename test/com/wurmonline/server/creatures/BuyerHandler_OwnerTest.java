@@ -1,5 +1,6 @@
 package com.wurmonline.server.creatures;
 
+import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.items.BuyerTrade;
 import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.ItemsPackageFactory;
@@ -28,6 +29,7 @@ public class BuyerHandler_OwnerTest extends WurmTradingTest {
     protected void setUp() throws Throwable {
         super.setUp();
         makeOwnerBuyerTrade();
+        //noinspection ConstantConditions
         handler = (BuyerHandler)buyer.getTradeHandler();
     }
 
@@ -61,7 +63,7 @@ public class BuyerHandler_OwnerTest extends WurmTradingTest {
     @Test
     void testSucksCoins() {
         int items = 5;
-        factory.createManyCopperCoins(items).forEach(owner.getInventory()::insertItem);
+        Arrays.asList(Economy.getEconomy().getCoinsFor(500)).forEach(owner.getInventory()::insertItem);
         TradingWindow window = trade.getTradingWindow(2);
         owner.getInventory().getItems().forEach(window::addItem);
         handler.balance();
@@ -89,7 +91,7 @@ public class BuyerHandler_OwnerTest extends WurmTradingTest {
     void testBuyerAlwaysSatisfied() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         int items = 5;
         factory.createManyItems(items).forEach(owner.getInventory()::insertItem);
-        factory.createManyCopperCoins(items).forEach(owner.getInventory()::insertItem);
+        Arrays.asList(Economy.getEconomy().getCoinsFor(500)).forEach(owner.getInventory()::insertItem);
         TradingWindow window = trade.getTradingWindow(2);
         owner.getInventory().getItems().forEach(window::addItem);
         handler.balance();
