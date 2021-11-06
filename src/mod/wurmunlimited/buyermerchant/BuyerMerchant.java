@@ -12,6 +12,7 @@ import com.wurmonline.shared.constants.IconConstants;
 import com.wurmonline.shared.constants.ItemMaterials;
 import com.wurmonline.shared.util.StringUtilities;
 import javassist.*;
+import mod.wurmunlimited.buyermerchant.db.BuyerScheduler;
 import org.gotti.wurmunlimited.modloader.classhooks.HookManager;
 import org.gotti.wurmunlimited.modloader.interfaces.*;
 import org.gotti.wurmunlimited.modsupport.ItemTemplateBuilder;
@@ -201,6 +202,11 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                 "stopLoggers",
                 "()V",
                 () -> this::stopLoggers);
+
+        manager.registerHook("com.wurmonline.server.creatures.Creature",
+                "poll",
+                "()Z",
+                () -> this::poll);
     }
 
     @Override
@@ -263,6 +269,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$2.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumSet.class"));
             pool.makeClass(BuyerMerchant.class.getResourceAsStream("WeightString.class"));
+            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerScheduler.class"));
         } catch (NotFoundException | IOException | CannotCompileException e) {
             throw new RuntimeException(e);
         }
@@ -442,7 +449,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         } finally {
             contracts.forEach(item -> item.setTemplateId(templateId));
         }
-        //noinspection SuspiciousInvocationHandlerImplementation
+
         return null;
     }
 
@@ -572,5 +579,17 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         Class<?> BuyerTradingWindow = Class.forName("com.wurmonline.server.items.BuyerTradingWindow");
         BuyerTradingWindow.getMethod("stopLoggers").invoke(null);
         return method.invoke(o, args);
+    }
+
+    Object poll(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
+        Creature creature = (Creature)o;
+        boolean toDestroy = (boolean)method.invoke(o, args);
+
+        if (!toDestroy && isBuyer(creature)) {
+            BuyerScheduler.updateBuyer(creature);
+        }
+
+        //noinspection SuspiciousInvocationHandlerImplementation
+        return toDestroy;
     }
 }

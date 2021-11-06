@@ -17,7 +17,6 @@ import mod.wurmunlimited.WurmTradingTest;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.stubbing.Answer;
 
 import java.lang.reflect.Field;
@@ -32,15 +31,16 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("ConstantConditions")
 class BuyerMerchantTest extends WurmTradingTest {
 
     private Method method;
     private BuyerMerchant buyerMerchant;
 
     @BeforeEach
-    void createBuyerMerchant() throws NoSuchFieldException {
+    void createBuyerMerchant() throws NoSuchFieldException, IllegalAccessException {
         buyerMerchant = new BuyerMerchant();
-        FieldSetter.setField(buyerMerchant, BuyerMerchant.class.getDeclaredField("templateId"), factory.createBuyerContract().getTemplateId());
+        ReflectionUtil.setPrivateField(buyerMerchant, BuyerMerchant.class.getDeclaredField("templateId"), factory.createBuyerContract().getTemplateId());
         method = mock(Method.class);
     }
 
@@ -586,7 +586,7 @@ class BuyerMerchantTest extends WurmTradingTest {
     void handle_EXAMINENoSuchPlayerAsOwner() throws Throwable {
         InvocationHandler handler = (o, method, args) -> buyerMerchant.handle_EXAMINE(o, method, args);
         Players players = mock(Players.class);
-        FieldSetter.setField(null, Players.class.getDeclaredField("instance"), players);
+        ReflectionUtil.setPrivateField(null, Players.class.getDeclaredField("instance"), players);
         when(players.getNameFor(anyLong())).thenThrow(NoSuchPlayerException.class);
 
         long id = 199999999;
@@ -807,14 +807,17 @@ class BuyerMerchantTest extends WurmTradingTest {
 
         makeBuyerTrade();
         player.getInventory().getItems().forEach(trade.getTradingWindow(2)::addItem);
-        BuyerHandler handler = (BuyerHandler)buyer.getTradeHandler();
+        TradeHandler tradeHandler = buyer.getTradeHandler();
+        assert tradeHandler != null;
+        //noinspection ConstantConditions
+        BuyerHandler handler = (BuyerHandler)tradeHandler;
         ReflectionUtil.callPrivateMethod(handler, BuyerHandler.class.getDeclaredMethod("balance"));
 
         assertEquals(maxItems, trade.getTradingWindow(4).getItems().length);
     }
 
     @Test
-    void testDestroyBoughtItemsStillSetsMerchantMaxItems() throws PriceList.NoPriceListOnBuyer, EntryBuilder.EntryBuilderException, PriceList.PageNotAdded, PriceList.PriceListFullException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    void testDestroyBoughtItemsStillSetsMerchantMaxItems() {
         int maxItems = 1500;
         Properties properties = new Properties();
         properties.setProperty("max_items", String.valueOf(maxItems));

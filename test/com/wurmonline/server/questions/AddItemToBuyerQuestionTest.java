@@ -3,7 +3,6 @@ package com.wurmonline.server.questions;
 import com.wurmonline.server.behaviours.MethodsItems;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.FakeCommunicator;
-import com.wurmonline.server.economy.Change;
 import com.wurmonline.server.items.*;
 import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.WurmTradingQuestionTest;
@@ -23,17 +22,18 @@ import static mod.wurmunlimited.Assert.receivedMessageContaining;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
-class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
+abstract class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
+    private static final String cancel = "You decide not to add anything.";
+    private static final Pattern allOptions = Pattern.compile("options=\"([\\s-,\\w']+)\"");
+    private static final Pattern otherOptions = Pattern.compile("options=\"(?:Nothing,)?(?:No change,)?(?:Any material,)?([\\s-,\\w']+)\"");
 
-    private static String cancel = "You decide not to add anything.";
-    private Pattern allOptions = Pattern.compile("options=\"([\\s-,\\w']+)\"");
-    private Pattern otherOptions = Pattern.compile("options=\"(?:Nothing,)?(?:No change,)?(?:Any material,)?([\\s-,\\w']+)\"");
-
-    private void askQuestion() {
-        super.askQuestion(new AddItemToBuyerQuestion(owner, buyer.getWurmId()));
+    protected void askQuestion() {
+        askQuestion(owner, buyer);
     }
 
-    private String getElementPositionInOptions(String bml, int templateId) {
+    protected abstract AddItemToBuyerQuestion askQuestion(Creature asker, Creature buyer);
+
+    protected String getElementPositionInOptions(String bml, int templateId) {
         try {
             String templateName = ItemTemplateFactory.getInstance().getTemplate(templateId).getName();
             Matcher match = otherOptions.matcher(bml);
@@ -49,7 +49,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         }
     }
 
-    private String getElementPositionInOptions(String bml, String element) {
+    protected String getElementPositionInOptions(String bml, String element) {
         Matcher match = otherOptions.matcher(bml);
         assertTrue(match.find());
         List<String> elements = Arrays.asList(match.group(1).split(","));
@@ -278,56 +278,6 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         assertEquals(template7Index, id);
     }
 
-    @SuppressWarnings("ConstantConditions")
-    @Test
-    void testItemWithCorrectDetailsAddedToPriceList() throws PriceList.NoPriceListOnBuyer, NoSuchTemplateException {
-        int templateId = 7;
-        byte material = ItemTemplateFactory.getInstance().getTemplate(templateId).getMaterial();
-        int weight = 1000;
-        float ql = 55.6f;
-        int money = 1122334455;
-        int remainingToPurchase = 200;
-        int minimumPurchase = 100;
-        boolean acceptsDamaged = true;
-        Change change = new Change(money);
-
-        askQuestion();
-        answers.setProperty("templateId", getElementPositionInOptions(com.lastBmlContent, templateId));
-        answer();
-
-        answers.setProperty("material", getElementPositionInOptions(com.lastBmlContent, Item.getMaterialString(material)));
-        answer();
-
-        answers.setProperty("weight", WeightString.toString(weight));
-        answers.setProperty("q", Float.toString(ql));
-        answers.setProperty("g", Long.toString(change.goldCoins));
-        answers.setProperty("s", Long.toString(change.silverCoins));
-        answers.setProperty("c", Long.toString(change.copperCoins));
-        answers.setProperty("i", Long.toString(change.ironCoins));
-        answers.setProperty("r", Integer.toString(remainingToPurchase));
-        answers.setProperty("p", Integer.toString(minimumPurchase));
-        answers.setProperty("d", Boolean.toString(acceptsDamaged));
-        answer();
-
-        PriceList.Entry item = PriceList.getPriceListFromBuyer(buyer).iterator().next();
-        Change price = new Change(item.getPrice());
-
-        assertAll(
-                () -> assertEquals(templateId, item.getItem().getTemplateId(), "Template Id incorrect"),
-                () -> assertEquals(material, item.getItem().getMaterial(), "Material incorrect"),
-                () -> assertEquals(weight, item.getItem().getWeightGrams(), "Weight incorrect"),
-                () -> assertEquals(ql, item.getItem().getQualityLevel(), "QL incorrect"),
-                () -> assertEquals(change.goldCoins, price.goldCoins, "Gold incorrect"),
-                () -> assertEquals(change.silverCoins, price.silverCoins, "Silver incorrect"),
-                () -> assertEquals(change.copperCoins, price.copperCoins, "Copper incorrect"),
-                () -> assertEquals(change.ironCoins, price.ironCoins, "Iron incorrect"),
-                () -> assertEquals(remainingToPurchase, item.getRemainingToPurchase(), "Remaining to Purchase incorrect"),
-                () -> assertEquals(minimumPurchase, item.getMinimumPurchase(), "Minimum Purchase incorrect"),
-                () -> assertEquals(acceptsDamaged, item.acceptsDamaged(), "Accepts Damaged incorrect")
-        );
-    }
-
-
     private void testMaterialSelectionOptions(int templateId, int count) {
         askQuestion();
         answers.setProperty("templateId", getElementPositionInOptions(com.lastBmlContent, templateId));
@@ -375,6 +325,10 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         assertEquals(count, options.split(",").length);
     }
 
+    protected void answerInterval() {}
+
+    protected abstract byte getMaterialType() throws PriceList.NoPriceListOnBuyer;
+
     private void testMaterialTypeCorrect(int templateId, byte material, boolean custom) throws PriceList.NoPriceListOnBuyer {
         askQuestion();
         answers.setProperty("templateId", getElementPositionInOptions(com.lastBmlContent, templateId));
@@ -389,9 +343,9 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         
         answer();
 
-        Item item = PriceList.getPriceListFromBuyer(buyer).iterator().next().getItem();
+        answerInterval();
 
-        assertEquals(material, item.getMaterial());
+        assertEquals(material, getMaterialType());
     }
 
     @Test
@@ -440,8 +394,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         FakeCommunicator newCom = factory.getCommunicator(newOwner);
         Creature newBuyer = factory.createNewBuyer(newOwner);
         Properties newAnswers;
-        AddItemToBuyerQuestion newQuestion = new AddItemToBuyerQuestion(newOwner, newBuyer.getWurmId());
-        newQuestion.sendQuestion();
+        AddItemToBuyerQuestion newQuestion = askQuestion(newOwner, newBuyer);
 
         newAnswers = new Properties();
         newAnswers.setProperty("templateId", templateIndex);
@@ -457,7 +410,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         newAnswers.setProperty("back", "true");
         newQuestion.answer(newAnswers);
 
-        String[] ownerBml = factory.getCommunicator(sender).getBml();
+        String[] ownerBml = factory.getCommunicator(owner).getBml();
         String[] newOwnerBml = factory.getCommunicator(newOwner).getBml();
         assertNotEquals(removePassThroughAndDefault(ownerBml[4]), removePassThroughAndDefault(newOwnerBml[3]));
         assertEquals(removePassThroughAndDefault(ownerBml[2]), removePassThroughAndDefault(ownerBml[4]));
@@ -581,9 +534,12 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty("material", "0");
         answer();
         answer();
+        answerInterval();
 
-        assertEquals(ItemTemplateFactory.getInstance().getTemplate(backPack).getMaterial(), PriceList.getPriceListFromBuyer(buyer).iterator().next().getItem().getMaterial());
+        assertEquals(ItemTemplateFactory.getInstance().getTemplate(backPack).getMaterial(), getMaterialType());
     }
+
+    protected abstract boolean instanceOfMenu(Question question);
 
     @Test
     void testAddItemLeadsBackToSetBuyerPrices() throws NoSuchQuestionException {
@@ -593,16 +549,15 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty("material", "0");
         answer();
         answer();
+        answerInterval();
 
         Question question = Questions.getQuestion(getPassThroughId(com.lastBmlContent));
-        assertTrue(question instanceof SetBuyerPricesQuestion);
+        assertTrue(instanceOfMenu(question));
     }
 
     @Test
     void testPlayerCannotAddToList() {
-        Question question = new AddItemToBuyerQuestion(player, buyer.getWurmId());
-        FakeCommunicator com = factory.getCommunicator(player);
-        question.sendQuestion();
+        Question question = askQuestion(player, buyer);
         Properties answers = new Properties();
         answers.setProperty("templateId", getElementPositionInOptions(com.lastBmlContent, backPack));
         question.answer(answers);
@@ -656,8 +611,7 @@ class AddItemToBuyerQuestionTest extends WurmTradingQuestionTest {
     @SuppressWarnings("unchecked")
     @Test
     void testAllTemplateMaterialCombinations() throws NoSuchFieldException, IllegalAccessException {
-        AddItemToBuyerQuestion question = new AddItemToBuyerQuestion(owner, buyer.getWurmId());
-        question.sendQuestion();
+        AddItemToBuyerQuestion question = askQuestion(owner, buyer);
         Field itemTemplates = AddItemToBuyerQuestion.class.getDeclaredField("itemTemplates");
         itemTemplates.setAccessible(true);
         List<ItemTemplate> templates = (List<ItemTemplate>)itemTemplates.get(question);

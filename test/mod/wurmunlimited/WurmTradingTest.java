@@ -1,5 +1,6 @@
 package mod.wurmunlimited;
 
+import com.wurmonline.server.Constants;
 import com.wurmonline.server.Players;
 import com.wurmonline.server.creatures.BuyerHandler;
 import com.wurmonline.server.creatures.Creature;
@@ -13,20 +14,23 @@ import com.wurmonline.server.questions.Question;
 import com.wurmonline.server.questions.Questions;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.buyermerchant.PriceList;
+import mod.wurmunlimited.buyermerchant.db.BuyerScheduler;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.gotti.wurmunlimited.modsupport.actions.ActionEntryBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockito.internal.util.reflection.FieldSetter;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public abstract class WurmTradingTest {
-
     protected Player player;
     protected Player owner;
     protected Creature buyer;
@@ -41,12 +45,17 @@ public abstract class WurmTradingTest {
         ActionEntryBuilder.init();
         WurmMail.resetStatic();
         Zones.resetStatic();
-        FieldSetter.setField(null, Players.class.getDeclaredField("instance"), null);
-        FieldSetter.setField(null, Questions.class.getDeclaredField("questions"), new HashMap<Integer, Question>(10));
+        ReflectionUtil.setPrivateField(null, Players.class.getDeclaredField("instance"), null);
+        ReflectionUtil.setPrivateField(null, Questions.class.getDeclaredField("questions"), new HashMap<Integer, Question>());
+        Constants.dbHost = ".";
+        ReflectionUtil.<Map<Creature, BuyerScheduler.Update>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("toUpdate")).clear();
+        ReflectionUtil.setPrivateField(null, BuyerScheduler.class.getDeclaredField("created"), false);
+        //noinspection ResultOfMethodCallIgnored
+        Files.walk(Paths.get("./sqlite/")).filter(it -> !it.toFile().isDirectory()).forEach(it -> it.toFile().delete());
         BuyerTradingWindow.freeMoney = false;
         BuyerTradingWindow.destroyBoughtItems = false;
         BuyerHandler.maxPersonalItems = 51;
-        FieldSetter.setField(null, TradeHandler.class.getDeclaredField("maxPersonalItems"), 50);
+        ReflectionUtil.setPrivateField(null, TradeHandler.class.getDeclaredField("maxPersonalItems"), 50);
         factory = new WurmObjectsFactory();
         player = factory.createNewPlayer();
         player.setName("Player");
@@ -71,8 +80,8 @@ public abstract class WurmTradingTest {
         try {
             trade = new BuyerTrade(player, buyer);
             BuyerHandler handler = new BuyerHandler(buyer, trade);
-            FieldSetter.setField(buyer, Creature.class.getDeclaredField("tradeHandler"), handler);
-        } catch (PriceList.NoPriceListOnBuyer | NoSuchFieldException e) {
+            ReflectionUtil.setPrivateField(buyer, Creature.class.getDeclaredField("tradeHandler"), handler);
+        } catch (PriceList.NoPriceListOnBuyer | NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
         player.setTrade(trade);
@@ -83,8 +92,8 @@ public abstract class WurmTradingTest {
         try {
             trade = new BuyerTrade(owner, buyer);
             BuyerHandler handler = new BuyerHandler(buyer, trade);
-            FieldSetter.setField(buyer, Creature.class.getDeclaredField("tradeHandler"), handler);
-        } catch (PriceList.NoPriceListOnBuyer | NoSuchFieldException e) {
+            ReflectionUtil.setPrivateField(buyer, Creature.class.getDeclaredField("tradeHandler"), handler);
+        } catch (PriceList.NoPriceListOnBuyer | NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
         owner.setTrade(trade);

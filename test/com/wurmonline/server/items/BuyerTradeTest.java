@@ -5,13 +5,14 @@ import com.wurmonline.server.NoSuchItemException;
 import com.wurmonline.server.behaviours.MethodsCreatures;
 import com.wurmonline.server.creatures.BuyerHandler;
 import com.wurmonline.server.creatures.Creature;
+import com.wurmonline.server.creatures.TradeHandler;
 import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.players.Player;
 import mod.wurmunlimited.WurmTradingTest;
 import mod.wurmunlimited.buyermerchant.PriceList;
 import mod.wurmunlimited.buyermerchant.PriceListTest;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.util.reflection.FieldSetter;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -79,6 +80,7 @@ class BuyerTradeTest extends WurmTradingTest {
     @Test
     void testNotImplementedMethods() {
         makeBuyerTrade();
+        //noinspection ResultOfMethodCallIgnored
         assertAll(
                 () -> assertThrows(UnsupportedOperationException.class, () -> trade.setMoneyAdded(1)),
                 () -> assertThrows(UnsupportedOperationException.class, () -> trade.addShopDiff(1)),
@@ -139,9 +141,9 @@ class BuyerTradeTest extends WurmTradingTest {
     }
 
     @Test
-    void testCannotCarryThatMuch() throws NoSuchFieldException {
+    void testCannotCarryThatMuch() throws NoSuchFieldException, IllegalAccessException {
         Item item = factory.createNewItem();
-        FieldSetter.setField(item, Item.class.getDeclaredField("weight"), 500000000);
+        ReflectionUtil.setPrivateField(item, Item.class.getDeclaredField("weight"), 500000000);
         makeBuyerTrade();
         player.setTrade(trade);
         buyer.setTrade(trade);
@@ -374,9 +376,9 @@ class BuyerTradeTest extends WurmTradingTest {
     }
 
     @Test
-    void testNotTradeWhenNoLink() throws NoSuchFieldException {
+    void testNotTradeWhenNoLink() throws NoSuchFieldException, IllegalAccessException {
         makeBuyerTrade();
-        FieldSetter.setField(player, Player.class.getDeclaredField("receivedLinkloss"), 1L);
+        ReflectionUtil.setPrivateField(player, Player.class.getDeclaredField("receivedLinkloss"), 1L);
         assert !player.hasLink();
 
         makeTrade();
@@ -458,7 +460,10 @@ class BuyerTradeTest extends WurmTradingTest {
         assertThat(player, hasCoinsOfValue((long)(MonetaryConstants.COIN_COPPER)));
 
         makeOwnerBuyerTrade();
-        BuyerHandler handler = (BuyerHandler)buyer.getTradeHandler();
+        TradeHandler tradeHandler = buyer.getTradeHandler();
+        assert tradeHandler != null;
+        //noinspection ConstantConditions
+        BuyerHandler handler = (BuyerHandler)tradeHandler;
         Method method = BuyerHandler.class.getDeclaredMethod("addItemsToTrade");
         method.setAccessible(true);
         method.invoke(handler);

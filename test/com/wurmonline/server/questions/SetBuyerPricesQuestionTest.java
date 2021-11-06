@@ -403,7 +403,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testAddItemToBuyerQuestionAsked() {
+    void testAddItemToBuyerInstantQuestionAsked() {
         askQuestion();
 
         // Reset bml messages.
@@ -412,7 +412,22 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         answers.setProperty("new", "true");
         answer();
 
-        new AddItemToBuyerQuestion(owner, buyer.getWurmId()).sendQuestion();
+        new AddItemToBuyerInstantQuestion(owner, buyer.getWurmId()).sendQuestion();
+
+        assertThat(owner, bmlEqual());
+    }
+
+    @Test
+    void testAddItemToBuyerUpdateQuestionAsked() {
+        askQuestion();
+
+        // Reset bml messages.
+        factory.attachFakeCommunicator(owner);
+
+        answers.setProperty("schedule", "true");
+        answer();
+
+        new UpdateScheduleQuestion(owner, buyer).sendQuestion();
 
         assertThat(owner, bmlEqual());
     }

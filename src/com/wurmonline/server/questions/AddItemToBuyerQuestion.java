@@ -7,27 +7,24 @@ import com.wurmonline.server.behaviours.MethodsItems;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.NoSuchCreatureException;
 import com.wurmonline.server.economy.Economy;
-import com.wurmonline.server.items.*;
+import com.wurmonline.server.items.Item;
+import com.wurmonline.server.items.ItemTemplate;
+import com.wurmonline.server.items.ItemTemplateFactory;
+import com.wurmonline.server.items.Materials;
 import com.wurmonline.server.players.PlayerInfoFactory;
 import com.wurmonline.shared.constants.ItemMaterials;
 import com.wurmonline.shared.util.MaterialUtilities;
-import mod.wurmunlimited.buyermerchant.PriceList;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.logging.Level;
 
-public class AddItemToBuyerQuestion extends BuyerQuestionExtension {
+public abstract class AddItemToBuyerQuestion extends BuyerQuestionExtension {
+
     private int stage = 0;
-    private static final String[] questionTitles = new String[] {
-            "Add a new item to the buyers list:",
-            "Select the material for the new entry:",
-            "Select the material for the new entry:",
-            "Set final details for the new entry:"};
-    private ItemTemplate itemTemplate;
-    private byte material = 0;
+    protected ItemTemplate itemTemplate;
+    protected byte material = 0;
     private boolean usingCustomMaterial = false;
     private String filter = "*";
     private final ArrayList<ItemTemplate> itemTemplates = new ArrayList<>();
@@ -52,17 +49,12 @@ public class AddItemToBuyerQuestion extends BuyerQuestionExtension {
         ItemMaterials.MATERIAL_MEAT_TOUGH
     };
 
-    // Note - target is the buyer.
-    AddItemToBuyerQuestion(Creature aResponder, long aTarget) {
-        this(aResponder, questionTitles[0], aTarget);
-    }
-
-    private AddItemToBuyerQuestion(Creature aResponder, String title, long aTarget) {
+    protected AddItemToBuyerQuestion(Creature aResponder, String title, long aTarget) {
         super(aResponder, "Add Item To Buyer", title, QuestionTypes.PRICEMANAGE, aTarget);
     }
 
-    private AddItemToBuyerQuestion(Creature aResponder, long aTarget, ItemTemplate template, byte material, int stage, String filter, boolean customMaterial, List<String> materialList) {
-        this(aResponder, questionTitles[stage], aTarget);
+    protected AddItemToBuyerQuestion(Creature aResponder, String title, long aTarget, ItemTemplate template, byte material, int stage, String filter, boolean customMaterial, List<String> materialList) {
+        this(aResponder, title, aTarget);
         this.itemTemplate = template;
         this.material = material;
         this.stage = stage;
@@ -146,42 +138,18 @@ public class AddItemToBuyerQuestion extends BuyerQuestionExtension {
                     break;
                 case 3:
                     addItem();
-                    new SetBuyerPricesQuestion(this.getResponder(), this.target).sendQuestion();
                     return;
             }
         }
 
         //noinspection SimplifiableConditionalExpression
-        AddItemToBuyerQuestion question = new AddItemToBuyerQuestion(this.getResponder(), this.target, itemTemplate, material, stage, filter, stage < 1 ? false : usingCustomMaterial, materialsList);
+        AddItemToBuyerQuestion question = createQuestion(this.getResponder(), this.target, itemTemplate, material, stage, filter, stage < 1 ? false : usingCustomMaterial, materialsList);
         question.sendQuestion();
     }
 
-    private void addItem() {
-        Creature responder = this.getResponder();
-        try {
-            Creature buyer = Server.getInstance().getCreature(this.target);
-    
-            try {
-                PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-                // Any material is 0.  Client will not label 0 material (unknown).
-                PriceList.Entry newItem = priceList.addItem(itemTemplate.getTemplateId(), material);
-                SetBuyerPricesQuestion.setItemDetails(newItem, -1, this.getAnswer(), responder);
-                priceList.savePriceList();
-                responder.getCommunicator().sendNormalServerMessage(buyer.getName() + " adds the item to their list.");
-            } catch (PriceList.NoPriceListOnBuyer | PriceList.PageNotAdded noPriceListOnBuyer) {
-                responder.getCommunicator().sendNormalServerMessage(PriceList.noPriceListFoundPlayerMessage);
-                noPriceListOnBuyer.printStackTrace();
-            } catch (PriceList.PriceListFullException e) {
-                responder.getCommunicator().sendNormalServerMessage(PriceList.noSpaceOnPriceListPlayerMessage);
-            } catch (NoSuchTemplateException | IOException e) {
-                responder.getCommunicator().sendNormalServerMessage(PriceList.couldNotCreateItemPlayerMessage);
-                e.printStackTrace();
-            }
+    protected abstract AddItemToBuyerQuestion createQuestion(Creature player, long target, ItemTemplate itemTemplate, byte material, int stage, String filter, boolean customMaterial, List<String> materialsList);
 
-        } catch (NoSuchPlayerException | NoSuchCreatureException e) {
-            e.printStackTrace();
-        }
-    }
+    protected abstract void addItem();
 
     @Override
     public void sendQuestion() {
@@ -205,7 +173,7 @@ public class AddItemToBuyerQuestion extends BuyerQuestionExtension {
         return getTemplateString(template, template.getMaterial());
     }
 
-    private String getTemplateString(ItemTemplate template, byte material) {
+    static String getTemplateString(ItemTemplate template, byte material) {
         if (!template.isMetal() && !template.isWood() && !template.isOre && !template.isShard) {
             if (template.bowUnstringed) {
                 return template.getName() + " - " + template.sizeString + " [unstringed]";

@@ -180,7 +180,19 @@ public class BuyerManagementQuestionTest extends WurmTradingTest {
         answers.setProperty("add", "true");
         question.answer(answers);
 
-        new AddItemToBuyerQuestion(owner, buyer.getWurmId()).sendQuestion();
+        new AddItemToBuyerInstantQuestion(owner, buyer.getWurmId()).sendQuestion();
+
+        String[] bml = factory.getCommunicator(owner).getBml();
+        assertEquals(removePassThrough(bml[2]), removePassThrough(bml[1]));
+    }
+
+    @Test
+    void testOpensSchedule() {
+        askManageQuestion();
+        answers.setProperty("schedule", "true");
+        question.answer(answers);
+
+        new UpdateScheduleQuestion(owner, buyer).sendQuestion();
 
         String[] bml = factory.getCommunicator(owner).getBml();
         assertEquals(removePassThrough(bml[2]), removePassThrough(bml[1]));

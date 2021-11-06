@@ -10,8 +10,8 @@ import com.wurmonline.server.players.FakePlayerInfo;
 import com.wurmonline.server.players.Player;
 import mod.wurmunlimited.buyermerchant.BuyerMerchant;
 import mod.wurmunlimited.buyermerchant.PriceList;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.jetbrains.annotations.NotNull;
-import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
@@ -169,9 +169,9 @@ public class WurmObjectsFactory {
             player.setWurmId(WurmId.getNextPlayerId(), 1, 1, 1, 1);
             ServerPackageFactory.addPlayer(player);
             creatures.put(player.getWurmId(), player);
-            FieldSetter.setField(player, Creature.class.getDeclaredField("status"), new FakeCreatureStatus(player, 1, 1, 0.0f, 1));
+            ReflectionUtil.setPrivateField(player, Creature.class.getDeclaredField("status"), new FakeCreatureStatus(player, 1, 1, 0.0f, 1));
             player.getBody().createBodyParts();
-            FieldSetter.setField(player, Player.class.getDeclaredField("saveFile"), new FakePlayerInfo(player.getName()));
+            ReflectionUtil.setPrivateField(player, Player.class.getDeclaredField("saveFile"), new FakePlayerInfo(player.getName()));
             player.createPossessions();
             attachFakeCommunicator(player);
             return player;
@@ -300,16 +300,16 @@ public class WurmObjectsFactory {
             item.setTemplateId(templateId);
             item.setMaterial(ItemTemplateFactory.getInstance().getTemplate(templateId).getMaterial());
             item.setQualityLevel(1.0f);
-            FieldSetter.setField(item, Item.class.getDeclaredField("weight"), ItemTemplateFactory.getInstance().getTemplate(templateId).getWeightGrams());
+            ReflectionUtil.setPrivateField(item, Item.class.getDeclaredField("weight"), ItemTemplateFactory.getInstance().getTemplate(templateId).getWeightGrams());
             item.setPosXYZRotation(1, 1, 1, 90);
 
             if (item.canHaveInscription()) {
-                FieldSetter.setField(item, Item.class.getDeclaredField("inscription"), new InscriptionData(item.getWurmId(), "", "", 0));
+                ReflectionUtil.setPrivateField(item, Item.class.getDeclaredField("inscription"), new InscriptionData(item.getWurmId(), "", "", 0));
             }
 
             items.put(item.getWurmId(), item);
             Items.putItem(item);
-        } catch (NoSuchFieldException | NoSuchTemplateException e) {
+        } catch (NoSuchFieldException | NoSuchTemplateException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
 

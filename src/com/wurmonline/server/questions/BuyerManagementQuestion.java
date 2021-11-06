@@ -305,10 +305,18 @@ public class BuyerManagementQuestion extends BuyerQuestionExtension implements T
                 }
             } else if (wasSelected("add")) {
                 try {
-                    AddItemToBuyerQuestion addItem = new AddItemToBuyerQuestion(this.getResponder(), Items.getItem(target).getData());
-                    addItem.sendQuestion();
+                    new AddItemToBuyerInstantQuestion(this.getResponder(), Items.getItem(target).getData()).sendQuestion();
                 } catch (NoSuchItemException ignored) {
                     // Pass to parseBuyerManagementQuestion error handling.
+                }
+            } else if (wasSelected("schedule")) {
+                try {
+                    new UpdateScheduleQuestion(this.getResponder(), Creatures.getInstance().getCreature(Items.getItem(target).getData())).sendQuestion();
+                } catch (NoSuchItemException ignored) {
+                    // Pass to parseBuyerManagementQuestion error handling.
+                } catch (NoSuchCreatureException e) {
+                    logger.warning("Could not find buyer for update schedule.");
+                    e.printStackTrace();
                 }
             }
 

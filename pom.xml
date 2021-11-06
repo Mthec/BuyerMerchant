@@ -6,7 +6,7 @@
 
     <groupId>mod.wurmunlimited.buyermerchant</groupId>
     <artifactId>BuyerMerchant</artifactId>
-    <version>0.5.25</version>
+    <version>0.5.26</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -14,7 +14,7 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <powermock.version>2.0.0-beta.5</powermock.version>
-        <folder.server>E:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher</folder.server>
+        <folder.server>F:/Steam/steamapps/common/Wurm Unlimited/WurmServerLauncher</folder.server>
         <folder.mods>${folder.server}/mods</folder.mods>
     </properties>
 
@@ -22,19 +22,19 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.3.1</version>
+            <version>5.8.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-runner</artifactId>
-            <version>1.1.0</version>
+            <version>1.8.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
-            <version>2.23.4</version>
+            <version>4.0.0</version>
             <scope>test</scope>
         </dependency>
 

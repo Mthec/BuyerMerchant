@@ -11,8 +11,8 @@ import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.WurmTradingTest;
 import mod.wurmunlimited.buyermerchant.BuyerMerchant;
 import mod.wurmunlimited.buyermerchant.PriceList;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.util.reflection.FieldSetter;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -33,10 +33,10 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     private void setOptions(boolean freeMoney, boolean destroyBoughtItems) {
         try {
             BuyerMerchant buyerMerchant = new BuyerMerchant();
-            FieldSetter.setField(buyerMerchant, BuyerMerchant.class.getDeclaredField("freeMoney"), freeMoney);
-            FieldSetter.setField(buyerMerchant, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), destroyBoughtItems);
+            ReflectionUtil.setPrivateField(buyerMerchant, BuyerMerchant.class.getDeclaredField("freeMoney"), freeMoney);
+            ReflectionUtil.setPrivateField(buyerMerchant, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), destroyBoughtItems);
             buyerMerchant.onServerStarted();
-        } catch (NoSuchFieldException e) {
+        } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }
@@ -559,9 +559,9 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testIntegerOverflowProtection() throws NoSuchFieldException {
+    void testIntegerOverflowProtection() throws NoSuchFieldException, IllegalAccessException {
         BuyerMerchant buyerMerchant = new BuyerMerchant();
-        FieldSetter.setField(buyerMerchant, BuyerMerchant.class.getDeclaredField("maxItems"), Integer.MAX_VALUE);
+        ReflectionUtil.setPrivateField(buyerMerchant, BuyerMerchant.class.getDeclaredField("maxItems"), Integer.MAX_VALUE);
         assertDoesNotThrow(buyerMerchant::onServerStarted);
         assertEquals(Integer.MAX_VALUE, BuyerHandler.maxPersonalItems);
     }

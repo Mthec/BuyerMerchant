@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class PriceList implements Iterable<PriceList.Entry> {
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     private static final String PRICE_LIST_DESCRIPTION = "Price List";
     private static final String BUY_LIST_DESCRIPTION = "Buy List";
@@ -128,7 +129,16 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
             setValues(template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
 
-            prices.put(this, null);
+            if (createdItems) {
+                try {
+                    prices.put(this, createItem(this));
+                } catch (IOException | NoSuchTemplateException e) {
+                    logger.warning("Error when creating TempItem for trading.  Skipping entry.");
+                    e.printStackTrace();
+                }
+            } else {
+                prices.put(this, null);
+            }
         }
 
         public Item getItem() {
@@ -213,6 +223,10 @@ public class PriceList implements Iterable<PriceList.Entry> {
                 return weight;
         }
 
+        public byte getMaterial() {
+            return material;
+        }
+
         public float getQualityLevel() {
             return minQL;
         }
@@ -243,6 +257,10 @@ public class PriceList implements Iterable<PriceList.Entry> {
             return acceptsDamaged;
         }
 
+        public void setRemainingToPurchase(int toPurchase) {
+            remainingToPurchase = toPurchase;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o)
@@ -269,6 +287,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
          * @param other Another entry.
          * @return Compared on template name, then minQL descending order.
          */
+        @SuppressWarnings("DuplicatedCode")
         @Override
         public int compareTo(@NotNull Entry other) {
             ItemTemplateFactory factory = ItemTemplateFactory.getInstance();
