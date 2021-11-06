@@ -31,7 +31,7 @@ public class AddItemToBuyerUpdateQuestionTests extends AddItemToBuyerQuestionTes
 
     @Override
     protected void answerInterval() {
-        answers.setProperty("submit", "true");
+        answers.setProperty("add", "true");
         answers.setProperty("interval", "10");
         answer();
     }

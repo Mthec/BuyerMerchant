@@ -8,7 +8,6 @@ import mod.wurmunlimited.buyermerchant.db.BuyerScheduler;
 
 import java.sql.SQLException;
 import java.text.DecimalFormat;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -25,10 +24,11 @@ public class UpdateScheduleQuestion extends BuyerQuestionExtension {
     }
 
     @Override
-    public void answer(Properties properties) {
+    public void answer(Properties answers) {
+        setAnswer(answers);
         Creature responder = getResponder();
 
-        if (wasSelected("submit")) {
+        if (wasSelected("save")) {
             if (buyer.isNpcTrader()) {
                 Shop shop = Economy.getEconomy().getShop(buyer);
                 if (shop == null) {
@@ -40,7 +40,7 @@ public class UpdateScheduleQuestion extends BuyerQuestionExtension {
                             BuyerScheduler.deleteUpdateFor(buyer, update.id);
                         } else {
                             int interval = update.getIntervalHours();
-                            String val = properties.getProperty(bid + "interval");
+                            String val = answers.getProperty(bid + "interval");
                             if (val != null && !val.isEmpty()) {
                                 try {
                                     interval = Integer.parseInt(val);
@@ -60,20 +60,21 @@ public class UpdateScheduleQuestion extends BuyerQuestionExtension {
                                 logger.warning("Error when updating buyer update details:");
                                 e.printStackTrace();
                                 responder.getCommunicator().sendAlertServerMessage(buyer.getName() + " looks confused and forgets what they were doing.");
+                                return;
                             } catch (BuyerScheduler.UpdateAlreadyExists e) {
                                 responder.getCommunicator().sendNormalServerMessage(buyer.getName() + " says 'I am already scheduling an item with those details'.");
+                                return;
                             }
                         }
                     }
-                    responder.getCommunicator().sendNormalServerMessage("The updates are updated.");
+                    responder.getCommunicator().sendNormalServerMessage("The schedule was updated.");
                 } else {
                     responder.getCommunicator().sendNormalServerMessage("You don't own that shop.");
                 }
             }
         } else if (wasSelected("new")) {
             new AddItemToBuyerUpdateQuestion(responder, buyer.getWurmId()).sendQuestion();
-        } else if (wasSelected("sort")) {
-            Arrays.sort(updates);
+        } else if (wasSelected("prices")) {
             new SetBuyerPricesQuestion(getResponder(), getTarget()).sendQuestion();
         }
     }
@@ -91,12 +92,12 @@ public class UpdateScheduleQuestion extends BuyerQuestionExtension {
                 buf.append("text{type=\"bold\";text=\"Scheduled Updates for ").append(buyer.getName()).append("\"}text{text=''}");
                 buf.append("text{text=\"Limit restricts the Buyer from purchasing more than that number of items.  Entry will be reset to maximum on the scheduled interval.\"}");
                 buf.append("text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}");
-                buf.append("table{rows=\"").append(updates.length + 1).append("\"; cols=\"11\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Limit\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"};label{text=\"Interval\"};label{text=\"Remove?\"}");
+                buf.append("table{rows=\"").append(updates.length + 1).append("\"; cols=\"12\";label{text=\"Item name\"};label{text=\"Weight\"};label{text=\"Min. QL\"};label{text=\"Gold\"};label{text=\"Silver\"};label{text=\"Copper\"};label{text=\"Iron\"}label{text=\"Limit\"};label{text=\"Min. Purchase\"};label{text=\"Accept Damaged\"};label{text=\"Interval\"};label{text=\"Remove?\"}");
 
                 for (BuyerScheduler.Update update : updates) {
                     ++idx;
                     Change change = Economy.getEconomy().getChangeFor(update.getPrice());
-                    buf.append(AddItemToBuyerQuestion.getTemplateString(update.template, update.material));
+                    buf.append("label{text=\"").append(AddItemToBuyerQuestion.getTemplateString(update.template, update.material)).append("\"};");
                     buf.append("harray{input{maxchars=\"8\"; id=\"").append(idx).append("weight\";text=\"").append(WeightString.toString(update.getWeight())).append("\"};label{text=\"kg \"}};");
                     buf.append("harray{input{maxchars=\"3\"; id=\"").append(idx).append("q\";text=\"").append(df.format(update.getMinQL())).append("\"};label{text=\" \"}};");
                     buf.append("harray{input{maxchars=\"3\"; id=\"").append(idx).append("g\";text=\"").append(change.getGoldCoins()).append("\"};label{text=\" \"}};");
@@ -113,7 +114,7 @@ public class UpdateScheduleQuestion extends BuyerQuestionExtension {
 
                 buf.append("}");
                 buf.append("text{text=\"\"}");
-                buf.append("harray {button{text='Save Prices';id='submit'};label{text=\" \";id=\"spacedlxg\"};button{text='Schedule New';id='new'}label{text=\" \";id=\"spacedlxg\"};button{text='Sort';id='sort'}}}}null;null;}");
+                buf.append("harray {button{text='Save Changes';id='save'};label{text=\" \";id=\"spacedlxg\"};button{text='Schedule New';id='new'};label{text=\" \";id=\"spacedlxg\"};button{text='Current Prices';id='prices'};label{text=\" \";id=\"spacedlxg\"};button{text='Cancel';id='cancel'}}}}null;null;}");
                 this.getResponder().getCommunicator().sendBml(650, 300, true, true, buf.toString(), 200, 200, 200, this.title);
             } else {
                 this.getResponder().getCommunicator().sendNormalServerMessage("You don't own that shop.");

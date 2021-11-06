@@ -21,7 +21,6 @@ import java.util.*;
 import java.util.logging.Level;
 
 public abstract class AddItemToBuyerQuestion extends BuyerQuestionExtension {
-
     private int stage = 0;
     protected ItemTemplate itemTemplate;
     protected byte material = 0;
@@ -50,7 +49,7 @@ public abstract class AddItemToBuyerQuestion extends BuyerQuestionExtension {
     };
 
     protected AddItemToBuyerQuestion(Creature aResponder, String title, long aTarget) {
-        super(aResponder, "Add Item To Buyer", title, QuestionTypes.PRICEMANAGE, aTarget);
+        super(aResponder, title, "", QuestionTypes.PRICEMANAGE, aTarget);
     }
 
     protected AddItemToBuyerQuestion(Creature aResponder, String title, long aTarget, ItemTemplate template, byte material, int stage, String filter, boolean customMaterial, List<String> materialList) {

@@ -38,12 +38,12 @@ public class SetUpdateIntervalQuestion extends BuyerQuestionExtension {
     }
 
     @Override
-    public void answer(Properties properties) {
-        setAnswer(properties);
+    public void answer(Properties answers) {
+        setAnswer(answers);
         Creature responder = getResponder();
 
-        if (wasSelected("submit")) {
-            String val = properties.getProperty("interval");
+        if (wasSelected("add")) {
+            String val = answers.getProperty("interval");
             if (val == null || val.isEmpty()) {
                 responder.getCommunicator().sendNormalServerMessage("Invalid interval received - " + val + ".");
                 resendQuestion();
@@ -59,7 +59,8 @@ public class SetUpdateIntervalQuestion extends BuyerQuestionExtension {
                             try {
                                 BuyerScheduler.addUpdateFor(buyer, template, material, details.weight,
                                         details.minQL, details.price, details.remainingToPurchase, details.minimumPurchase,
-                                        details.acceptsDamaged, interval * TimeConstants.HOUR_MILLIS);
+                                        details.acceptsDamaged, interval);
+                                responder.getCommunicator().sendNormalServerMessage(buyer.getName() + " added the item to their schedule.");
                             } catch (SQLException e) {
                                 e.printStackTrace();
                                 responder.getCommunicator().sendAlertServerMessage("Something went wrong and the update was not set.");
@@ -69,6 +70,7 @@ public class SetUpdateIntervalQuestion extends BuyerQuestionExtension {
                         } else if (update != null) {
                             try {
                                 BuyerScheduler.setIntervalFor(update, interval * TimeConstants.HOUR_MILLIS);
+                                responder.getCommunicator().sendNormalServerMessage(buyer.getName() + " updated their schedule.");
                             } catch (SQLException e) {
                                 e.printStackTrace();
                                 responder.getCommunicator().sendAlertServerMessage("Something went wrong and the interval was not changed.");
@@ -101,10 +103,10 @@ public class SetUpdateIntervalQuestion extends BuyerQuestionExtension {
                              "label{text=\"Item:  " +
                              AddItemToBuyerQuestion.getTemplateString(template, (material != 0) ? material : template.getMaterial()) +
                              "\"}" +
-                             "harray{label{text=\"Interval (Hours):  \"};input{maxchars=\"8\";id=\"interval\";text=\"" + currentInterval + "\"}" +
+                             "harray{label{text=\"Interval (Hours):  \"};input{maxchars=\"8\";id=\"interval\";text=\"" + currentInterval + "\"}}" +
                              "label{text=\"Day - 24, Week - 168, Month (28 days) - 672\"}" +
                              "text{text=\"\"}" +
-                             "harray {button{text=\"Submit\";id=\"submit\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Cancel\";id=\"cancel\"};}}}null;null;};";
-        this.getResponder().getCommunicator().sendBml(250, 300, true, true, buf, 200, 200, 200, this.title);
+                             "harray {button{text=\"Submit\";id=\"add\"};label{text=\" \";id=\"spacedlxg\"};button{text=\"Cancel\";id=\"cancel\"}}}}null;null;}";
+        this.getResponder().getCommunicator().sendBml(300, 300, true, true, buf, 200, 200, 200, this.title);
     }
 }

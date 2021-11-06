@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -197,6 +198,11 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                 "(ZLjava/lang/String;)V",
                 () -> this::die);
 
+        manager.registerHook("com.wurmonline.server.creatures.Creature",
+                "destroy",
+                "()V",
+                () -> this::die);
+
         // StopLoggers.
         manager.registerHook("com.wurmonline.server.items.TradingWindow",
                 "stopLoggers",
@@ -244,33 +250,38 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
 
             // Then load subclasses.
             // TODO - Why do I need to load PriceList?  Because it needs to be on the same loader as the rest of the Buyer code?
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$Entry.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$NoPriceListOnBuyer.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$PriceListFullException.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$PageNotAdded.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerHandler.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTradingWindow.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTrade.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerQuestionExtension.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerManagementQuestion.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetBuyerPricesQuestion.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerQuestion.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyPriceListAction.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyBuyerPriceListAction.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyContractPriceListAction.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PlaceNpcMenu.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("NpcMenuEntry.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ManageBuyerAction.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PlaceBuyerAction.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ContractMinimum.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$1.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$2.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumSet.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("WeightString.class"));
-            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerScheduler.class"));
-        } catch (NotFoundException | IOException | CannotCompileException e) {
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$Entry.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$NoPriceListOnBuyer.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$PriceListFullException.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$PageNotAdded.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerHandler.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTradingWindow.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTrade.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerQuestionExtension.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerManagementQuestion.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetBuyerPricesQuestion.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("UpdateScheduleQuestion.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerQuestion.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerInstantQuestion.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerUpdateQuestion.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetUpdateIntervalQuestion.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyPriceListAction.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyBuyerPriceListAction.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyContractPriceListAction.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PlaceNpcMenu.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("NpcMenuEntry.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ManageBuyerAction.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PlaceBuyerAction.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ContractMinimum.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$1.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$2.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumSet.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("WeightString.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerScheduler.class"));
+//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ItemDetails.class"));
+        } catch (NotFoundException | CannotCompileException e) {
             throw new RuntimeException(e);
         }
 
@@ -349,6 +360,13 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                     }
                 }
             }
+        }
+
+        try {
+            BuyerScheduler.loadAll();
+        } catch (SQLException e) {
+            logger.warning("Error when loading Buyer Schedules:");
+            e.printStackTrace();
         }
     }
 
@@ -571,6 +589,8 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                     break;
                 }
             }
+
+            BuyerScheduler.remove(buyer);
         }
         return method.invoke(o, args);
     }

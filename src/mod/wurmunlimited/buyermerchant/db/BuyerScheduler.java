@@ -18,12 +18,13 @@ import java.sql.*;
 import java.time.Clock;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class BuyerScheduler {
     public static class Update implements Comparable<Update> {
         private static int ids = 0;
         public final int id;
-        long lastUpdated = 0;
+        long lastUpdated;
         long interval;
 
         public final ItemTemplate template;
@@ -36,8 +37,11 @@ public class BuyerScheduler {
         boolean acceptsDamaged;
         private final String name;
 
-        private Update(int id, ItemTemplate template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged, long interval) {
+        private Update(int id, ItemTemplate template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged, long interval, long lastUpdated) {
             this.id = id;
+            if (id > ids) {
+                ids = id + 1;
+            }
             this.template = template;
             this.material = material;
             this.weight = weight;
@@ -48,14 +52,19 @@ public class BuyerScheduler {
             this.acceptsDamaged = acceptsDamaged;
             this.interval = interval;
             this.name = ItemFactory.generateName(template, material);
+            this.lastUpdated = lastUpdated;
         }
 
         private Update(ItemTemplate template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged, long interval) {
-            this(++ids, template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged, interval);
+            this(++ids, template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged, interval, 0);
         }
 
         public int getWeight() {
-            return weight;
+            if (weight == -1) {
+                return template.getWeightGrams();
+            } else {
+                return weight;
+            }
         }
 
         public float getMinQL() {
@@ -136,11 +145,13 @@ public class BuyerScheduler {
     public static class UpdateAlreadyExists extends Exception {}
 
     private static final Logger logger = Logger.getLogger(BuyerScheduler.class.getName());
+    private static final long fiveMinutes = TimeConstants.MINUTE_MILLIS * 5;
     private static final String dbName = "buyer";
     private static String dbString = "";
     private static boolean created = false;
     private static final Clock clock = Clock.systemUTC();
     private static final Map<Creature, List<Update>> toUpdate = new HashMap<>();
+    private static final Map<Creature, Long> lastChecked = new HashMap<>();
 
     public interface Execute {
         void run(Connection db) throws SQLException;
@@ -173,7 +184,6 @@ public class BuyerScheduler {
             db = DriverManager.getConnection(dbString);
             if (!created) {
                 init(db);
-                loadAll();
             }
             execute.run(db);
         } finally {
@@ -207,14 +217,15 @@ public class BuyerScheduler {
         return toReturn.toArray(new Update[0]);
     }
     
-    public static void addUpdateFor(Creature buyer, ItemTemplate template, byte material, int weight, float ql, int price, int toPurchase, int minimumPurchase, boolean acceptsDamaged, long interval) throws SQLException, UpdateAlreadyExists {
-        ItemDetails details = new ItemDetails(weight, ql, price, toPurchase, minimumPurchase, acceptsDamaged);
+    public static void addUpdateFor(Creature buyer, ItemTemplate template, byte material, int weight, float ql, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged, long intervalHours) throws SQLException, UpdateAlreadyExists {
+        ItemDetails details = new ItemDetails(weight, ql, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
         List<Update> currentUpdates = toUpdate.computeIfAbsent(buyer, k -> new ArrayList<>());
         if (currentUpdates.stream().anyMatch(it -> it.matches(template, material, details))) {
             throw new UpdateAlreadyExists();
         }
+        long interval = intervalHours * TimeConstants.HOUR_MILLIS;
 
-        Update update = new Update(template, material, weight, ql, price, toPurchase, minimumPurchase, acceptsDamaged, interval);
+        Update update = new Update(template, material, weight, ql, price, remainingToPurchase, minimumPurchase, acceptsDamaged, interval);
         execute(db -> {
             PreparedStatement ps = db.prepareStatement("INSERT INTO updates VALUES(?,?,?,?,?,?,?,?,?,?,?,?)");
             ps.setLong(1, buyer.getWurmId());
@@ -224,13 +235,16 @@ public class BuyerScheduler {
             ps.setInt(5, weight);
             ps.setFloat(6, ql);
             ps.setInt(7, price);
-            ps.setInt(8, toPurchase);
+            ps.setInt(8, remainingToPurchase);
             ps.setInt(9, minimumPurchase);
             ps.setBoolean(10, acceptsDamaged);
             ps.setLong(11, interval);
             ps.setLong(12, clock.millis());
+            ps.executeUpdate();
         });
         currentUpdates.add(update);
+
+        lastChecked.remove(buyer);
     }
 
     public static void setIntervalFor(Update update, long newInterval) throws SQLException {
@@ -243,36 +257,113 @@ public class BuyerScheduler {
         });
         update.interval = newInterval;
     }
-    
+
     public static void deleteUpdateFor(Creature buyer, int updateId) {
         List<Update> updates = toUpdate.get(buyer);
         if (updates != null) {
-            Iterator<Update> toRemove = updates.stream().filter(it -> it.id == updateId).iterator();
+            List<Update> toRemove = updates.stream().filter(it -> it.id == updateId).collect(Collectors.toList());
             try {
-                while (toRemove.hasNext()) {
-                    Update update = toRemove.next();
+                PriceList priceList = null;
+                try {
+                    priceList = PriceList.getPriceListFromBuyer(buyer);
+                } catch (PriceList.NoPriceListOnBuyer e) {
+                    logger.warning("No PriceList found when deleting update.");
+                    e.printStackTrace();
+                }
+                for (Update update : toRemove) {
                     execute(db -> {
                         PreparedStatement ps = db.prepareStatement("DELETE FROM updates WHERE id=?;");
                         ps.setLong(1, update.id);
                         ps.executeUpdate();
                     });
                     updates.remove(update);
+
+                    if (priceList != null) {
+                        Optional<PriceList.Entry> entry = findEntry(priceList, update);
+                        if (entry.isPresent()) {
+                            priceList.removeItem(entry.get());
+                        }
+                    }
+                }
+
+                if (priceList != null) {
+                    priceList.savePriceList();
                 }
             } catch (SQLException e) {
                 logger.warning("Error when attempting to delete update:");
                 e.printStackTrace();
+            } catch (PriceList.PageNotAdded | PriceList.PriceListFullException e) {
+                logger.warning("Error saving PriceList after update deletion.");
+                e.printStackTrace();
             }
         }
     }
-            
+
+    public static void updateUpdateDetails(Creature buyer, Update update, ItemDetails details, int intervalHours) throws SQLException, UpdateAlreadyExists {
+        if (update.matches(update.template, update.material, details)) {
+            return;
+        }
+        List<Update> currentUpdates = toUpdate.get(buyer);
+        if (currentUpdates != null && currentUpdates.stream().anyMatch(it -> it.id != update.id && it.matches(update.template, update.material, details))) {
+            throw new UpdateAlreadyExists();
+        }
+
+        long interval = intervalHours * TimeConstants.HOUR_MILLIS;
+        long now = clock.millis();
+        execute(db -> {
+            PreparedStatement ps = db.prepareStatement("UPDATE updates SET weight=?, minQL=?, price=?, remainingToPurchase=?, minimumPurchase=?, acceptsDamaged=?, interval=?, lastUpdated=? WHERE id=?;");
+            ps.setInt(1, details.weight);
+            ps.setFloat(2, details.minQL);
+            ps.setInt(3, details.price);
+            ps.setInt(4, details.remainingToPurchase);
+            ps.setInt(5, details.minimumPurchase);
+            ps.setBoolean(6, details.acceptsDamaged);
+            ps.setLong(7, interval);
+            ps.setLong(8, now);
+            ps.setInt(9, update.id);
+            ps.executeUpdate();
+        });
+
+        try {
+            PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+            Optional<PriceList.Entry> entry = findEntry(priceList, update);
+            if (entry.isPresent()) {
+                entry.get().updateItemDetails(details.weight, details.minQL, details.price, details.remainingToPurchase, details.minimumPurchase, details.acceptsDamaged);
+                priceList.savePriceList();
+            }
+        } catch (PriceList.PageNotAdded | PriceList.PriceListFullException | PriceList.NoPriceListOnBuyer e) {
+            logger.warning("Failed to update PriceList when updating buyer update details.");
+            e.printStackTrace();
+        }
+
+        update.weight = details.weight;
+        update.minQL = details.minQL;
+        update.price = details.price;
+        update.remainingToPurchase = details.remainingToPurchase;
+        update.minimumPurchase = details.minimumPurchase;
+        update.acceptsDamaged = details.acceptsDamaged;
+        update.interval = interval;
+        update.lastUpdated = now;
+
+        if (currentUpdates != null) {
+            currentUpdates.sort(Update::compareTo);
+        }
+    }
+
     public static void updateBuyer(Creature buyer) {
+        long lastUpdate = lastChecked.computeIfAbsent(buyer, k -> 0L);
+        long now = clock.millis();
+        if (now - lastUpdate < fiveMinutes) {
+            return;
+        }
+        lastChecked.put(buyer, now);
+
         List<Update> updates = toUpdate.get(buyer);
-        if (updates != null) {
+        if (updates != null && !updates.isEmpty()) {
             try {
                 PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
 
                 for (Update update : updates) {
-                    long now = clock.millis();
                     if (now - update.lastUpdated > update.interval) {
                         Optional<PriceList.Entry> entry = findEntry(priceList, update);
                         if (entry.isPresent()) {
@@ -303,51 +394,9 @@ public class BuyerScheduler {
         }
     }
 
-    public static void updateUpdateDetails(Creature buyer, Update update, ItemDetails details, int intervalHours) throws SQLException, UpdateAlreadyExists {
-        List<Update> currentUpdates = toUpdate.get(buyer);
-        if (currentUpdates != null && currentUpdates.stream().anyMatch(it -> it.matches(update.template, update.material, details))) {
-            throw new UpdateAlreadyExists();
-        }
-
-        long interval = intervalHours * TimeConstants.HOUR_MILLIS;
-        long now = clock.millis();        
-        execute(db -> {
-            PreparedStatement ps = db.prepareStatement("UPDATE updates SET weight=?, minQL=?, price=?, toPurchase=?, minimumPurchase=?, acceptsDamaged=?, interval=?, lastUpdated=? WHERE id=?;");
-            ps.setInt(1, details.weight);
-            ps.setFloat(2, details.minQL);
-            ps.setInt(3, details.price);
-            ps.setInt(4, details.remainingToPurchase);
-            ps.setInt(5, details.minimumPurchase);
-            ps.setBoolean(6, details.acceptsDamaged);
-            ps.setLong(7, interval);
-            ps.setLong(8, now);
-            ps.setInt(9, update.id);
-        });
-
-        try {
-            PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-            Optional<PriceList.Entry> entry = findEntry(priceList, update);
-            if (entry.isPresent()) {
-                entry.get().updateItemDetails(details.weight, details.minQL, details.price, details.remainingToPurchase, details.minimumPurchase, details.acceptsDamaged);
-                priceList.savePriceList();
-            }
-        } catch (PriceList.PageNotAdded | PriceList.PriceListFullException | PriceList.NoPriceListOnBuyer e) {
-            logger.warning("Failed to update PriceList when updating buyer update details.");
-            e.printStackTrace();
-        }
-
-        update.weight = details.weight;
-        update.minQL = details.minQL;
-        update.price = details.price;
-        update.remainingToPurchase = details.remainingToPurchase;
-        update.minimumPurchase = details.minimumPurchase;
-        update.acceptsDamaged = details.acceptsDamaged;
-        update.interval = interval;
-        update.lastUpdated = now;
-    }
-
     public static void loadAll() throws SQLException {
         execute(db -> {
+            toUpdate.clear();
             ResultSet rs = db.prepareStatement("SELECT * FROM updates;").executeQuery();
             Map<Long, Creature> creatures = new HashMap<>();
             ItemTemplateFactory factory = ItemTemplateFactory.getInstance();
@@ -378,7 +427,8 @@ public class BuyerScheduler {
                                 rs.getInt(8),
                                 rs.getInt(9),
                                 rs.getBoolean(10),
-                                rs.getLong(11)));
+                                rs.getLong(11),
+                                rs.getLong(12)));
                     } catch (NoSuchTemplateException e) {
                         logger.warning("Unknown ItemTemplate for update (" + rs.getInt(3) + "):");
                         e.printStackTrace();
@@ -386,5 +436,14 @@ public class BuyerScheduler {
                 }
             }
         });
+    }
+
+    public static void remove(Creature buyer) {
+        List<Update> updates = toUpdate.remove(buyer);
+        if (updates != null) {
+            for (Update update : updates) {
+                deleteUpdateFor(buyer, update.id);
+            }
+        }
     }
 }

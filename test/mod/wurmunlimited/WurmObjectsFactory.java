@@ -467,4 +467,16 @@ public class WurmObjectsFactory {
         item.setLockId(lock.getWurmId());
         lock.setLocked(true);
     }
+
+    public static void setFinalField(Object obj, Field field, Object value) {
+        try {
+            field.setAccessible(true);
+            Field modifiers = Field.class.getDeclaredField("modifiers");
+            modifiers.setAccessible(true);
+            modifiers.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+            field.set(obj, value);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

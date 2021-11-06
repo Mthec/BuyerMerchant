@@ -128,7 +128,7 @@
                     <outputDirectory>out/jar/${project.name.lowercase}</outputDirectory>
                     <finalName>${project.name.lowercase}</finalName>
                     <excludes>
-                        <exclude>**/com/**</exclude>
+                        <exclude>**/Trad*</exclude>
                     </excludes>
                     <archive>
                         <manifest>
@@ -145,39 +145,39 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <version>3.1.0</version>
                 <executions>
-                    <execution>
-                        <id>copy-class-files-for-javassist</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>out/${project.name.lowercase}/classes/mod/wurmunlimited/${project.name.lowercase}</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/behaviours</directory>
-                                    <excludes>
-                                        <exclude>**/Trad*</exclude>
-                                    </excludes>
-                                </resource>
-                                <resource>
-                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/creatures</directory>
-                                    <excludes>
-                                        <exclude>**/Trad*</exclude>
-                                    </excludes>
-                                </resource>
-                                <resource>
-                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/items</directory>
-                                    <excludes>
-                                        <exclude>**/Trad*</exclude>
-                                    </excludes>
-                                </resource>
-                                <resource>
-                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/questions</directory>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
+<!--                    <execution>-->
+<!--                        <id>copy-class-files-for-javassist</id>-->
+<!--                        <phase>prepare-package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>copy-resources</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <outputDirectory>out/${project.name.lowercase}/classes/mod/wurmunlimited/${project.name.lowercase}</outputDirectory>-->
+<!--                            <resources>-->
+<!--                                <resource>-->
+<!--                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/behaviours</directory>-->
+<!--                                    <excludes>-->
+<!--                                        <exclude>**/Trad*</exclude>-->
+<!--                                    </excludes>-->
+<!--                                </resource>-->
+<!--                                <resource>-->
+<!--                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/creatures</directory>-->
+<!--                                    <excludes>-->
+<!--                                        <exclude>**/Trad*</exclude>-->
+<!--                                    </excludes>-->
+<!--                                </resource>-->
+<!--                                <resource>-->
+<!--                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/items</directory>-->
+<!--                                    <excludes>-->
+<!--                                        <exclude>**/Trad*</exclude>-->
+<!--                                    </excludes>-->
+<!--                                </resource>-->
+<!--                                <resource>-->
+<!--                                    <directory>out/${project.name.lowercase}/classes/com/wurmonline/server/questions</directory>-->
+<!--                                </resource>-->
+<!--                            </resources>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
                     <execution>
                         <id>copy-to-game-folder</id>
                         <phase>package</phase>

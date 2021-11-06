@@ -440,7 +440,7 @@ public class BuyerManagementQuestion extends BuyerQuestionExtension implements T
             buf.append("text{type=\"bold\";text=\"Dismissing\"};text{text=\"if you dismiss a buyer they will take all items with them!\"}");
             buf.append("harray{label{text=\"Dismiss\"};checkbox{id=\"").append(traderId).append("dismiss\";selected=\"false\";text=\" \"}}");
 
-            buf.append("harray {button{text='Confirm';id='confirm'};label{text=' ';id='spacedlxg'};button{text='Manage Prices';id='").append(traderId).append("manage'};label{text=' ';id='spacedlxg'};button{text='Add Item To List';id='add'}}}};null;null;null;null;}");
+            buf.append("harray {button{text='Confirm';id='confirm'};label{text=' ';id='spacedlxg'};button{text='Manage Prices';id='").append(traderId).append("manage'};label{text=' ';id='spacedlxg'};button{text='Add Item To List';id='add'};label{text=' ';id='spacedlxg'};button{text='Schedule';id='schedule'}}}};null;null;null;null;}");
         } else {
             buf.append("text{type=\"bold\";text=\"Hire personal buyer:\"}");
             buf.append("text{text=\"By using this contract a personal buyer will appear.\"}");

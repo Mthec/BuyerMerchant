@@ -61,6 +61,16 @@ public class BuyerManagementQuestionTest extends WurmTradingTest {
     }
 
     @Test
+    void testCorrectButtonsAdded() {
+        askManageQuestion();
+        String bml = factory.getCommunicator(owner).lastBmlContent;
+        assertTrue(bml.contains("button{text='Confirm';id='confirm'}"), bml);
+        assertTrue(bml.contains("button{text='Manage Prices';id='" + buyer.getWurmId() + "manage'}"), bml);
+        assertTrue(bml.contains("button{text='Add Item To List';id='add'}"), bml);
+        assertTrue(bml.contains("button{text='Schedule';id='schedule'}"), bml);
+    }
+
+    @Test
     void testBuyerContractOpensWindow() {
         askQuestion();
         assertNotEquals(FakeCommunicator.empty, factory.getCommunicator(owner).lastBmlContent);
@@ -155,7 +165,7 @@ public class BuyerManagementQuestionTest extends WurmTradingTest {
         question = new BuyerManagementQuestion(owner, contract.getWurmId());
         question.sendQuestion();
         answers.setProperty("ptradername", name);
-        answers.setProperty("submit", "true");
+        answers.setProperty("confirm", "true");
         question.answer(answers);
 
         assertEquals("Buyer_" + name, factory.getCreature(contract.getData()).getName());

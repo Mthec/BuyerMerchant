@@ -270,7 +270,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
 
                     buf.append("}");
                     buf.append("text{text=\"\"}");
-                    buf.append("harray {button{text='Save Prices';id='submit'};label{text=\" \";id=\"spacedlxg\"};button{text='Add New';id='new'}label{text=\" \";id=\"spacedlxg\"};button{text='Sort';id='sort'};button{text='Schedule';id='schedule'}label{text=\" \";id=\"spacedlxg\"}}}}null;null;}");
+                    buf.append("harray {button{text='Save Prices';id='submit'};label{text=\" \";id=\"spacedlxg\"};button{text='Add New';id='new'};label{text=\" \";id=\"spacedlxg\"};button{text='Sort';id='sort'};label{text=\" \";id=\"spacedlxg\"};button{text='Schedule';id='schedule'}}}}null;null;}");
                     this.getResponder().getCommunicator().sendBml(650, 300, true, true, buf.toString(), 200, 200, 200, this.title);
                 } else {
                     this.getResponder().getCommunicator().sendNormalServerMessage("You don't own that shop.");
