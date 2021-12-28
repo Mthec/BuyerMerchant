@@ -14,6 +14,7 @@ import com.wurmonline.server.kingdom.Kingdom;
 import com.wurmonline.server.questions.Questions;
 import com.wurmonline.server.skills.SkillList;
 import mod.wurmunlimited.WurmTradingTest;
+import mod.wurmunlimited.buyermerchant.db.BuyerScheduler;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Properties;
 
 import static mod.wurmunlimited.Assert.receivedMessageContaining;
@@ -568,6 +572,7 @@ class BuyerMerchantTest extends WurmTradingTest {
 
     @Test
     void handle_EXAMINE() throws Throwable {
+        assert BuyerScheduler.getUpdatesFor(buyer).length == 0;
         InvocationHandler handler = (o, method, args) -> buyerMerchant.handle_EXAMINE(o, method, args);
         Method getNoDb = Players.class.getDeclaredMethod("getInstanceForUnitTestingWithoutDatabase");
         getNoDb.setAccessible(true);
@@ -580,6 +585,30 @@ class BuyerMerchantTest extends WurmTradingTest {
         assertEquals(2, factory.getCommunicator(player).getMessages().length);
         assertThat(player, receivedMessageContaining("buying items on behalf of Owner"));
         assertEquals("He has a normal build.", factory.getCommunicator(player).lastNormalServerMessage);
+    }
+
+    @Test
+    void handle_EXAMINEWithUpdates() throws Throwable {
+        BuyerScheduler.addUpdateFor(buyer, ItemTemplateFactory.getInstance().getTemplate(ItemList.pickAxe), (byte)0, 1, 1.0f, 1, 1, 1, false, 1);
+        BuyerScheduler.Update[] updates = BuyerScheduler.getUpdatesFor(buyer);
+        assert updates.length == 1;
+        InvocationHandler handler = (o, method, args) -> buyerMerchant.handle_EXAMINE(o, method, args);
+        Method getNoDb = Players.class.getDeclaredMethod("getInstanceForUnitTestingWithoutDatabase");
+        getNoDb.setAccessible(true);
+        getNoDb.invoke(null);
+
+        Object[] args1 = new Object[] {player, buyer};
+        Clock clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+        ReflectionUtil.setPrivateField(null, BuyerScheduler.class.getDeclaredField("clock"), clock);
+        ReflectionUtil.setPrivateField(updates[0], BuyerScheduler.Update.class.getDeclaredField("lastUpdated"), clock.millis());
+
+        handler.invoke(null, method, args1);
+
+        String[] messages = factory.getCommunicator(player).getMessages();
+        assertEquals(3, messages.length);
+        assertThat(player, receivedMessageContaining("buying items on behalf of Owner"));
+        assertEquals("He has a normal build.", messages[1]);
+        assertThat(player, receivedMessageContaining("update their stock in 1 hours."));
     }
 
     @Test

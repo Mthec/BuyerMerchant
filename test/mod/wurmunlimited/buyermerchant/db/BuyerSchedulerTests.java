@@ -182,4 +182,21 @@ public class BuyerSchedulerTests extends WurmTradingTest {
         assertEquals(1, BuyerScheduler.getUpdatesFor(buyer).length);
         assertEquals(update, BuyerScheduler.getUpdatesFor(buyer)[0]);
     }
+
+    @Test
+    void testGetNextUpdateFor() throws BuyerScheduler.UpdateAlreadyExists, SQLException {
+        BuyerScheduler.addUpdateFor(buyer, template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamage, 1);
+        BuyerScheduler.Update[] updates = BuyerScheduler.getUpdatesFor(buyer);
+        assert updates.length == 1;
+        updates[0].lastUpdated = Clock.systemUTC().millis();
+
+        assertEquals(TimeConstants.HOUR_MILLIS, BuyerScheduler.getNextUpdateFor(buyer));
+    }
+
+    @Test
+    void testGetNextUpdateForNoUpdates() {
+        assert BuyerScheduler.getUpdatesFor(buyer).length == 0;
+
+        assertEquals(-1L, BuyerScheduler.getNextUpdateFor(buyer));
+    }
 }

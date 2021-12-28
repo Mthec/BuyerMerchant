@@ -20,6 +20,7 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+@SuppressWarnings({"SqlNoDataSourceInspection", "SqlResolve"})
 public class BuyerScheduler {
     public static class Update implements Comparable<Update> {
         private static int ids = 0;
@@ -149,7 +150,8 @@ public class BuyerScheduler {
     private static final String dbName = "buyer";
     private static String dbString = "";
     private static boolean created = false;
-    private static final Clock clock = Clock.systemUTC();
+    @SuppressWarnings("FieldMayBeFinal")
+    private static Clock clock = Clock.systemUTC();
     private static final Map<Creature, List<Update>> toUpdate = new HashMap<>();
     private static final Map<Creature, Long> lastChecked = new HashMap<>();
 
@@ -215,6 +217,14 @@ public class BuyerScheduler {
         if (toReturn == null)
             return new Update[0];
         return toReturn.toArray(new Update[0]);
+    }
+
+    public static long getNextUpdateFor(Creature buyer) {
+        List<Update> toReturn = toUpdate.get(buyer);
+        if (toReturn == null)
+            return -1L;
+        long now = clock.millis();
+        return toReturn.stream().mapToLong(u -> u.interval - now + u.lastUpdated).min().orElse(-1L);
     }
     
     public static void addUpdateFor(Creature buyer, ItemTemplate template, byte material, int weight, float ql, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged, long intervalHours) throws SQLException, UpdateAlreadyExists {

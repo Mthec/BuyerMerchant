@@ -25,6 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -50,6 +51,7 @@ public abstract class WurmTradingTest {
         Constants.dbHost = ".";
         ReflectionUtil.<Map<Creature, BuyerScheduler.Update>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("toUpdate")).clear();
         ReflectionUtil.setPrivateField(null, BuyerScheduler.class.getDeclaredField("created"), false);
+        ReflectionUtil.setPrivateField(null, BuyerScheduler.class.getDeclaredField("clock"), Clock.systemUTC());
         //noinspection ResultOfMethodCallIgnored
         Files.walk(Paths.get("./sqlite/")).filter(it -> !it.toFile().isDirectory()).forEach(it -> it.toFile().delete());
         BuyerTradingWindow.freeMoney = false;

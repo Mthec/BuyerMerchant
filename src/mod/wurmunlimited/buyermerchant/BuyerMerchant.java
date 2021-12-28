@@ -566,6 +566,11 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             }
             performer.getCommunicator().sendNormalServerMessage(message);
             performer.getCommunicator().sendNormalServerMessage(StringUtilities.raiseFirstLetter(target.getStatus().getBodyType()));
+            long nextUpdate = BuyerScheduler.getNextUpdateFor(target);
+            if (nextUpdate > 0) {
+                performer.getCommunicator().sendNormalServerMessage(target.getName() + " will next update their stock in " +
+                                                                            StringUtilities.getTimeString(nextUpdate) + ".");
+            }
             return null;
         }
         return method.invoke(o, args);
