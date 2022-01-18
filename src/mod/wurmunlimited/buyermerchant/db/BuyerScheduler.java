@@ -13,6 +13,7 @@ import mod.wurmunlimited.buyermerchant.ItemDetails;
 import mod.wurmunlimited.buyermerchant.PriceList;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.sql.*;
 import java.time.Clock;
@@ -154,6 +155,8 @@ public class BuyerScheduler {
     private static Clock clock = Clock.systemUTC();
     private static final Map<Creature, List<Update>> toUpdate = new HashMap<>();
     private static final Map<Creature, Long> lastChecked = new HashMap<>();
+    private static final Map<Long, Boolean> freeMoney = new HashMap<>();
+    private static final Map<Long, Boolean> destroyBoughtItems = new HashMap<>();
 
     public interface Execute {
         void run(Connection db) throws SQLException;
@@ -174,6 +177,16 @@ public class BuyerScheduler {
                                                              "interval INTEGER NOT NULL," +
                                                              "lastUpdated INTEGER NOT NULL" +
                                                              ");").executeUpdate();
+
+        conn.prepareStatement("CREATE TABLE IF NOT EXISTS freeMoney (" +
+                                      "buyerId INTEGER NOT NULL UNIQUE," +
+                                      "freeMoney INTEGER NOT NULL" +
+                                      ");").executeUpdate();
+
+        conn.prepareStatement("CREATE TABLE IF NOT EXISTS destroyBoughtItems (" +
+                                      "buyerId INTEGER NOT NULL UNIQUE," +
+                                      "destroyBoughtItems INTEGER NOT NULL" +
+                                      ");").executeUpdate();
 
         created = true;
     }
@@ -407,6 +420,8 @@ public class BuyerScheduler {
     public static void loadAll() throws SQLException {
         execute(db -> {
             toUpdate.clear();
+            freeMoney.clear();
+            destroyBoughtItems.clear();
             ResultSet rs = db.prepareStatement("SELECT * FROM updates;").executeQuery();
             Map<Long, Creature> creatures = new HashMap<>();
             ItemTemplateFactory factory = ItemTemplateFactory.getInstance();
@@ -445,6 +460,22 @@ public class BuyerScheduler {
                     }
                 }
             }
+
+            rs = db.prepareStatement("SELECT * FROM freeMoney;").executeQuery();
+
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                boolean isFreeMoney = rs.getBoolean(2);
+                freeMoney.put(id, isFreeMoney);
+            }
+
+            rs = db.prepareStatement("SELECT * FROM destroyBoughtItems;").executeQuery();
+
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                boolean isDestroyBoughtItems = rs.getBoolean(2);
+                destroyBoughtItems.put(id, isDestroyBoughtItems);
+            }
         });
     }
 
@@ -455,5 +486,73 @@ public class BuyerScheduler {
                 deleteUpdateFor(buyer, update.id);
             }
         }
+    }
+
+    public static @Nullable Boolean getIsFreeMoneyFor(@NotNull Creature buyer) {
+        return freeMoney.get(buyer.getWurmId());
+    }
+
+    public static void setFreeMoneyFor(@NotNull Creature buyer, @Nullable Boolean isFreeMoney) throws SQLException {
+        long id = buyer.getWurmId();
+        Boolean current = freeMoney.get(id);
+        execute(db -> {
+            if (isFreeMoney == null) {
+                if (current != null) {
+                    PreparedStatement ps = db.prepareStatement("DELETE FROM freeMoney WHERE buyerId=?;");
+                    ps.setLong(1, id);
+                    ps.execute();
+                    freeMoney.remove(id);
+                }
+            } else if (current == null || isFreeMoney != current) {
+                PreparedStatement ps;
+
+                if (current == null) {
+                    ps = db.prepareStatement("INSERT INTO freeMoney VALUES(?, ?);");
+                    ps.setLong(1, id);
+                    ps.setBoolean(2, isFreeMoney);
+                } else {
+                    ps = db.prepareStatement("UPDATE freeMoney SET freeMoney=? WHERE buyerId=?;");
+                    ps.setBoolean(1, isFreeMoney);
+                    ps.setLong(2, id);
+                }
+
+                ps.executeUpdate();
+                freeMoney.put(id, isFreeMoney);
+            }
+        });
+    }
+
+    public static @Nullable Boolean getIsDestroyBoughtItemsFor(@NotNull Creature buyer) {
+        return destroyBoughtItems.get(buyer.getWurmId());
+    }
+
+    public static void setDestroyBoughtItemsFor(@NotNull Creature buyer, @Nullable Boolean isDestroyBoughtItems) throws SQLException {
+        long id = buyer.getWurmId();
+        Boolean current = destroyBoughtItems.get(id);
+        execute(db -> {
+            if (isDestroyBoughtItems == null) {
+                if (current != null) {
+                    PreparedStatement ps = db.prepareStatement("DELETE FROM destroyBoughtItems WHERE buyerId=?;");
+                    ps.setLong(1, id);
+                    ps.execute();
+                    destroyBoughtItems.remove(id);
+                }
+            } else if (current == null || isDestroyBoughtItems != current) {
+                PreparedStatement ps;
+
+                if (current == null) {
+                    ps = db.prepareStatement("INSERT INTO destroyBoughtItems VALUES(?, ?);");
+                    ps.setLong(1, id);
+                    ps.setBoolean(2, isDestroyBoughtItems);
+                } else {
+                    ps = db.prepareStatement("UPDATE destroyBoughtItems SET destroyBoughtItems=? WHERE buyerId=?;");
+                    ps.setBoolean(1, isDestroyBoughtItems);
+                    ps.setLong(2, id);
+                }
+
+                ps.executeUpdate();
+                destroyBoughtItems.put(id, isDestroyBoughtItems);
+            }
+        });
     }
 }

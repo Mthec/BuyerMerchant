@@ -1,7 +1,6 @@
 package mod.wurmunlimited.buyermerchant.db;
 
 import com.wurmonline.server.TimeConstants;
-import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.items.ItemList;
 import com.wurmonline.server.items.ItemTemplate;
 import com.wurmonline.server.items.ItemTemplateFactory;
@@ -18,11 +17,10 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BuyerSchedulerTests extends WurmTradingTest {
     private ItemTemplate template = null;
@@ -172,15 +170,20 @@ public class BuyerSchedulerTests extends WurmTradingTest {
     void testLoadAll() throws NoSuchFieldException, IllegalAccessException, SQLException {
         BuyerScheduler.Update update = createUpdate();
         assert BuyerScheduler.getUpdatesFor(buyer).length == 1;
+        BuyerScheduler.setFreeMoneyFor(buyer, true);
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, false);
 
-        Map<Creature, List<BuyerScheduler.Update>> toUpdate = ReflectionUtil.getPrivateField(null, BuyerScheduler.class.getDeclaredField("toUpdate"));
-        toUpdate.clear();
+        ReflectionUtil.<Map<Long, Boolean>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("toUpdate")).clear();
+        ReflectionUtil.<Map<Long, Boolean>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("freeMoney")).clear();
+        ReflectionUtil.<Map<Long, Boolean>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("destroyBoughtItems")).clear();
 
-        assertEquals(0, BuyerScheduler.getUpdatesFor(buyer).length);
         BuyerScheduler.loadAll();
 
         assertEquals(1, BuyerScheduler.getUpdatesFor(buyer).length);
         assertEquals(update, BuyerScheduler.getUpdatesFor(buyer)[0]);
+
+        assertTrue(Objects.requireNonNull(BuyerScheduler.getIsFreeMoneyFor(buyer)));
+        assertFalse(Objects.requireNonNull(BuyerScheduler.getIsDestroyBoughtItemsFor(buyer)));
     }
 
     @Test
@@ -198,5 +201,77 @@ public class BuyerSchedulerTests extends WurmTradingTest {
         assert BuyerScheduler.getUpdatesFor(buyer).length == 0;
 
         assertEquals(-1L, BuyerScheduler.getNextUpdateFor(buyer));
+    }
+
+    @Test
+    void testSetFreeMoneyNullToTrue() throws SQLException, NoSuchFieldException, IllegalAccessException {
+        assert BuyerScheduler.getIsFreeMoneyFor(buyer) == null;
+
+        BuyerScheduler.setFreeMoneyFor(buyer, true);
+        assertTrue(Objects.requireNonNull(BuyerScheduler.getIsFreeMoneyFor(buyer)));
+
+        ReflectionUtil.<Map<Long, Boolean>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("freeMoney")).clear();
+        BuyerScheduler.loadAll();
+        assertTrue(Objects.requireNonNull(BuyerScheduler.getIsFreeMoneyFor(buyer)));
+    }
+
+    @Test
+    void testSetFreeMoneyTrueToFalse() throws SQLException, NoSuchFieldException, IllegalAccessException {
+        BuyerScheduler.setFreeMoneyFor(buyer, true);
+
+        BuyerScheduler.setFreeMoneyFor(buyer, false);
+        assertFalse(Objects.requireNonNull(BuyerScheduler.getIsFreeMoneyFor(buyer)));
+
+        ReflectionUtil.<Map<Long, Boolean>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("freeMoney")).clear();
+        BuyerScheduler.loadAll();
+        assertFalse(Objects.requireNonNull(BuyerScheduler.getIsFreeMoneyFor(buyer)));
+    }
+
+    @Test
+    void testSetFreeMoneyFalseToNull() throws SQLException, NoSuchFieldException, IllegalAccessException {
+        BuyerScheduler.setFreeMoneyFor(buyer, false);
+
+        BuyerScheduler.setFreeMoneyFor(buyer, null);
+        assertNull(BuyerScheduler.getIsFreeMoneyFor(buyer));
+
+        ReflectionUtil.<Map<Long, Boolean>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("freeMoney")).clear();
+        BuyerScheduler.loadAll();
+        assertNull(BuyerScheduler.getIsFreeMoneyFor(buyer));
+    }
+
+    @Test
+    void testSetDestroyBoughtItemsNullToTrue() throws SQLException, NoSuchFieldException, IllegalAccessException {
+        assert BuyerScheduler.getIsDestroyBoughtItemsFor(buyer) == null;
+
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, true);
+        assertTrue(Objects.requireNonNull(BuyerScheduler.getIsDestroyBoughtItemsFor(buyer)));
+
+        ReflectionUtil.<Map<Long, Boolean>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("destroyBoughtItems")).clear();
+        BuyerScheduler.loadAll();
+        assertTrue(Objects.requireNonNull(BuyerScheduler.getIsDestroyBoughtItemsFor(buyer)));
+    }
+
+    @Test
+    void testSetDestroyBoughtItemsTrueToFalse() throws SQLException, NoSuchFieldException, IllegalAccessException {
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, true);
+
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, false);
+        assertFalse(Objects.requireNonNull(BuyerScheduler.getIsDestroyBoughtItemsFor(buyer)));
+
+        ReflectionUtil.<Map<Long, Boolean>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("destroyBoughtItems")).clear();
+        BuyerScheduler.loadAll();
+        assertFalse(Objects.requireNonNull(BuyerScheduler.getIsDestroyBoughtItemsFor(buyer)));
+    }
+
+    @Test
+    void testSetDestroyBoughtItemsFalseToNull() throws SQLException, NoSuchFieldException, IllegalAccessException {
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, false);
+
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, null);
+        assertNull(BuyerScheduler.getIsDestroyBoughtItemsFor(buyer));
+
+        ReflectionUtil.<Map<Long, Boolean>>getPrivateField(null, BuyerScheduler.class.getDeclaredField("destroyBoughtItems")).clear();
+        BuyerScheduler.loadAll();
+        assertNull(BuyerScheduler.getIsDestroyBoughtItemsFor(buyer));
     }
 }

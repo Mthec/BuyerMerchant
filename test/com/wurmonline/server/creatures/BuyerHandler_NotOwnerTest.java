@@ -164,7 +164,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
     @Test
     void testAlreadyExceededMaxItems() {
-        factory.createManyItems(BuyerHandler.getMaxNumPersonalItems() + 1).forEach(buyer.getInventory()::insertItem);
+        factory.createManyItems(BuyerHandler.getMaxNumPersonalItems(buyer) + 1).forEach(buyer.getInventory()::insertItem);
         Item item = factory.createNewItem();
         player.getInventory().insertItem(item);
         addOneCopperItemToPriceList(item);
@@ -181,7 +181,8 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
     @Test
     void testWillNotExceedMaxItems() {
-        factory.createManyItems(BuyerHandler.getMaxNumPersonalItems() - 2).forEach(buyer.getInventory()::insertItem);
+        assert BuyerHandler.getMaxNumPersonalItems(buyer) != Integer.MAX_VALUE;
+        factory.createManyItems(BuyerHandler.getMaxNumPersonalItems(buyer) - 2).forEach(buyer.getInventory()::insertItem);
         Item item = factory.createNewItem();
         player.getInventory().insertItem(item);
         player.getInventory().insertItem(factory.createNewItem());
@@ -595,7 +596,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     void testMinimumPurchaseExceedsSpaceButPurchasesSome() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, EntryBuilder.EntryBuilderException {
         int minimumPurchase = 20;
         int numberOfItems = minimumPurchase * 2;
-        BuyerHandler.maxPersonalItems = (int)(minimumPurchase * 1.5f);
+        BuyerHandler.defaultMaxPersonalItems = (int)(minimumPurchase * 1.5f);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         EntryBuilder.addEntry(priceList).templateId(factory.getIsWoodId()).price(10).minimumRequired(minimumPurchase).build();
         priceList.savePriceList();
@@ -609,16 +610,16 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
         items.forEach(playerOffer::addItem);
         handler.balance();
 
-        assertEquals(BuyerHandler.maxPersonalItems - 1, playerToTrade.getItems().length);
-        assertEquals(numberOfItems - BuyerHandler.maxPersonalItems + 1, playerOffer.getItems().length);
+        assertEquals(BuyerHandler.defaultMaxPersonalItems - 1, playerToTrade.getItems().length);
+        assertEquals(numberOfItems - BuyerHandler.defaultMaxPersonalItems + 1, playerOffer.getItems().length);
 
         setSatisfied(player);
         assertThat(player, receivedMessageContaining("to accept all of the " + ItemTemplateFactory.getInstance().getTemplate(factory.getIsWoodId()).getPlural()));
         assertThat(player, receivedMessageContaining("completed successfully"));
 
-        assertEquals(BuyerHandler.maxPersonalItems, buyer.getInventory().getItemCount());
-        assertEquals(initialFunds - (10 * (BuyerHandler.maxPersonalItems - 1) * 1.1f), factory.getShop(buyer).getMoney());
-        assertEquals(numberOfItems - BuyerHandler.maxPersonalItems + 1, player.getInventory().getNumItemsNotCoins());
+        assertEquals(BuyerHandler.defaultMaxPersonalItems, buyer.getInventory().getItemCount());
+        assertEquals(initialFunds - (10 * (BuyerHandler.defaultMaxPersonalItems - 1) * 1.1f), factory.getShop(buyer).getMoney());
+        assertEquals(numberOfItems - BuyerHandler.defaultMaxPersonalItems + 1, player.getInventory().getNumItemsNotCoins());
     }
 
     @Test

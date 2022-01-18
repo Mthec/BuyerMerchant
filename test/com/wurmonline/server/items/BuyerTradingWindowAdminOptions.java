@@ -11,6 +11,7 @@ import com.wurmonline.shared.constants.ItemMaterials;
 import mod.wurmunlimited.WurmTradingTest;
 import mod.wurmunlimited.buyermerchant.BuyerMerchant;
 import mod.wurmunlimited.buyermerchant.PriceList;
+import mod.wurmunlimited.buyermerchant.db.BuyerScheduler;
 import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -42,8 +44,8 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testNoFreeMoneyOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
-        assert !BuyerTradingWindow.freeMoney;
+    void testNoFreeMoneyOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"));
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_GOLD);
@@ -69,8 +71,8 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testFreeMoneyOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
-        BuyerTradingWindow.freeMoney = true;
+    void testFreeMoneyOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_GOLD);
@@ -96,8 +98,8 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testItemsNotDestroyedOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
-        assert !BuyerTradingWindow.destroyBoughtItems;
+    void testItemsNotDestroyedOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_COPPER);
@@ -124,8 +126,8 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testItemsDestroyedOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
-        BuyerTradingWindow.destroyBoughtItems = true;
+    void testItemsDestroyedOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), true);
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_COPPER);
@@ -153,9 +155,9 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testDestroyAndFreeMoney() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
-        BuyerTradingWindow.freeMoney = true;
-        BuyerTradingWindow.destroyBoughtItems = true;
+    void testDestroyAndFreeMoney() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), true);
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_GOLD);
@@ -184,19 +186,19 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testMaxPersonalItemsSetOnDestroyBoughtItems() {
-        assert !BuyerTradingWindow.destroyBoughtItems;
-        assert BuyerHandler.maxPersonalItems < 100;
+    void testMaxPersonalItemsSetOnDestroyBoughtItems() throws NoSuchFieldException, IllegalAccessException {
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
+        assert BuyerHandler.defaultMaxPersonalItems < 100;
 
         setOptions(false, true);
 
-        assertTrue(BuyerTradingWindow.destroyBoughtItems);
-        assertEquals(Integer.MAX_VALUE, BuyerHandler.getMaxNumPersonalItems());
+        assertTrue(ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems")));
+        assertEquals(Integer.MAX_VALUE, BuyerHandler.getMaxNumPersonalItems(buyer));
     }
 
     @Test
-    void testNoWeightRestrictionForDestroyBoughtItems() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
-        assert !BuyerTradingWindow.destroyBoughtItems;
+    void testNoWeightRestrictionForDestroyBoughtItems() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
         // Iron ore.
         int templateId = 38;
         int numberOfItems = 50;
@@ -233,9 +235,9 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testAcceptsCoinsFromOwnerOnDestroyBoughtItemsWhileNotFreeMoney() {
-        BuyerTradingWindow.destroyBoughtItems = true;
-        assert !BuyerTradingWindow.freeMoney;
+    void testAcceptsCoinsFromOwnerOnDestroyBoughtItemsWhileNotFreeMoney() throws NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), true);
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"));
 
         Item item = factory.createNewItem();
         Item coin = factory.createNewCopperCoin();
@@ -255,9 +257,9 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testAcceptsCoinsFromOwnerOnNotDestroyBoughtItemsAndNotFreeMoney() {
-        assert !BuyerTradingWindow.freeMoney;
-        assert !BuyerTradingWindow.destroyBoughtItems;
+    void testAcceptsCoinsFromOwnerOnNotDestroyBoughtItemsAndNotFreeMoney() throws NoSuchFieldException, IllegalAccessException {
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"));
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
         assert factory.getShop(buyer).getMoney() == 0;
 
         Item item = factory.createNewItem();
@@ -279,9 +281,9 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testAcceptsPriceListWhenOptionsTrue() throws NoSuchTemplateException, FailedException {
-        BuyerTradingWindow.freeMoney = true;
-        BuyerTradingWindow.destroyBoughtItems = true;
+    void testAcceptsPriceListWhenOptionsTrue() throws NoSuchTemplateException, FailedException, NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), true);
 
         Item priceList = PriceList.getNewBuyList();
         owner.getInventory().insertItem(priceList);
@@ -299,8 +301,8 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testOwnerTradedMoneyAddsToShopWhenFreeMoneyTrue() {
-        BuyerTradingWindow.freeMoney = true;
+    void testOwnerTradedMoneyAddsToShopWhenFreeMoneyTrue() throws NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
 
         Item coin = factory.createNewCopperCoin();
         owner.getInventory().insertItem(coin);
@@ -318,8 +320,8 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testOwnerCanStillRemoveCoinsWhenFreeMoneyTrue() {
-        BuyerTradingWindow.freeMoney = true;
+    void testOwnerCanStillRemoveCoinsWhenFreeMoneyTrue() throws NoSuchFieldException, IllegalAccessException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
 
         Item coin = factory.createNewCopperCoin();
         buyer.getInventory().insertItem(coin);
@@ -344,7 +346,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerMerchant buyerMerchant = new BuyerMerchant();
         buyerMerchant.configure(config);
         buyerMerchant.onServerStarted();
-        assertEquals(100 + 1, BuyerHandler.maxPersonalItems);
+        assertEquals(100 + 1, BuyerHandler.defaultMaxPersonalItems);
         assertEquals(100, TradeHandler.getMaxNumPersonalItems());
     }
 
@@ -356,7 +358,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerMerchant buyerMerchant = new BuyerMerchant();
         buyerMerchant.configure(config);
         buyerMerchant.onServerStarted();
-        assertEquals(100 + 1, BuyerHandler.maxPersonalItems);
+        assertEquals(100 + 1, BuyerHandler.defaultMaxPersonalItems);
         assertEquals(50, TradeHandler.getMaxNumPersonalItems());
     }
 
@@ -368,7 +370,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerMerchant buyerMerchant = new BuyerMerchant();
         buyerMerchant.configure(config);
         buyerMerchant.onServerStarted();
-        assertEquals(50 + 1, BuyerHandler.maxPersonalItems);
+        assertEquals(50 + 1, BuyerHandler.defaultMaxPersonalItems);
         assertEquals(50, TradeHandler.getMaxNumPersonalItems());
     }
 
@@ -417,7 +419,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerMerchant buyerMerchant = new BuyerMerchant();
         buyerMerchant.configure(config);
         buyerMerchant.onServerStarted();
-        assert BuyerHandler.maxPersonalItems == numberOfItems + 1;
+        assert BuyerHandler.defaultMaxPersonalItems == numberOfItems + 1;
         assert TradeHandler.getMaxNumPersonalItems() == numberOfItems;
         Creature merchant = factory.createNewMerchant(owner);
 
@@ -475,7 +477,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerMerchant buyerMerchant = new BuyerMerchant();
         buyerMerchant.configure(config);
         buyerMerchant.onServerStarted();
-        assert BuyerHandler.maxPersonalItems == 50 + 1;
+        assert BuyerHandler.defaultMaxPersonalItems == 50 + 1;
 
         int numberOfItems = 51;
         long money = (long)(MonetaryConstants.COIN_IRON * numberOfItems * 1.1f);
@@ -493,7 +495,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         assertThat(player, receivedMessageContaining("cannot add more items"));
         // Remove Price List to keep the money calculations simpler.
         int itemCount = buyer.getInventory().getNumItemsNotCoins() - 1;
-        assertEquals(BuyerHandler.maxPersonalItems - 1, itemCount);
+        assertEquals(BuyerHandler.defaultMaxPersonalItems - 1, itemCount);
         assertEquals((long)(money - (MonetaryConstants.COIN_IRON * itemCount * 1.1f)), factory.getShop(buyer).getMoney());
         assertThat(player, hasCoinsOfValue((long)(MonetaryConstants.COIN_IRON * itemCount)));
     }
@@ -508,7 +510,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerMerchant buyerMerchant = new BuyerMerchant();
         buyerMerchant.configure(config);
         buyerMerchant.onServerStarted();
-        assert BuyerHandler.maxPersonalItems == numberOfItems + 1;
+        assert BuyerHandler.defaultMaxPersonalItems == numberOfItems + 1;
         assert TradeHandler.getMaxNumPersonalItems() == 50;
         Creature merchant = factory.createNewMerchant(owner);
 
@@ -563,7 +565,155 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         BuyerMerchant buyerMerchant = new BuyerMerchant();
         ReflectionUtil.setPrivateField(buyerMerchant, BuyerMerchant.class.getDeclaredField("maxItems"), Integer.MAX_VALUE);
         assertDoesNotThrow(buyerMerchant::onServerStarted);
-        assertEquals(Integer.MAX_VALUE, BuyerHandler.maxPersonalItems);
+        assertEquals(Integer.MAX_VALUE, BuyerHandler.defaultMaxPersonalItems);
+    }
+
+    @Test
+    void testNoFreeMoneyOnFalseSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
+        BuyerScheduler.setFreeMoneyFor(buyer, false);
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_GOLD);
+        priceList.savePriceList();
+        buyer.getInventory().insertItem(factory.createNewCopperCoin());
+        factory.getShop(buyer).setMoney(MonetaryConstants.COIN_COPPER);
+
+        makeBuyerTrade();
+        Item item = factory.createNewItem(factory.getIsMetalId());
+        item.setMaterial(ItemMaterials.MATERIAL_IRON);
+        player.getInventory().insertItem(item);
+        trade.getCreatureTwoRequestWindow().addItem(item);
+        balance();
+
+        setSatisfied(player);
+
+        assertEquals(2, buyer.getInventory().getItemCount());
+        assertEquals(MonetaryConstants.COIN_COPPER, factory.getShop(buyer).getMoney());
+        assertThat(buyer, hasCoinsOfValue((long)MonetaryConstants.COIN_COPPER));
+        assertThat(player, hasCoinsOfValue(0L));
+        assertTrue(player.getInventory().getItems().contains(item));
+        assertThat(player, receivedMessageContaining("low on cash"));
+    }
+
+    @Test
+    void testFreeMoneyOnTrueSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"));
+        BuyerScheduler.setFreeMoneyFor(buyer, true);
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_GOLD);
+        priceList.savePriceList();
+        buyer.getInventory().insertItem(factory.createNewCopperCoin());
+        factory.getShop(buyer).setMoney(MonetaryConstants.COIN_COPPER);
+
+        makeBuyerTrade();
+        Item item = factory.createNewItem(factory.getIsMetalId());
+        item.setMaterial(ItemMaterials.MATERIAL_IRON);
+        player.getInventory().insertItem(item);
+        trade.getCreatureTwoRequestWindow().addItem(item);
+        balance();
+
+        setSatisfied(player);
+
+        assertEquals(3, buyer.getInventory().getItemCount());
+        assertEquals(MonetaryConstants.COIN_COPPER, factory.getShop(buyer).getMoney());
+        assertThat(buyer, hasCoinsOfValue((long)MonetaryConstants.COIN_COPPER));
+        assertThat(player, hasCoinsOfValue((long)MonetaryConstants.COIN_GOLD));
+        assertFalse(player.getInventory().getItems().contains(item));
+        assertThat(player, receivedMessageContaining("completed successfully"));
+    }
+
+    @Test
+    void testItemsNotDestroyedOnFalseSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), true);
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, false);
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_COPPER);
+        priceList.savePriceList();
+        Stream.of(Economy.getEconomy().getCoinsFor((long)(MonetaryConstants.COIN_COPPER * 1.1f))).forEach(buyer.getInventory()::insertItem);
+        factory.getShop(buyer).setMoney((long)(MonetaryConstants.COIN_COPPER * 1.1f));
+
+        makeBuyerTrade();
+        Item item = factory.createNewItem(factory.getIsMetalId());
+        item.setMaterial(ItemMaterials.MATERIAL_IRON);
+        player.getInventory().insertItem(item);
+        trade.getCreatureTwoRequestWindow().addItem(item);
+        balance();
+
+        setSatisfied(player);
+
+        assertEquals(2, buyer.getInventory().getItemCount());
+        assertTrue(buyer.getInventory().getItems().contains(item));
+        assertEquals(0, factory.getShop(buyer).getMoney());
+        assertThat(buyer, hasCoinsOfValue(0L));
+        assertThat(player, hasCoinsOfValue((long)MonetaryConstants.COIN_COPPER));
+        assertFalse(player.getInventory().getItems().contains(item));
+        assertThat(player, receivedMessageContaining("completed successfully"));
+    }
+
+    @Test
+    void testItemsDestroyedOnTrueSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, true);
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_COPPER);
+        priceList.savePriceList();
+        Stream.of(Economy.getEconomy().getCoinsFor((long)(MonetaryConstants.COIN_COPPER * 1.1f))).forEach(buyer.getInventory()::insertItem);
+        factory.getShop(buyer).setMoney((long)(MonetaryConstants.COIN_COPPER * 1.1f));
+
+        makeBuyerTrade();
+        Item item = factory.createNewItem(factory.getIsMetalId());
+        item.setMaterial(ItemMaterials.MATERIAL_IRON);
+        player.getInventory().insertItem(item);
+        trade.getCreatureTwoRequestWindow().addItem(item);
+        balance();
+
+        setSatisfied(player);
+
+        assertNull(factory.getItem(item.getWurmId()));
+        assertEquals(1, buyer.getInventory().getItemCount());
+        assertFalse(buyer.getInventory().getItems().contains(item));
+        assertEquals(0, factory.getShop(buyer).getMoney());
+        assertThat(buyer, hasCoinsOfValue(0L));
+        assertThat(player, hasCoinsOfValue((long)MonetaryConstants.COIN_COPPER));
+        assertFalse(player.getInventory().getItems().contains(item));
+        assertThat(player, receivedMessageContaining("completed successfully"));
+    }
+
+    @Test
+    void testDestroyAndFreeMoneySpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"));
+        assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
+        BuyerScheduler.setFreeMoneyFor(buyer, true);
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, true);
+
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(factory.getIsMetalId(), ItemMaterials.MATERIAL_IRON, -1, 1.0f, MonetaryConstants.COIN_GOLD);
+        priceList.savePriceList();
+        Stream.of(Economy.getEconomy().getCoinsFor((long)(MonetaryConstants.COIN_COPPER * 1.1f))).forEach(buyer.getInventory()::insertItem);
+        int buyerItemCount = buyer.getInventory().getItemCount();
+        factory.getShop(buyer).setMoney((long)(MonetaryConstants.COIN_COPPER * 1.1f));
+
+        makeBuyerTrade();
+        Item item = factory.createNewItem(factory.getIsMetalId());
+        item.setMaterial(ItemMaterials.MATERIAL_IRON);
+        player.getInventory().insertItem(item);
+        trade.getCreatureTwoRequestWindow().addItem(item);
+        balance();
+
+        setSatisfied(player);
+
+        assertNull(factory.getItem(item.getWurmId()));
+        assertEquals(buyerItemCount, buyer.getInventory().getItemCount());
+        assertFalse(buyer.getInventory().getItems().contains(item));
+        assertEquals((long)(MonetaryConstants.COIN_COPPER * 1.1f), factory.getShop(buyer).getMoney());
+        assertThat(buyer, hasCoinsOfValue((long)(MonetaryConstants.COIN_COPPER * 1.1f)));
+        assertThat(player, hasCoinsOfValue((long)MonetaryConstants.COIN_GOLD));
+        assertFalse(player.getInventory().getItems().contains(item));
+        assertThat(player, receivedMessageContaining("completed successfully"));
     }
 
     // For turn_to_player_max_power see BuyerMerchantTest.

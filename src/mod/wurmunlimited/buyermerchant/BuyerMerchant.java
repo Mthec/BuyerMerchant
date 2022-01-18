@@ -33,12 +33,12 @@ import java.util.stream.Stream;
 public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, Initable, ServerStartedListener, ItemTemplatesCreatedListener {
     private static final Logger logger = Logger.getLogger(BuyerMerchant.class.getName());
     public static final String BUYER_NAME_PREFIX = "Buyer_";
+    private static boolean freeMoney = false;
+    private static boolean destroyBoughtItems = false;
     private int templateId;
     private boolean updateTraders = false;
     private boolean contractsOnTraders = true;
     private byte gmManagePowerRequired = 10;
-    private boolean freeMoney = false;
-    private boolean destroyBoughtItems = false;
     private final int defaultMaxItems = 50;
     private int maxItems = defaultMaxItems;
     private boolean applyMaxToMerchants = false;
@@ -46,6 +46,24 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
     // TODO - What about spells on items? - Probably going to ignore as Traders do, unless it is requested.
     // TODO - What about rarity - do later maybe?
     // TODO - Not high enough ql message to player.
+
+    public static boolean isFreeMoney(Creature buyer) {
+        Boolean is = BuyerScheduler.getIsFreeMoneyFor(buyer);
+        if (is != null) {
+            return is;
+        } else {
+            return freeMoney;
+        }
+    }
+
+    public static boolean isDestroyBoughtItems(Creature buyer) {
+        Boolean is = BuyerScheduler.getIsDestroyBoughtItemsFor(buyer);
+        if (is != null) {
+            return is;
+        } else {
+            return destroyBoughtItems;
+        }
+    }
 
     @Override
     public void onItemTemplatesCreated() {
@@ -247,40 +265,6 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
             // Remove final from TradingWindow.stopLoggers.
             CtMethod stopLoggers = tradingWindow.getDeclaredMethod("stopLoggers");
             stopLoggers.setModifiers(Modifier.clear(stopLoggers.getModifiers(), Modifier.FINAL));
-
-            // Then load subclasses.
-            // TODO - Why do I need to load PriceList?  Because it needs to be on the same loader as the rest of the Buyer code?
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$Entry.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$NoPriceListOnBuyer.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$PriceListFullException.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PriceList$PageNotAdded.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerHandler.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTradingWindow.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerTrade.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerQuestionExtension.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerManagementQuestion.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetBuyerPricesQuestion.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("UpdateScheduleQuestion.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerQuestion.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerInstantQuestion.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("AddItemToBuyerUpdateQuestion.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("SetUpdateIntervalQuestion.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyPriceListAction.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyBuyerPriceListAction.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("CopyContractPriceListAction.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PlaceNpcMenu.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("NpcMenuEntry.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ManageBuyerAction.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("PlaceBuyerAction.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ContractMinimum.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$1.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumRequired$2.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("MinimumSet.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("WeightString.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("BuyerScheduler.class"));
-//            pool.makeClass(BuyerMerchant.class.getResourceAsStream("ItemDetails.class"));
         } catch (NotFoundException | CannotCompileException e) {
             throw new RuntimeException(e);
         }
@@ -298,20 +282,9 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         new PlaceBuyerAction();
         PlaceNpcMenu.register();
 
-        BuyerTradingWindow.freeMoney = freeMoney;
-        BuyerTradingWindow.destroyBoughtItems = destroyBoughtItems;
-        if (destroyBoughtItems) {
-            BuyerHandler.maxPersonalItems = Integer.MAX_VALUE;
-        }
-
         if (maxItems != defaultMaxItems) {
-            if (!destroyBoughtItems) {
-                // Plus one for PriceList.
-                if (maxItems != Integer.MAX_VALUE)
-                    BuyerHandler.maxPersonalItems = maxItems + 1;
-                else
-                    BuyerHandler.maxPersonalItems = Integer.MAX_VALUE;
-            }
+            BuyerHandler.defaultMaxPersonalItems = maxItems + (maxItems != Integer.MAX_VALUE ? 1 : 0);
+
             if (applyMaxToMerchants) {
                 try {
                     Field maxPersonalItems = TradeHandler.class.getDeclaredField("maxPersonalItems");
@@ -322,18 +295,8 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                 }
             }
 
-            StringBuilder sb = new StringBuilder();
-            if (destroyBoughtItems && applyMaxToMerchants) {
-                sb.append("Merchant ");
-            } else if (!destroyBoughtItems && applyMaxToMerchants) {
-                sb.append("Buyer and merchant ");
-            } else if (!destroyBoughtItems) {
-                sb.append("Buyer ");
-            }
-
-            if (sb.length() > 0) {
-                logger.info(sb.append("max items set to ").append(maxItems).toString());
-            }
+            logger.info("Buyer " + (applyMaxToMerchants ? "and merchant" : "") + " max items set to " + maxItems +
+                                " (except buyers set to destroy bought items).");
         }
 
         if (updateTraders) {

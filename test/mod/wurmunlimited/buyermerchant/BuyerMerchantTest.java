@@ -829,7 +829,7 @@ class BuyerMerchantTest extends WurmTradingTest {
         priceList.savePriceList();
 
         buyerMerchant.onServerStarted();
-        assertEquals(maxItems + 1, BuyerHandler.getMaxNumPersonalItems());
+        assertEquals(maxItems + 1, BuyerHandler.getMaxNumPersonalItems(buyer));
 
         factory.getShop(buyer).setMoney(Integer.MAX_VALUE);
         factory.createManyItems(ItemList.rake, maxItems).forEach(player.getInventory()::insertItem);
@@ -855,7 +855,7 @@ class BuyerMerchantTest extends WurmTradingTest {
         buyerMerchant.configure(properties);
 
         buyerMerchant.onServerStarted();
-        assertEquals(Integer.MAX_VALUE, BuyerHandler.getMaxNumPersonalItems());
+        assertEquals(Integer.MAX_VALUE, BuyerHandler.getMaxNumPersonalItems(buyer));
         assertEquals(maxItems, TradeHandler.getMaxNumPersonalItems());
     }
 }

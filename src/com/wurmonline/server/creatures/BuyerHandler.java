@@ -14,6 +14,7 @@ import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.items.*;
 import mod.wurmunlimited.Pair;
+import mod.wurmunlimited.buyermerchant.BuyerMerchant;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.util.*;
@@ -26,7 +27,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
     private BuyerTrade trade;
     private boolean balanced = false;
     private boolean waiting = false;
-    public static int maxPersonalItems = 51;
+    public static int defaultMaxPersonalItems = 51;
     private final Shop shop;
     private final boolean ownerTrade;
     private PriceList priceList;
@@ -37,6 +38,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
     private static final int notFullWeight = 2;
     private final Map<PriceList.Entry, Set<Item>> remainingToPurchaseMap = new HashMap<>();
     private boolean tradeSuccessful;
+    private final int maxPersonalItems;
 
     public BuyerHandler(Creature aCreature, Trade _trade) throws PriceList.NoPriceListOnBuyer {
         this.creature = aCreature;
@@ -50,13 +52,14 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         }
         if (this.trade.creatureOne.getPower() >= 3) {
             long money = this.shop.getMoney();
-            if (BuyerTradingWindow.freeMoney) {
+            if (BuyerMerchant.isFreeMoney(aCreature)) {
                 this.trade.creatureOne.getCommunicator().sendSafeServerMessage(aCreature.getName() + " says, 'I do not require any money.  I have " + (money != 0 ? (new Change(money)).getChangeShortString() + " in" : "no") + " cash.'");
             } else {
                 this.trade.creatureOne.getCommunicator().sendSafeServerMessage(aCreature.getName() + " says, 'I have " + (money != 0 ? (new Change(money)).getChangeShortString() : "no money") + ".'");
             }
         }
         priceList = PriceList.getPriceListFromBuyer(this.creature);
+        maxPersonalItems = getMaxNumPersonalItems(creature);
     }
 
     @Override
@@ -203,8 +206,12 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
         return 0;
     }
 
-    public static int getMaxNumPersonalItems() {
-        return maxPersonalItems;
+    public static int getMaxNumPersonalItems(Creature buyer) {
+        if (BuyerMerchant.isDestroyBoughtItems(buyer)) {
+            return Integer.MAX_VALUE;
+        }
+
+        return defaultMaxPersonalItems;
     }
 
     private int suckInterestingItems() {
@@ -492,7 +499,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                     long diff = this.suckInterestingItems();
                     if (diff > 0L) {
                         long withBuyersCut = (long)(diff * 1.1f);
-                        if (!BuyerTradingWindow.freeMoney && withBuyersCut > this.shop.getMoney()) {
+                        if (!BuyerMerchant.isFreeMoney(this.creature) && withBuyersCut > this.shop.getMoney()) {
                             this.trade.creatureOne.getCommunicator().sendSafeServerMessage(this.creature.getName() + " 'I am low on cash and can not purchase those items.'");
                             this.waiting = true;
                         } else {

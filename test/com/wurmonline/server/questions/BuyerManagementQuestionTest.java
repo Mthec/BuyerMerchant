@@ -9,9 +9,14 @@ import com.wurmonline.server.items.Item;
 import com.wurmonline.server.items.WurmMail;
 import com.wurmonline.server.zones.Zones;
 import mod.wurmunlimited.WurmTradingTest;
+import mod.wurmunlimited.buyermerchant.BuyerMerchant;
+import mod.wurmunlimited.buyermerchant.db.BuyerScheduler;
+import org.gotti.wurmunlimited.modloader.ReflectionUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.util.*;
 
 import static mod.wurmunlimited.Assert.receivedMessageContaining;
@@ -319,5 +324,129 @@ public class BuyerManagementQuestionTest extends WurmTradingTest {
         question.answer(answers);
         AddItemToBuyerQuestion add = (AddItemToBuyerQuestion)Questions.getQuestion(getPassThroughId(factory.getCommunicator(owner).lastBmlContent));
         assertEquals(buyer.getWurmId(), add.getTarget());
+    }
+
+    @Test
+    void testSetIsFreeMoneyTrue() throws IOException {
+        assert !BuyerMerchant.isFreeMoney(buyer);
+
+        owner.setPower((byte)2);
+        Properties properties = new Properties();
+        properties.setProperty("free_money", "y");
+        askManageQuestion();
+        question.answer(properties);
+
+        assertTrue(BuyerMerchant.isFreeMoney(buyer));
+    }
+
+    @Test
+    void testSetIsFreeMoneyFalse() throws NoSuchFieldException, IllegalAccessException, IOException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
+        assert BuyerMerchant.isFreeMoney(buyer);
+
+        owner.setPower((byte)2);
+        Properties properties = new Properties();
+        properties.setProperty("free_money", "n");
+        askManageQuestion();
+        question.answer(properties);
+
+        assertFalse(BuyerMerchant.isFreeMoney(buyer));
+    }
+
+    @Test
+    void testSetIsFreeMoneyDefault() throws SQLException, IOException {
+        BuyerScheduler.setFreeMoneyFor(buyer, true);
+
+        owner.setPower((byte)2);
+        Properties properties = new Properties();
+        properties.setProperty("free_money", "d");
+        askManageQuestion();
+        question.answer(properties);
+
+        assertNull(BuyerScheduler.getIsFreeMoneyFor(buyer));
+    }
+
+    @Test
+    void testSetIsFreeMoneyTrueNotGM() {
+        assert !BuyerMerchant.isFreeMoney(buyer);
+        assert owner.getPower() < 2;
+
+        Properties properties = new Properties();
+        properties.setProperty("free_money", "y");
+        askManageQuestion();
+        question.answer(properties);
+
+        assertFalse(BuyerMerchant.isFreeMoney(buyer));
+    }
+
+    @Test
+    void testSetIsFreeMoneyTrueBuyerNotCreated() throws IOException {
+        assert !BuyerMerchant.isFreeMoney(buyer);
+
+        owner.setPower((byte)2);
+        Creature blocker = factory.createNewCreature();
+        Zones.creature = blocker;
+        blocker.getStatus().setPosition(owner.getStatus().getPosition());
+        Properties properties = new Properties();
+        properties.setProperty("free_money", "y");
+        properties.setProperty("ptradername", "Bob");
+        properties.setProperty("gender", "male");
+        askQuestion();
+        question.answer(properties);
+
+        assertEquals(-1, contract.getData());
+    }
+
+    @Test
+    void testSetIsDestroyBoughtItemsTrue() throws IOException {
+        assert !BuyerMerchant.isDestroyBoughtItems(buyer);
+
+        owner.setPower((byte)2);
+        Properties properties = new Properties();
+        properties.setProperty("destroy_items", "y");
+        askManageQuestion();
+        question.answer(properties);
+
+        assertTrue(BuyerMerchant.isDestroyBoughtItems(buyer));
+    }
+
+    @Test
+    void testSetIsDestroyBoughtItemsFalse() throws NoSuchFieldException, IllegalAccessException, IOException {
+        ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), true);
+        assert BuyerMerchant.isDestroyBoughtItems(buyer);
+
+        owner.setPower((byte)2);
+        Properties properties = new Properties();
+        properties.setProperty("destroy_items", "n");
+        askManageQuestion();
+        question.answer(properties);
+
+        assertFalse(BuyerMerchant.isDestroyBoughtItems(buyer));
+    }
+
+    @Test
+    void testSetIsDestroyBoughtItemsDefault() throws SQLException, IOException {
+        BuyerScheduler.setDestroyBoughtItemsFor(buyer, true);
+
+        owner.setPower((byte)2);
+        Properties properties = new Properties();
+        properties.setProperty("destroy_items", "d");
+        askManageQuestion();
+        question.answer(properties);
+
+        assertNull(BuyerScheduler.getIsDestroyBoughtItemsFor(buyer));
+    }
+
+    @Test
+    void testSetIsDestroyBoughtItemsTrueNotGM() {
+        assert !BuyerMerchant.isDestroyBoughtItems(buyer);
+        assert owner.getPower() < 2;
+
+        Properties properties = new Properties();
+        properties.setProperty("destroy_items", "y");
+        askManageQuestion();
+        question.answer(properties);
+
+        assertFalse(BuyerMerchant.isDestroyBoughtItems(buyer));
     }
 }

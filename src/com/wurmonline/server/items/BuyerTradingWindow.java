@@ -6,12 +6,14 @@
 
 package com.wurmonline.server.items;
 
-import com.wurmonline.server.*;
+import com.wurmonline.server.Items;
+import com.wurmonline.server.NoSuchItemException;
 import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.Shop;
 import com.wurmonline.server.players.Player;
 import com.wurmonline.shared.util.MaterialUtilities;
+import mod.wurmunlimited.buyermerchant.BuyerMerchant;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.io.IOException;
@@ -20,16 +22,16 @@ import java.util.logging.*;
 import java.util.stream.Collectors;
 
 public class BuyerTradingWindow extends TradingWindow {
+    private static final Logger logger = Logger.getLogger(BuyerTradingWindow.class.getName());
+    private static final Map<String, Logger> loggers = new HashMap();
     private final Creature windowowner;
     private final Creature watcher;
     private final boolean offer;
     private final long windowId;
     private Set<Item> items;
     private final Trade trade;
-    private static final Logger logger = Logger.getLogger(BuyerTradingWindow.class.getName());
-    private static final Map<String, Logger> loggers = new HashMap();
-    public static boolean freeMoney = false;
-    public static boolean destroyBoughtItems = false;
+    private final boolean freeMoney;
+    private final boolean destroyBoughtItems;
 
     BuyerTradingWindow(Creature aOwner, Creature aWatcher, boolean aOffer, long aWurmId, Trade aTrade) {
         super(aOwner, aWatcher, aOffer, aWurmId, aTrade);
@@ -38,6 +40,8 @@ public class BuyerTradingWindow extends TradingWindow {
         this.offer = aOffer;
         this.windowId = aWurmId;
         this.trade = aTrade;
+        this.freeMoney = BuyerMerchant.isFreeMoney(this.windowowner);
+        this.destroyBoughtItems = BuyerMerchant.isDestroyBoughtItems(this.watcher);
     }
 
     public static void stopLoggers() {

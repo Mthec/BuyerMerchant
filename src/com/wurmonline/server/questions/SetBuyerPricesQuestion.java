@@ -16,9 +16,9 @@ import com.wurmonline.server.economy.Change;
 import com.wurmonline.server.economy.Economy;
 import com.wurmonline.server.economy.MonetaryConstants;
 import com.wurmonline.server.economy.Shop;
-import com.wurmonline.server.items.BuyerTradingWindow;
 import com.wurmonline.server.items.ItemTemplate;
 import com.wurmonline.server.items.ItemTemplateFactory;
+import mod.wurmunlimited.buyermerchant.BuyerMerchant;
 import mod.wurmunlimited.buyermerchant.ItemDetails;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
@@ -244,8 +244,9 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
 
                     StringBuilder buf = new StringBuilder(this.getBmlHeaderWithScrollAndQuestion());
                     DecimalFormat df = new DecimalFormat("#.##");
-                    if (!BuyerTradingWindow.destroyBoughtItems)
+                    if (!BuyerMerchant.isDestroyBoughtItems(trader)) {
                         buf.append("text{text=\"").append(trader.getName()).append(" has inventory space for ").append(BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()).append(" more items.\"}");
+                    }
                     buf.append("text{type=\"bold\";text=\"Prices for ").append(trader.getName()).append("\"}text{text=''}");
                     buf.append("text{text=\"Limit restricts the Buyer from purchasing more than that number of items.  Entry will be removed once it reaches 0.  Set to 0 to accept any amount.\"}");
                     buf.append("text{text=\"Minimum Purchase restricts the Buyer from purchasing less than that number of items in a single trade.\"}");

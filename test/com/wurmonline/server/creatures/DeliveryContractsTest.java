@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class DeliveryContractsTest extends WurmTradingTest {
-
     private BuyerHandler handler;
     private TradingWindow playerOffer;
     private TradingWindow playerToTrade;
@@ -49,6 +48,7 @@ class DeliveryContractsTest extends WurmTradingTest {
 
     private void createHandler() {
         makeBuyerTrade();
+        //noinspection ConstantConditions
         handler = (BuyerHandler)buyer.getTradeHandler();
         playerOffer = trade.getTradingWindow(2);
         playerToTrade = trade.getTradingWindow(4);
@@ -253,7 +253,7 @@ class DeliveryContractsTest extends WurmTradingTest {
 
     @Test
     void testContractAcceptedAndSingleItemsTrimmed() {
-        assert BuyerHandler.maxPersonalItems == 51;
+        assert BuyerHandler.defaultMaxPersonalItems == 51;
         insertItemsIntoContract(factory.createManyItems(ItemList.dirtPile, 45));
         factory.createManyItems(ItemList.dirtPile, 55).forEach(i -> player.getInventory().insertItem(i, true));
         addOneCopperItemToPriceList(ItemList.dirtPile, 10);
@@ -272,7 +272,7 @@ class DeliveryContractsTest extends WurmTradingTest {
 
     @Test
     void testMixedContentsContractsRemoveOthersIfUncombinedCountIsBelowMinimum() {
-        assert BuyerHandler.maxPersonalItems == 51;
+        assert BuyerHandler.defaultMaxPersonalItems == 51;
         insertItemsIntoContract(factory.createManyItems(ItemList.dirtPile, 1));
         addOneCopperItemToPriceList(ItemList.dirtPile, 10);
         insertItemsIntoContract(factory.createManyItems(ItemList.sand, 20));

@@ -68,6 +68,5 @@ class BuyerTradingWindowLoggingTest extends WurmTradingTest {
         verify(logger, times(1)).info(contains("Paying King - 10"));
         verify(logger, times(1)).info(contains("Paying out 100 to " + player.getName()));
         verify(logger, times(1)).info(contains("My shop is now at 0"));
-
     }
 }

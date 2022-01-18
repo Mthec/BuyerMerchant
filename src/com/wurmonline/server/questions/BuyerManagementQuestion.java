@@ -20,11 +20,14 @@ import com.wurmonline.server.items.*;
 import com.wurmonline.server.structures.Structure;
 import com.wurmonline.server.zones.VolaTile;
 import com.wurmonline.shared.util.StringUtilities;
+import mod.wurmunlimited.buyermerchant.BuyerMerchant;
 import mod.wurmunlimited.buyermerchant.PriceList;
+import mod.wurmunlimited.buyermerchant.db.BuyerScheduler;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -301,7 +304,6 @@ public class BuyerManagementQuestion extends BuyerQuestionExtension implements T
                             }
                         }
                     } catch (NoSuchItemException | NoSuchCreatureException ignored) {}
-
                 }
             } else if (wasSelected("add")) {
                 try {
@@ -321,8 +323,37 @@ public class BuyerManagementQuestion extends BuyerQuestionExtension implements T
             }
 
             parseBuyerManagementQuestion(this);
-        }
 
+            if (getResponder().getPower() >= 2) {
+                try {
+                    Creature buyer = Creatures.getInstance().getCreature(Items.getItem(target).getData());
+
+                    String freeMoney = getStringProp("free_money");
+                    Boolean currentFreeMoney = BuyerScheduler.getIsFreeMoneyFor(buyer);
+                    if (freeMoney.equals("y") && (currentFreeMoney == null || !currentFreeMoney)) {
+                        BuyerScheduler.setFreeMoneyFor(buyer, true);
+                    } else if (freeMoney.equals("n") && (currentFreeMoney == null || currentFreeMoney)) {
+                        BuyerScheduler.setFreeMoneyFor(buyer, false);
+                    } else if (freeMoney.equals("d") && currentFreeMoney != null) {
+                        BuyerScheduler.setFreeMoneyFor(buyer, null);
+                    }
+
+                    String destroyBoughtItems = getStringProp("destroy_items");
+                    Boolean currentDestroyItems = BuyerScheduler.getIsDestroyBoughtItemsFor(buyer);
+                    if (destroyBoughtItems.equals("y") && (currentDestroyItems == null || !currentDestroyItems)) {
+                        BuyerScheduler.setDestroyBoughtItemsFor(buyer, true);
+                    } else if (destroyBoughtItems.equals("n") && (currentDestroyItems == null || currentDestroyItems)) {
+                        BuyerScheduler.setDestroyBoughtItemsFor(buyer, false);
+                    } else if (destroyBoughtItems.equals("d") && currentDestroyItems != null) {
+                        BuyerScheduler.setDestroyBoughtItemsFor(buyer, null);
+                    }
+                } catch (SQLException e) {
+                    logger.warning("Database exception when setting freeMoney or destroyBoughtItems");
+                    e.printStackTrace();
+                    getResponder().getCommunicator().sendAlertServerMessage("Something went wrong some settings were not updated.");
+                } catch (NoSuchItemException | NoSuchCreatureException ignored) {}
+            }
+        }
     }
 
     public void sendQuestion() {
@@ -362,6 +393,7 @@ public class BuyerManagementQuestion extends BuyerQuestionExtension implements T
         Creature trader = null;
         Shop shop = null;
         long traderId = -1L;
+        boolean isGM = getResponder().getPower() >= 2;
 
         try {
             contract = Items.getItem(this.target);
@@ -433,12 +465,19 @@ public class BuyerManagementQuestion extends BuyerQuestionExtension implements T
             buf.append("label{text=\"").append(times).append("\"}");
             buf.append("label{text=\"").append((new Change(shop.getMoneySpentMonth())).getChangeShortString()).append("\"}");
             buf.append("label{text=\"").append((new Change(getMoneySpentLife(shop))).getChangeShortString()).append("\"}");
-            if (BuyerTradingWindow.destroyBoughtItems)
+            if (BuyerMerchant.isDestroyBoughtItems(trader)) {
                 buf.append("label{text=\"N/A\"}}");
-            else
+            } else {
                 buf.append("label{text=\"").append(BuyerHandler.getMaxNumPersonalItems() - trader.getNumberOfShopItems()).append("\"}}");
-            buf.append("text{type=\"bold\";text=\"Dismissing\"};text{text=\"if you dismiss a buyer they will take all items with them!\"}");
+            }
+            buf.append("text{type=\"bold\";text=\"Dismissing\"};text{text=\"If you dismiss a buyer they will take all items with them!\"}");
             buf.append("harray{label{text=\"Dismiss\"};checkbox{id=\"").append(traderId).append("dismiss\";selected=\"false\";text=\" \"}}");
+            if (isGM) {
+                buf.append("text{type=\"bold\";text=\"Free Money\"};text{text=\"Should this buyer create its own money?\"}");
+                addTriState(buf, "free_money", BuyerScheduler.getIsFreeMoneyFor(trader));
+                buf.append("text{type=\"bold\";text=\"Destroying Items\"};text{text=\"Should this buyer destroy all bought items?\"}");
+                addTriState(buf, "destroy_items", BuyerScheduler.getIsDestroyBoughtItemsFor(trader));
+            }
 
             buf.append("harray {button{text='Confirm';id='confirm'};label{text=' ';id='spacedlxg'};button{text='Manage Prices';id='").append(traderId).append("manage'};label{text=' ';id='spacedlxg'};button{text='Add Item To List';id='add'};label{text=' ';id='spacedlxg'};button{text='Schedule';id='schedule'}}}};null;null;null;null;}");
         } else {
@@ -454,6 +493,13 @@ public class BuyerManagementQuestion extends BuyerQuestionExtension implements T
             } else {
                 buf.append("radio{ group=\"gender\"; id=\"male\";text=\"Male\";selected=\"true\"}");
                 buf.append("radio{ group=\"gender\"; id=\"female\";text=\"Female\"}");
+            }
+
+            if (isGM) {
+                buf.append("text{type=\"bold\";text=\"Free Money\"};text{text=\"Should this buyer create its own money?\"}");
+                addTriState(buf, "free_money", null);
+                buf.append("text{type=\"bold\";text=\"Destroying Items\"};text{text=\"Should this buyer destroy all bought items?\"}");
+                addTriState(buf, "destroy_items", null);
             }
 
             buf.append("harray{label{text=\"The buyer shalt be called " + BUYER_NAME_PREFIX + "\"};input{id=\"ptradername\";maxchars=\"20\"};label{text=\"!\"}}");
@@ -490,5 +536,24 @@ public class BuyerManagementQuestion extends BuyerQuestionExtension implements T
         }
 
         return buf.toString();
+    }
+
+    private void addTriState(StringBuilder buf, String group, @Nullable Boolean state) {
+        buf.append("harray{");
+        buf.append("radio{ group=\"").append(group).append("\"; id=\"y\";text=\"Yes\"");
+        if (state != null && state) {
+            buf.append(";selected=\"true\"");
+        }
+        buf.append("};");
+        buf.append("radio{ group=\"").append(group).append("\"; id=\"n\";text=\"No\"");
+        if (state != null && !state) {
+            buf.append(";selected=\"true\"");
+        }
+        buf.append("};");
+        buf.append("radio{ group=\"").append(group).append("\"; id=\"d\";text=\"Default\"");
+        if (state == null) {
+            buf.append(";selected=\"true\"");
+        }
+        buf.append("}}");
     }
 }
