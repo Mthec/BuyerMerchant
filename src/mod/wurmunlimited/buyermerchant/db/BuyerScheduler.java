@@ -137,10 +137,11 @@ public class BuyerScheduler {
             return compare;
         }
         
-        boolean matches(ItemTemplate otherTemplate, byte otherMaterial, ItemDetails details) {
+        boolean matches(ItemTemplate otherTemplate, byte otherMaterial, ItemDetails details, long otherInterval) {
             return otherTemplate == template && otherMaterial == material && details.weight == weight &&
-                           Float.compare(details.minQL, minQL) == 0 && details.remainingToPurchase == remainingToPurchase &&
-                           details.minimumPurchase == minimumPurchase && details.acceptsDamaged == acceptsDamaged;
+                           Float.compare(details.minQL, minQL) == 0 && details.price == price &&
+                           details.remainingToPurchase == remainingToPurchase && details.minimumPurchase == minimumPurchase &&
+                           details.acceptsDamaged == acceptsDamaged && otherInterval == getIntervalHours();
         }
     }
     
@@ -243,7 +244,7 @@ public class BuyerScheduler {
     public static void addUpdateFor(Creature buyer, ItemTemplate template, byte material, int weight, float ql, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged, long intervalHours) throws SQLException, UpdateAlreadyExists {
         ItemDetails details = new ItemDetails(weight, ql, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
         List<Update> currentUpdates = toUpdate.computeIfAbsent(buyer, k -> new ArrayList<>());
-        if (currentUpdates.stream().anyMatch(it -> it.matches(template, material, details))) {
+        if (currentUpdates.stream().anyMatch(it -> it.matches(template, material, details, intervalHours))) {
             throw new UpdateAlreadyExists();
         }
         long interval = intervalHours * TimeConstants.HOUR_MILLIS;
@@ -323,11 +324,11 @@ public class BuyerScheduler {
     }
 
     public static void updateUpdateDetails(Creature buyer, Update update, ItemDetails details, int intervalHours) throws SQLException, UpdateAlreadyExists {
-        if (update.matches(update.template, update.material, details)) {
+        if (update.matches(update.template, update.material, details, intervalHours)) {
             return;
         }
         List<Update> currentUpdates = toUpdate.get(buyer);
-        if (currentUpdates != null && currentUpdates.stream().anyMatch(it -> it.id != update.id && it.matches(update.template, update.material, details))) {
+        if (currentUpdates != null && currentUpdates.stream().anyMatch(it -> it.id != update.id && it.matches(update.template, update.material, details, intervalHours))) {
             throw new UpdateAlreadyExists();
         }
 

@@ -141,6 +141,23 @@ public class BuyerSchedulerTests extends WurmTradingTest {
     }
 
     @Test
+    void testUpdateUpdateDetailsOnlyPrice() throws PriceList.NoPriceListOnBuyer, BuyerScheduler.UpdateAlreadyExists, SQLException {
+        BuyerScheduler.Update update = createUpdate();
+        BuyerScheduler.updateBuyer(buyer);
+        assert PriceList.getPriceListFromBuyer(buyer).asArray().length == 1;
+
+        int newPrice = price * 2;
+        ItemDetails details = new ItemDetails(update.weight, update.minQL, newPrice, update.remainingToPurchase, update.minimumPurchase, update.acceptsDamaged);
+
+        BuyerScheduler.updateUpdateDetails(buyer, update, details, update.getIntervalHours());
+        assertEquals(1, BuyerScheduler.getUpdatesFor(buyer).length);
+        PriceList.Entry[] entries = PriceList.getPriceListFromBuyer(buyer).asArray();
+        assertEquals(newPrice, update.price);
+        assertEquals(1, entries.length);
+        assertEquals(newPrice, entries[0].getPrice());
+    }
+
+    @Test
     void updateBuyer() throws NoSuchFieldException, PriceList.NoPriceListOnBuyer, PriceList.PageNotAdded, PriceList.PriceListFullException {
         BuyerScheduler.Update update = createUpdate();
         Clock clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
