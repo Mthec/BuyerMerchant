@@ -92,7 +92,7 @@ public class BuyerSchedulerTests extends WurmTradingTest {
     @Test
     void testDeleteUpdateFor() throws PriceList.NoPriceListOnBuyer, BuyerScheduler.UpdateAlreadyExists, SQLException {
         BuyerScheduler.Update update = createUpdate();
-        BuyerScheduler.addUpdateFor(buyer, template, material, weight + 10, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamage, intervalHours);
+        BuyerScheduler.addUpdateFor(buyer, template, material, weight + 10, minQL + 10, price, remainingToPurchase, minimumPurchase, acceptsDamage, intervalHours);
         BuyerScheduler.updateBuyer(buyer);
         assert PriceList.getPriceListFromBuyer(buyer).asArray().length == 2;
 

@@ -46,6 +46,22 @@ public class PriceList implements Iterable<PriceList.Entry> {
     // Causes testIncorrectPriceListInscriptionRemovesEntry to fail if final.
     @SuppressWarnings("FieldMayBeFinal")
     private static Logger logger = Logger.getLogger(PriceList.class.getName());
+    private static final Comparator<Entry> minQLSorter;
+
+    // Maven doesn't want to compile if this is initialised inline.
+    static {
+        minQLSorter = (Entry o1, Entry o2) -> {
+            int toReturn = 0;
+
+            if (o1.minQL < o2.minQL) {
+                toReturn += 10000;
+            }
+
+            toReturn += o1.minQL - o2.minQL;
+
+            return toReturn;
+        };
+    }
 
     public class Entry implements Comparable<Entry> {
         int template;
@@ -316,6 +332,13 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
             return compare;
         }
+
+        public boolean matches(Entry entry) {
+            return template == entry.template &&
+                           material == entry.material &&
+                           entry.weight == weight &&
+                           Float.compare(entry.minQL, minQL) == 0;
+        }
     }
 
     public static class PriceListFullException extends WurmServerException {
@@ -529,18 +552,16 @@ public class PriceList implements Iterable<PriceList.Entry> {
     public Entry addItem(int templateId, byte material, int weight, float minQL, int price) throws PriceListFullException, IOException, NoSuchTemplateException {
         return addItem(templateId, material, weight, minQL, price, 0, 1, false);
     }
+
     public Entry addItem(int templateId, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) throws PriceListFullException, IOException, NoSuchTemplateException {
         Entry item = new Entry(templateId, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
-        // TODO - Not sure if I should remove this and fix whatever it was preventing.
-        if (prices.containsKey(item)) {
-            Entry alreadyListed = prices.keySet().stream().filter(entry -> entry.equals(item)).findAny().orElse(null);
-            if (alreadyListed != null) {
-                alreadyListed.price = price;
-                TempItem maybeItem = prices.get(alreadyListed);
-                if (maybeItem != null)
-                    maybeItem.setPrice(price);
-                return alreadyListed;
-            }
+        Entry alreadyListed = prices.keySet().stream().filter(entry -> entry.matches(item)).findAny().orElse(null);
+        if (alreadyListed != null) {
+            alreadyListed.price = price;
+            TempItem maybeItem = prices.get(alreadyListed);
+            if (maybeItem != null)
+                maybeItem.setPrice(price);
+            return alreadyListed;
         }
 
         // Plus one for newline.

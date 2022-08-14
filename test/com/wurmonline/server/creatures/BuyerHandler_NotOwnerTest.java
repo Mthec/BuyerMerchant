@@ -514,8 +514,8 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     @Test
     void testMinimumPurchaseItemsAreLabelledSo() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, EntryBuilder.EntryBuilderException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
-        EntryBuilder.addEntry(priceList).price(10).minimumRequired(1).build();
-        EntryBuilder.addEntry(priceList).price(10).minimumRequired(100).build();
+        EntryBuilder.addEntry(priceList).ql(1).price(10).minimumRequired(1).build();
+        EntryBuilder.addEntry(priceList).ql(2).price(10).minimumRequired(100).build();
         priceList.savePriceList();
 
         createHandler();
