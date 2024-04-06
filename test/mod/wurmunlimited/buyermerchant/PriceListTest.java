@@ -93,7 +93,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testAddingAboveMaxPageSize() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, PriceList.PageNotAdded {
+    void testAddingAboveMaxPageSize() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, PriceList.PageNotAdded, PriceList.PriceListDuplicateException {
         StringBuilder stringBuilder = new StringBuilder(512);
         for (int i = 1; i <= 46; i++)
             stringBuilder.append(i).append(",1,1.0,1\n");
@@ -141,7 +141,7 @@ public class PriceListTest {
 
     // PriceList.Entry tests.
     @Test
-    void testUpdate() throws PriceList.PriceListFullException {
+    void testUpdate() throws PriceList.PriceListFullException, PriceList.PriceListDuplicateException {
         PriceList priceList = new PriceList(createPriceList(one));
         String oldString = priceList.iterator().next().toString();
         priceList.iterator().next().updateItem(2, (byte)2, -1, 2, 10000000, 0, 1, false);
@@ -328,7 +328,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testNewItemsCreatedIfAlreadyCalledGetItems() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException {
+    void testNewItemsCreatedIfAlreadyCalledGetItems() throws PriceList.PriceListFullException, IOException, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         PriceList priceList = new PriceList(createPriceList("7,42,1.0,10\n1,0,2.0,20"));
         Set<TempItem> firstItems = priceList.getItems();
         int templateId = 50;
@@ -367,7 +367,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testAnyMaterialGetsPriceCorrectly() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded {
+    void testAnyMaterialGetsPriceCorrectly() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded, PriceList.PriceListDuplicateException {
         Item item = factory.createNewItem(factory.getIsWoodId());
         Creature buyer = factory.createNewBuyer(factory.createNewPlayer());
         int price = 101;
@@ -535,32 +535,6 @@ public class PriceListTest {
     }
 
     @Test
-    void testDuplicatePriceListEntryUpdatesInstead() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
-        PriceList priceList = new PriceList(createPriceList(""));
-
-        priceList.addItem(1, (byte)1, -1, 1.0f, 1);
-        assertEquals(1, priceList.iterator().next().getPrice());
-
-        priceList.addItem(1, (byte)1, -1, 1.0f, 1);
-        priceList.addItem(1, (byte)1, -1, 1.0f, 2);
-        assertEquals(1, priceList.size());
-        assertEquals(2, priceList.iterator().next().getPrice());
-    }
-
-    @Test
-    void testDuplicatePriceListEntryUpdatesItemToo() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
-        PriceList priceList = new PriceList(createPriceList(""));
-
-        priceList.addItem(1, (byte)1, -1, 1.0f, 1);
-        assertEquals(1, priceList.getItems().iterator().next().getPrice());
-
-        priceList.addItem(1, (byte)1, -1, 1.0f, 1);
-        priceList.addItem(1, (byte)1, -1, 1.0f, 2);
-        assertEquals(1, priceList.size());
-        assertEquals(2, priceList.getItems().iterator().next().getPrice());
-    }
-
-    @Test
     void testPriceListSorting() throws PriceList.PriceListFullException, PriceList.PageNotAdded {
         String list =  ItemList.icecream + ",1,1.0,10\n" +
                        ItemList.hatchet + ",1,25.0,10\n" +
@@ -700,7 +674,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testPageRemoval() throws NoSuchTemplateException, FailedException, PriceList.PageNotAdded, PriceList.PriceListFullException, IOException {
+    void testPageRemoval() throws NoSuchTemplateException, FailedException, PriceList.PageNotAdded, PriceList.PriceListFullException, IOException, PriceList.PriceListDuplicateException {
         Item priceListItem = PriceList.getNewBuyList();
 
         PriceList priceList;
@@ -747,7 +721,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testAddingAboveMaximumEntriesAndRemovingRepeated() throws NoSuchTemplateException, FailedException, IOException, PriceList.PriceListFullException {
+    void testAddingAboveMaximumEntriesAndRemovingRepeated() throws NoSuchTemplateException, FailedException, IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException {
         Item priceListItem = PriceList.getNewBuyList();
         PriceList list = new PriceList(priceListItem);
 
@@ -802,7 +776,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testCopyPriceListFull() throws NoSuchTemplateException, FailedException, IOException {
+    void testCopyPriceListFull() throws NoSuchTemplateException, FailedException, IOException, PriceList.PriceListDuplicateException {
         Item priceList = factory.createPriceList();
         PriceList list = new PriceList(priceList);
         int templateId = 100;
@@ -846,7 +820,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testCopyDoesNotCopyBadPages() throws NoSuchTemplateException, FailedException, IOException, NoSuchFieldException, IllegalAccessException {
+    void testCopyDoesNotCopyBadPages() throws NoSuchTemplateException, FailedException, IOException, NoSuchFieldException, IllegalAccessException, PriceList.PriceListDuplicateException {
         Item priceList = factory.createPriceList();
         PriceList list = new PriceList(priceList);
         int templateId = 100;
@@ -914,7 +888,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testAddPriceListEntryWeightValue() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException {
+    void testAddPriceListEntryWeightValue() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, PriceList.PriceListDuplicateException {
         Item priceListItem = createPriceList("");
         PriceList priceList = new PriceList(priceListItem);
 
@@ -980,7 +954,7 @@ public class PriceListTest {
     }
 
     @Test
-    void testPriceListDoesNotRemoveRemainingToPurchaseWhenSetToZero() throws PriceList.PriceListFullException {
+    void testPriceListDoesNotRemoveRemainingToPurchaseWhenSetToZero() throws PriceList.PriceListFullException, PriceList.PriceListDuplicateException {
         Item priceListItem = createPriceList(one + ",r10");
         PriceList priceList = new PriceList(priceListItem);
 

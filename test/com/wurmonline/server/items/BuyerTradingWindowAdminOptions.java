@@ -44,7 +44,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testNoFreeMoneyOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+    void testNoFreeMoneyOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
         assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"));
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -71,7 +71,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testFreeMoneyOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+    void testFreeMoneyOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
         ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -98,7 +98,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testItemsNotDestroyedOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+    void testItemsNotDestroyedOnFalse() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
         assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -126,7 +126,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testItemsDestroyedOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+    void testItemsDestroyedOnTrue() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
         ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), true);
 
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -155,7 +155,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testDestroyAndFreeMoney() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+    void testDestroyAndFreeMoney() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
         ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
         ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), true);
 
@@ -197,7 +197,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testNoWeightRestrictionForDestroyBoughtItems() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
+    void testNoWeightRestrictionForDestroyBoughtItems() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException {
         assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
         // Iron ore.
         int templateId = 38;
@@ -396,7 +396,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
         }
     }
 
-    private void tradeItems(int numberOfItems) throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
+    private void tradeItems(int numberOfItems) throws PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         Arrays.stream(Economy.getEconomy().getCoinsFor((int)(MonetaryConstants.COIN_IRON * numberOfItems * 1.1f))).forEach(buyer.getInventory()::insertItem);
         factory.getShop(buyer).setMoney((long)(MonetaryConstants.COIN_IRON * numberOfItems * 1.1f));
         Set<Item> items = new HashSet<>(numberOfItems);
@@ -470,7 +470,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testMaxItemsDefaultsTo50() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
+    void testMaxItemsDefaultsTo50() throws PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
         Properties config = new Properties();
         config.setProperty("max_items", "1.0");
         config.setProperty("apply_max_to_merchant", "true");
@@ -501,7 +501,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testBuyerOnlyMaxItems() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, NoSuchFieldException {
+    void testBuyerOnlyMaxItems() throws PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, NoSuchFieldException {
         int numberOfItems = 100;
         int extraItems = 10;
         Properties config = new Properties();
@@ -569,7 +569,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testNoFreeMoneyOnFalseSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+    void testNoFreeMoneyOnFalseSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
         ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"), true);
         BuyerScheduler.setFreeMoneyFor(buyer, false);
 
@@ -597,7 +597,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testFreeMoneyOnTrueSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+    void testFreeMoneyOnTrueSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
         assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"));
         BuyerScheduler.setFreeMoneyFor(buyer, true);
 
@@ -625,7 +625,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testItemsNotDestroyedOnFalseSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+    void testItemsNotDestroyedOnFalseSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
         ReflectionUtil.setPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"), true);
         BuyerScheduler.setDestroyBoughtItemsFor(buyer, false);
 
@@ -654,7 +654,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testItemsDestroyedOnTrueSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+    void testItemsDestroyedOnTrueSpecific() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
         assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
         BuyerScheduler.setDestroyBoughtItemsFor(buyer, true);
 
@@ -684,7 +684,7 @@ class BuyerTradingWindowAdminOptions extends WurmTradingTest {
     }
 
     @Test
-    void testDestroyAndFreeMoneySpecific() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
+    void testDestroyAndFreeMoneySpecific() throws IOException, PriceList.PriceListFullException, PriceList.PriceListDuplicateException, PriceList.PageNotAdded, NoSuchTemplateException, NoSuchFieldException, IllegalAccessException, SQLException {
         assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("freeMoney"));
         assert !ReflectionUtil.<Boolean>getPrivateField(null, BuyerMerchant.class.getDeclaredField("destroyBoughtItems"));
         BuyerScheduler.setFreeMoneyFor(buyer, true);

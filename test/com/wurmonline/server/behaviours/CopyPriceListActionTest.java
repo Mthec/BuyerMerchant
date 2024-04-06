@@ -165,7 +165,7 @@ class CopyPriceListActionTest extends WurmTradingTest {
     // copyToBuyer action
 
     @Test
-    void testBuyerActionCopiedSuccessfully() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded {
+    void testBuyerActionCopiedSuccessfully() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded, PriceList.PriceListDuplicateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         for (int i = 1; i < 100; i++) {
             priceList.addItem(i, (byte)1);
@@ -206,7 +206,7 @@ class CopyPriceListActionTest extends WurmTradingTest {
     // copyToContract action
 
     @Test
-    void testContractActionCopiedSuccessfully() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded {
+    void testContractActionCopiedSuccessfully() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, PriceList.PageNotAdded, PriceList.PriceListDuplicateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(targetBuyer);
         for (int i = 1; i < 100; i++) {
             priceList.addItem(i, (byte)1);

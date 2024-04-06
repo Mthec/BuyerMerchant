@@ -11,6 +11,7 @@ import com.wurmonline.server.behaviours.ItemBehaviour;
 import com.wurmonline.server.creatures.*;
 import com.wurmonline.server.items.*;
 import com.wurmonline.server.kingdom.Kingdom;
+import com.wurmonline.server.players.Player;
 import com.wurmonline.server.questions.Questions;
 import com.wurmonline.server.skills.SkillList;
 import mod.wurmunlimited.WurmTradingTest;
@@ -857,5 +858,50 @@ class BuyerMerchantTest extends WurmTradingTest {
         buyerMerchant.onServerStarted();
         assertEquals(Integer.MAX_VALUE, BuyerHandler.getMaxNumPersonalItems(buyer));
         assertEquals(maxItems, TradeHandler.getMaxNumPersonalItems());
+    }
+
+    @Test
+    void testWillLeaveServerEmptyContract() throws Throwable {
+        BuyerMerchant mod = new BuyerMerchant();
+        InvocationHandler handler = mod::willLeaveServer;
+        Item item = factory.createNewItem(mod.getContractTemplateId());
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { true, false, false };
+
+        assertTrue((Boolean)handler.invoke(item, method, args));
+        assertFalse(item.isTransferred());
+        verify(method, never()).invoke(item, args);
+    }
+
+    @Test
+    void testWillLeaveServerUsedContract() throws Throwable {
+        Player gm = factory.createNewPlayer();
+
+        BuyerMerchant mod = new BuyerMerchant();
+        InvocationHandler handler = mod::willLeaveServer;
+        Item item = factory.createNewItem(mod.getContractTemplateId());
+        item.setData(gm.getWurmId());
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { true, false, false };
+
+        assertFalse((Boolean)handler.invoke(item, method, args));
+        assertTrue(item.isTransferred());
+        verify(method, never()).invoke(item, args);
+    }
+
+    @Test
+    void testWillLeaveServerNotContract() throws Throwable {
+        Player gm = factory.createNewPlayer();
+
+        InvocationHandler handler = new BuyerMerchant()::willLeaveServer;
+        Item item = factory.createNewItem(ItemList.lunchbox);
+        item.setData(gm.getWurmId());
+        boolean isTransferred = item.isTransferred();
+        Method method = mock(Method.class);
+        Object[] args = new Object[] { true, false, false };
+
+        assertNull(handler.invoke(item, method, args));
+        assertEquals(isTransferred, item.isTransferred());
+        verify(method, times(1)).invoke(item, args);
     }
 }

@@ -8,6 +8,8 @@ import com.wurmonline.server.items.NoSuchTemplateException;
 import mod.wurmunlimited.buyermerchant.PriceList;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -60,6 +62,60 @@ public class AddItemToBuyerInstantQuestionTests extends AddItemToBuyerQuestionTe
         answers.setProperty("d", Boolean.toString(acceptsDamaged));
         answer();
 
+        PriceList.Entry item = PriceList.getPriceListFromBuyer(buyer).iterator().next();
+        Change price = new Change(item.getPrice());
+
+        assertAll(
+                () -> assertEquals(templateId, item.getItem().getTemplateId(), "Template Id incorrect"),
+                () -> assertEquals(material, item.getItem().getMaterial(), "Material incorrect"),
+                () -> assertEquals(weight, item.getItem().getWeightGrams(), "Weight incorrect"),
+                () -> assertEquals(ql, item.getItem().getQualityLevel(), "QL incorrect"),
+                () -> assertEquals(change.goldCoins, price.goldCoins, "Gold incorrect"),
+                () -> assertEquals(change.silverCoins, price.silverCoins, "Silver incorrect"),
+                () -> assertEquals(change.copperCoins, price.copperCoins, "Copper incorrect"),
+                () -> assertEquals(change.ironCoins, price.ironCoins, "Iron incorrect"),
+                () -> assertEquals(remainingToPurchase, item.getRemainingToPurchase(), "Remaining to Purchase incorrect"),
+                () -> assertEquals(minimumPurchase, item.getMinimumPurchase(), "Minimum Purchase incorrect"),
+                () -> assertEquals(acceptsDamaged, item.acceptsDamaged(), "Accepts Damaged incorrect")
+        );
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    void testItemWithDuplicateDetailsNotAddedToPriceList() throws IOException, NoSuchTemplateException, PriceList.PriceListFullException, PriceList.PageNotAdded, PriceList.PriceListDuplicateException {
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+
+        int templateId = 7;
+        byte material = ItemTemplateFactory.getInstance().getTemplate(templateId).getMaterial();
+        int weight = 1000;
+        float ql = 55.6f;
+        int money = 1122334455;
+        int remainingToPurchase = 200;
+        int minimumPurchase = 100;
+        boolean acceptsDamaged = true;
+        Change change = new Change(money);
+        priceList.addItem(templateId, material, weight, ql, money, remainingToPurchase, minimumPurchase, acceptsDamaged);
+        priceList.savePriceList();
+
+        askQuestion();
+        answers.setProperty("templateId", getElementPositionInOptions(com.lastBmlContent, templateId));
+        answer();
+
+        answers.setProperty("material", getElementPositionInOptions(com.lastBmlContent, Item.getMaterialString(material)));
+        answer();
+
+        answers.setProperty("weight", WeightString.toString(weight));
+        answers.setProperty("q", Float.toString(ql));
+        answers.setProperty("g", Long.toString(change.goldCoins));
+        answers.setProperty("s", Long.toString(change.silverCoins));
+        answers.setProperty("c", Long.toString(change.copperCoins));
+        answers.setProperty("i", Long.toString(change.ironCoins));
+        answers.setProperty("r", Integer.toString(remainingToPurchase));
+        answers.setProperty("p", Integer.toString(minimumPurchase));
+        answers.setProperty("d", Boolean.toString(acceptsDamaged));
+        answer();
+
+        assertEquals(1, PriceList.getPriceListFromBuyer(buyer).asArray().length);
         PriceList.Entry item = PriceList.getPriceListFromBuyer(buyer).iterator().next();
         Change price = new Change(item.getPrice());
 

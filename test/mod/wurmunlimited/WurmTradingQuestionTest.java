@@ -17,7 +17,7 @@ public abstract class WurmTradingQuestionTest extends WurmTradingTest {
     protected FakeCommunicator com;
 
     @BeforeEach
-    private void resetAnswers() {
+    void resetAnswers() {
         answers = new Properties();
     }
 

@@ -6,7 +6,7 @@
 
     <groupId>mod.wurmunlimited.buyermerchant</groupId>
     <artifactId>BuyerMerchant</artifactId>
-    <version>0.5.30</version>
+    <version>0.5.32</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,71 +22,21 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.9.0</version>
+            <version>5.10.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-runner</artifactId>
-            <version>1.9.0</version>
+            <version>1.10.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-inline</artifactId>
-            <version>4.6.1</version>
+            <version>5.2.0</version>
             <scope>test</scope>
         </dependency>
-
-        <!--<dependency>
-            <groupId>org.gotti.wurmunlimited</groupId>
-            <artifactId>server-modlauncher</artifactId>
-            <version>0.43</version>
-            <scope>system</scope>
-            <systemPath>${folder.server}/lib/ServerLauncher-0.43.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>javassist</groupId>
-            <artifactId>javassist</artifactId>
-            <version>3.23.1</version>
-            <scope>system</scope>
-            <systemPath>${folder.server}/lib/javassist-3.23.1.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>com.google</groupId>
-            <artifactId>common</artifactId>
-            <version>18.0</version>
-            <scope>system</scope>
-            <systemPath>${folder.server}/lib/guava-18.0.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains</groupId>
-            <artifactId>annotations</artifactId>
-            <version>16.0.2</version>
-            <scope>system</scope>
-            <systemPath>${folder.server}/lib/annotations-16.0.2.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>java.sql</groupId>
-            <artifactId>sqlite</artifactId>
-            <version>3.8.11.2</version>
-            <scope>system</scope>
-            <systemPath>${folder.server}/lib/sqlite-jdbc-3.8.11.2.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway</artifactId>
-            <version>4.0.3</version>
-            <scope>system</scope>
-            <systemPath>${folder.server}/lib/flyway-core-4.0.3.jar</systemPath>
-        </dependency>
-        <dependency>
-            <groupId>com.wurmonline</groupId>
-            <artifactId>common</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>${folder.server}/common.jar</systemPath>
-        </dependency>-->
         <dependency>
             <groupId>com.wurmonline</groupId>
             <artifactId>wurmunlimited-server</artifactId>
@@ -119,7 +69,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M1</version>
+                <version>3.2.5</version>
             </plugin>
             <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -143,7 +93,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.3.1</version>
                 <executions>
                     <execution>
                         <id>copy-to-game-folder</id>
@@ -187,6 +137,26 @@
                         <goals>
                             <goal>single</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireMavenVersion>
+                                    <version>3.6.3</version>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -6,10 +6,13 @@ import com.wurmonline.server.creatures.Creature;
 import com.wurmonline.server.creatures.NoSuchCreatureException;
 import com.wurmonline.server.items.ItemTemplate;
 import com.wurmonline.server.items.NoSuchTemplateException;
+import mod.wurmunlimited.buyermerchant.ItemDetails;
 import mod.wurmunlimited.buyermerchant.PriceList;
 
 import java.io.IOException;
 import java.util.List;
+
+import static com.wurmonline.server.questions.SetBuyerPricesQuestion.getItemDetails;
 
 public class AddItemToBuyerInstantQuestion extends AddItemToBuyerQuestion {
     private static final String[] questionTitles = new String[] {
@@ -39,9 +42,9 @@ public class AddItemToBuyerInstantQuestion extends AddItemToBuyerQuestion {
 
             try {
                 PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+                ItemDetails details = getItemDetails(responder, this.getAnswer(), -1, itemTemplate.getTemplateId(), itemTemplate.getName(), itemTemplate.getWeightGrams());
                 // Any material is 0.  Client will not label 0 material (unknown).
-                PriceList.Entry newItem = priceList.addItem(itemTemplate.getTemplateId(), material);
-                SetBuyerPricesQuestion.setItemDetails(newItem, -1, this.getAnswer(), responder);
+                priceList.addItem(itemTemplate.getTemplateId(), material, details.weight, details.minQL, details.price, details.remainingToPurchase, details.minimumPurchase, details.acceptsDamaged);
                 priceList.savePriceList();
                 responder.getCommunicator().sendNormalServerMessage(buyer.getName() + " adds the item to their list.");
             } catch (PriceList.NoPriceListOnBuyer | PriceList.PageNotAdded noPriceListOnBuyer) {
@@ -52,6 +55,8 @@ public class AddItemToBuyerInstantQuestion extends AddItemToBuyerQuestion {
             } catch (NoSuchTemplateException | IOException e) {
                 responder.getCommunicator().sendNormalServerMessage(PriceList.couldNotCreateItemPlayerMessage);
                 e.printStackTrace();
+            } catch (PriceList.PriceListDuplicateException e) {
+                responder.getCommunicator().sendNormalServerMessage(PriceList.wouldResultInDuplicateMessage.replace("update", "add"));
             }
 
         } catch (NoSuchPlayerException | NoSuchCreatureException e) {

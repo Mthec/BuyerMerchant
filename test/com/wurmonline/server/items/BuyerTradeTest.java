@@ -434,7 +434,7 @@ class BuyerTradeTest extends WurmTradingTest {
     }
 
     @Test
-    void testMoneyTradedProperly() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, PriceList.PageNotAdded {
+    void testMoneyTradedProperly() throws IOException, PriceList.PriceListFullException, NoSuchTemplateException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, PriceList.PageNotAdded, PriceList.PriceListDuplicateException {
         PriceList priceList  = PriceList.getPriceListFromBuyer(buyer);
         Item tradingItem = factory.createNewItem();
         priceList.addItem(tradingItem.getTemplateId(), tradingItem.getMaterial(), -1, tradingItem.getQualityLevel(), MonetaryConstants.COIN_COPPER);

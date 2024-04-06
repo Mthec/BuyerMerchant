@@ -40,7 +40,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
             ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(templateId);
             list.addItem(template.getTemplateId(), ItemMaterials.MATERIAL_MEAT_DRAGON, -1, ql, price, 0, 1, acceptsDamage);
             list.savePriceList();
-        } catch (NoSuchTemplateException | IOException | PriceList.PageNotAdded | PriceList.PriceListFullException e) {
+        } catch (NoSuchTemplateException | IOException | PriceList.PageNotAdded | PriceList.PriceListFullException | PriceList.PriceListDuplicateException e) {
             throw new RuntimeException(e);
         }
     }
@@ -82,7 +82,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPrice() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
+    void setItemQLAndPrice() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         float ql = 50;
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
@@ -97,7 +97,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemWeight() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
+    void setItemWeight() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         int weight = 4321;
         float ql = 50;
         int price = 123456789;
@@ -112,7 +112,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPriceWithId() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
+    void setItemQLAndPriceWithId() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         int id = 12;
         float ql = 50;
         int price = 123456789;
@@ -128,7 +128,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPriceNegativeQL() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
+    void setItemQLAndPriceNegativeQL() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         float ql = -100;
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
@@ -143,7 +143,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void setItemQLAndPriceOver100QL() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
+    void setItemQLAndPriceOver100QL() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         float ql = 101;
         int price = 123456789;
         Properties answers = generateProperties(ql, price);
@@ -160,7 +160,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testPriceNumberFormatErrors() throws PriceList.NoPriceListOnBuyer, PriceList.PriceListFullException {
+    void testPriceNumberFormatErrors() throws PriceList.NoPriceListOnBuyer, PriceList.PriceListFullException, PriceList.PriceListDuplicateException {
         float ql = 89.7f;
         int price = 987654321;
         Properties answers = generateProperties(ql, price);
@@ -185,7 +185,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testPriceNegative() throws PriceList.NoPriceListOnBuyer, PriceList.PriceListFullException {
+    void testPriceNegative() throws PriceList.NoPriceListOnBuyer, PriceList.PriceListFullException, PriceList.PriceListDuplicateException {
         float ql = 89.7f;
         int price = 987654321;
         Properties answers = generateProperties(ql, price);
@@ -315,7 +315,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testRowsAdded() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
+    void testRowsAdded() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         FakeCommunicator ownerCom = factory.getCommunicator(owner);
         askQuestion();
         int empty = factory.getCommunicator(owner).lastBmlContent.length();
@@ -326,13 +326,13 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         int length1 = ownerCom.lastBmlContent.length();
 
         list = PriceList.getPriceListFromBuyer(buyer);
-        list.addItem(1, (byte)0);
+        list.addItem(2, (byte)0);
         list.savePriceList();
         askQuestion();
         int length2 = ownerCom.lastBmlContent.length();
 
         list = PriceList.getPriceListFromBuyer(buyer);
-        list.addItem(1, (byte)0);
+        list.addItem(3, (byte)0);
         list.savePriceList();
         askQuestion();
         int length3 = ownerCom.lastBmlContent.length();
@@ -341,7 +341,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testItemValuesCorrect() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException {
+    void testItemValuesCorrect() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         PriceList list = PriceList.getPriceListFromBuyer(buyer);
         int weight = 1234;
         float ql = 55.6f;
@@ -370,7 +370,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testItemNameCorrect() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
+    void testItemNameCorrect() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(7, (byte)1);
         priceList.savePriceList();
@@ -386,7 +386,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testItemMaterialCorrect() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
+    void testItemMaterialCorrect() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         PriceList list = PriceList.getPriceListFromBuyer(buyer);
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(factory.getIsMetalId());
         list.addItem(template.getTemplateId(), ItemMaterials.MATERIAL_MEAT_DRAGON);
@@ -461,7 +461,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testRemoveItemFromList() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
+    void testRemoveItemFromList() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         for (int i = 1; i < 15; ++i) {
             priceList.addItem(7, (byte)i, -1, 1.0f, i);
@@ -487,7 +487,7 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
     }
 
     @Test
-    void testKilogramsString() throws NoSuchTemplateException, IOException, PriceList.PriceListFullException, PriceList.PageNotAdded {
+    void testKilogramsString() throws NoSuchTemplateException, IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, PriceList.PriceListDuplicateException {
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplate(factory.getIsWoodId());
         assert template.getWeightGrams() == 24000;
         ItemTemplate template2 = ItemTemplateFactory.getInstance().getTemplate(factory.getIsCoinId());
@@ -632,5 +632,29 @@ class SetBuyerPricesQuestionTest extends WurmTradingQuestionTest {
         priceList = PriceList.getPriceListFromBuyer(buyer);
         assertEquals(1, priceList.size());
         assertThat(owner, didNotReceiveMessageContaining("Purchase limit is less"));
+    }
+
+    @Test
+    void testUpdateIntoDuplicate() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, PriceList.PriceListDuplicateException {
+        int price = 123456789;
+        PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
+        priceList.addItem(1, (byte)1,5,1.0f, price);
+        PriceList.Entry item = priceList.iterator().next();
+        priceList.addItem(1, (byte)1,5,2.0f, price);
+        priceList.savePriceList();
+
+        askQuestion();
+        Properties ans = generateProperties(String.valueOf(1), item.getWeight(), item.getQualityLevel(), price, item.getRemainingToPurchase(), item.getMinimumPurchase(), item.acceptsDamaged());
+        ans.putAll(generateProperties(String.valueOf(2), item.getWeight(), item.getQualityLevel(), price, item.getRemainingToPurchase(), item.getMinimumPurchase(), item.acceptsDamaged()));
+        ans.setProperty("1weight", "0.005");
+        ans.setProperty("2weight", "0.005");
+        answers = ans;
+        answer();
+
+        PriceList.Entry[] prices = PriceList.getPriceListFromBuyer(buyer).asArray();
+        assertEquals(2, prices.length);
+        assertEquals(1.0f, prices[0].getQualityLevel());
+        assertEquals(2.0f, prices[1].getQualityLevel());
+        assertThat(owner, receivedMessageContaining("would result in a duplicate"));
     }
 }

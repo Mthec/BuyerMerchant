@@ -99,7 +99,7 @@ public class EntryBuilder {
                 entry.updateItemDetails(weight, ql, price, remainingToPurchase, minimumRequired, acceptsDamaged);
             else
                 throw new RuntimeException("Nothing set for EntryBuilder.");
-        } catch (PriceList.PriceListFullException | NoSuchTemplateException | IOException e) {
+        } catch (PriceList.PriceListFullException | NoSuchTemplateException | IOException | PriceList.PriceListDuplicateException e) {
             throw new EntryBuilderException(e);
         }
     }

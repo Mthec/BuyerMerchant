@@ -65,6 +65,10 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         }
     }
 
+    public int getContractTemplateId() {
+        return templateId;
+    }
+
     @Override
     public void onItemTemplatesCreated() {
         try {
@@ -231,6 +235,11 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
                 "poll",
                 "()Z",
                 () -> this::poll);
+
+        manager.registerHook("com.wurmonline.server.items.Item",
+                "willLeaveServer",
+                "(ZZZ)Z",
+                () -> this::willLeaveServer);
     }
 
     @Override
@@ -579,5 +588,26 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
 
         //noinspection SuspiciousInvocationHandlerImplementation
         return toDestroy;
+    }
+
+    Object willLeaveServer(Object o, Method method, Object[] args) throws InvocationTargetException, IllegalAccessException {
+        Item item = (Item)o;
+        if (item.getTemplateId() == templateId) {
+            boolean leaving = (boolean)args[0];
+
+            if (item.getData() > 0) {
+                if (leaving) {
+                    item.setTransferred(true);
+                }
+                return false;
+            }
+
+            if (leaving) {
+                item.setTransferred(false);
+                return true;
+            }
+        }
+
+        return method.invoke(o, args);
     }
 }

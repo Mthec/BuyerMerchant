@@ -41,6 +41,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
     public static final String noPriceListFoundPlayerMessage = "The buyer fumbles in their pockets but fails to find their price list.";
     public static final String noSpaceOnPriceListPlayerMessage = "The buyer has run out of space on their price list and cannot record the changes.  Try removing some items from the list.";
     public static final String couldNotCreateItemPlayerMessage = "The buyer looks at you confused, as if not understanding what you're saying.";
+    public static final String wouldResultInDuplicateMessage = "The buyer decides not to update an entry, as it would result in a duplicate.";
     public static int unauthorised = -1;
     private static final Pattern pageName = Pattern.compile("[\\w\\s]*(Buy|Sell) List Page (\\d+)");
     // Causes testIncorrectPriceListInscriptionRemovesEntry to fail if final.
@@ -211,15 +212,19 @@ public class PriceList implements Iterable<PriceList.Entry> {
             return sb.toString();
         }
 
-        public void updateItemDetails(int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) throws PriceListFullException {
+        public void updateItemDetails(int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) throws PriceListFullException, PriceListDuplicateException {
             updateItem(template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
         }
 
-        public void updateItem(int template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) throws PriceListFullException {
+        public void updateItem(int template, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) throws PriceListFullException, PriceListDuplicateException {
             if (minQL < 0 || minQL > 100)
                 minQL = this.minQL;
             int oldLength = toString().length();
-            int newLength = new Entry(template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged).toString().length();
+            Entry newEntry = new Entry(template, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
+            if (prices.containsKey(newEntry) && !newEntry.equals(this)) {
+                throw new PriceListDuplicateException();
+            }
+            int newLength = newEntry.toString().length();
             if (lastInscriptionLength + (newLength - oldLength) > MAX_INSCRIPTION_LENGTH)
                 throw new PriceListFullException("Not enough space for that update.");
             if (minimumPurchase == -1)
@@ -371,6 +376,12 @@ public class PriceList implements Iterable<PriceList.Entry> {
         }
     }
 
+    public static class PriceListDuplicateException extends WurmServerException {
+        PriceListDuplicateException() {
+            super("Update would result in duplicate entry.");
+        }
+    }
+
     PriceList(Item priceList) {
         assert isPriceList(priceList);
         this.priceListItem = priceList;
@@ -414,7 +425,11 @@ public class PriceList implements Iterable<PriceList.Entry> {
                             logger.warning("Bad Price List Entry - " + entry + " - Removing.");
                             e.printStackTrace();
                         }
-                        if (newEntry != null) {
+
+                        if (prices.containsKey(newEntry)) {
+                            error = true;
+                            logger.warning("Duplicate Price List Entry - " + entry + " - Removing.");
+                        } else if (newEntry != null) {
                             prices.put(newEntry, null);
                             pricesOrder.add(newEntry);
                         }
@@ -545,23 +560,19 @@ public class PriceList implements Iterable<PriceList.Entry> {
     }
 
     // TODO - Remove IOException and just make getItems check for nulls?
-    public Entry addItem(int templateId, byte material) throws PriceListFullException, IOException, NoSuchTemplateException {
+    public Entry addItem(int templateId, byte material) throws PriceListFullException, IOException, NoSuchTemplateException, PriceListDuplicateException {
         return addItem(templateId, material, -1, 1.0f, 1);
     }
 
-    public Entry addItem(int templateId, byte material, int weight, float minQL, int price) throws PriceListFullException, IOException, NoSuchTemplateException {
+    public Entry addItem(int templateId, byte material, int weight, float minQL, int price) throws PriceListFullException, IOException, NoSuchTemplateException, PriceListDuplicateException {
         return addItem(templateId, material, weight, minQL, price, 0, 1, false);
     }
 
-    public Entry addItem(int templateId, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) throws PriceListFullException, IOException, NoSuchTemplateException {
+    public Entry addItem(int templateId, byte material, int weight, float minQL, int price, int remainingToPurchase, int minimumPurchase, boolean acceptsDamaged) throws PriceListFullException, IOException, NoSuchTemplateException, PriceListDuplicateException {
         Entry item = new Entry(templateId, material, weight, minQL, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
         Entry alreadyListed = prices.keySet().stream().filter(entry -> entry.matches(item)).findAny().orElse(null);
         if (alreadyListed != null) {
-            alreadyListed.price = price;
-            TempItem maybeItem = prices.get(alreadyListed);
-            if (maybeItem != null)
-                maybeItem.setPrice(price);
-            return alreadyListed;
+            throw new PriceListDuplicateException();
         }
 
         // Plus one for newline.

@@ -355,7 +355,7 @@ public class BuyerScheduler {
                 entry.get().updateItemDetails(details.weight, details.minQL, details.price, details.remainingToPurchase, details.minimumPurchase, details.acceptsDamaged);
                 priceList.savePriceList();
             }
-        } catch (PriceList.PageNotAdded | PriceList.PriceListFullException | PriceList.NoPriceListOnBuyer e) {
+        } catch (PriceList.PageNotAdded | PriceList.PriceListFullException | PriceList.NoPriceListOnBuyer | PriceList.PriceListDuplicateException e) {
             logger.warning("Failed to update PriceList when updating buyer update details.");
             e.printStackTrace();
         }
@@ -407,7 +407,7 @@ public class BuyerScheduler {
             } catch (PriceList.NoPriceListOnBuyer e) {
                 logger.warning("PriceList not found for " + buyer.getName() + "(" + buyer.getWurmId() + ").");
                 e.printStackTrace();
-            } catch (PriceList.PriceListFullException | PriceList.PageNotAdded ignored) {
+            } catch (PriceList.PriceListFullException | PriceList.PageNotAdded | PriceList.PriceListDuplicateException ignored) {
 
             } catch (NoSuchTemplateException e) {
                 logger.warning("No such template exists:");

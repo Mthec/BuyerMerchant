@@ -84,8 +84,13 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
                         int bid = itemMap.get(item);
                         if (wasSelected(bid + "remove"))
                             priceList.removeItem(item);
-                        else
-                            setItemDetails(item, bid, props, responder);
+                        else {
+                            try {
+                                setItemDetails(item, bid, props, responder);
+                            } catch (PriceList.PriceListDuplicateException e) {
+                                responder.getCommunicator().sendNormalServerMessage(PriceList.wouldResultInDuplicateMessage);
+                            }
+                        }
                     }
                     priceList.savePriceList();
                     responder.getCommunicator().sendNormalServerMessage("The prices are updated.");
@@ -108,10 +113,10 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
         boolean badPrice = false;
         ItemTemplate template = ItemTemplateFactory.getInstance().getTemplateOrNull(templateId);
         int weight = -1;
-        float ql = -1;
+        float ql = 1;
         int price = 0;
         int remainingToPurchase = 0;
-        int minimumPurchase = -1;
+        int minimumPurchase = 1;
         boolean acceptsDamaged;
         String stringId;
         if (id == -1)
@@ -140,7 +145,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
                     throw new NumberFormatException("Quality level out of range.");
             } catch (NumberFormatException var21) {
                 responder.getCommunicator().sendNormalServerMessage("Failed to set the minimum quality level for " + name + ".");
-                ql = -1;
+                ql = 1;
             }
         }
 
@@ -225,7 +230,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
         return new ItemDetails(weight, ql, price, remainingToPurchase, minimumPurchase, acceptsDamaged);
     }
 
-    static void setItemDetails(PriceList.Entry item, int id, Properties answers, Creature responder) throws PriceList.PriceListFullException {
+    static void setItemDetails(PriceList.Entry item, int id, Properties answers, Creature responder) throws PriceList.PriceListFullException, PriceList.PriceListDuplicateException {
         ItemDetails details = getItemDetails(responder, answers, id, item.getTemplateId(), item.getName(), item.getWeight());
 
         item.updateItemDetails(details.weight, details.minQL, details.price, details.remainingToPurchase, details.minimumPurchase, details.acceptsDamaged);

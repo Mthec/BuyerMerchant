@@ -48,7 +48,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
             priceList.savePriceList();
             Shop shop = factory.getShop(buyer);
             shop.setMoney(shop.getMoney() + (long)(MonetaryConstants.COIN_COPPER * 1.1f));
-        } catch (NoSuchTemplateException | IOException | PriceList.PriceListFullException | PriceList.PageNotAdded e) {
+        } catch (NoSuchTemplateException | IOException | PriceList.PriceListFullException | PriceList.PageNotAdded | PriceList.PriceListDuplicateException e) {
             throw new RuntimeException(e);
         }
     }
@@ -339,7 +339,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testStillBalancedAfterChange() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
+    void testStillBalancedAfterChange() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         Item item = factory.createNewItem();
         player.getInventory().insertItem(item);
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
@@ -425,7 +425,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testNegativePriceAlwaysReturns0() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, EntryBuilder.EntryBuilderException {
+    void testNegativePriceAlwaysReturns0() throws PriceList.PriceListFullException, PriceList.PageNotAdded, IOException, NoSuchTemplateException, EntryBuilder.EntryBuilderException, PriceList.PriceListDuplicateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item = factory.createNewItem(factory.getIsWoodId());
         priceList.addItem(item.getTemplateId(), item.getMaterial());
@@ -433,7 +433,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
 
         // Skip -1 as that value is used in PriceList as an invalid price string.
         for (int i = -2; i > -100; --i) {
-            EntryBuilder.update(priceList.iterator().next()).price(i).build();
+            EntryBuilder.update(priceList.iterator().next()).ql(-i).price(i).build();
             priceList.savePriceList();
             createHandler();
             assertEquals(0, handler.getTraderBuyPriceForItem(item));
@@ -441,7 +441,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testAcceptingDonatedItems() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
+    void testAcceptingDonatedItems() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item1 = factory.createNewItem(factory.getIsWoodId());
         player.getInventory().insertItem(item1);
@@ -458,7 +458,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testAcceptingDonatedItemsDoesNotOverridePrice() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException {
+    void testAcceptingDonatedItemsDoesNotOverridePrice() throws IOException, PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, PriceList.PriceListDuplicateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         Item item1 = factory.createNewItem(factory.getIsWoodId());
         player.getInventory().insertItem(item1);
@@ -482,7 +482,7 @@ class BuyerHandler_NotOwnerTest extends WurmTradingTest {
     }
 
     @Test
-    void testUnauthorisedItemsNotAddedToWindow() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException {
+    void testUnauthorisedItemsNotAddedToWindow() throws PriceList.PriceListFullException, PriceList.PageNotAdded, NoSuchTemplateException, IOException, PriceList.PriceListDuplicateException {
         PriceList priceList = PriceList.getPriceListFromBuyer(buyer);
         priceList.addItem(factory.getIsWoodId(), (byte)0, -1, 1.0f, -1);
         priceList.addItem(factory.getIsMetalId(), (byte)0, -1, 1.0f, 10);

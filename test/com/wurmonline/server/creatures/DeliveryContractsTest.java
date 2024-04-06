@@ -65,7 +65,7 @@ class DeliveryContractsTest extends WurmTradingTest {
             priceList.savePriceList();
             Shop shop = factory.getShop(buyer);
             shop.setMoney(shop.getMoney() + (long)(MonetaryConstants.COIN_COPPER * 1.1f));
-        } catch (NoSuchTemplateException | IOException | PriceList.PriceListFullException | PriceList.PageNotAdded e) {
+        } catch (NoSuchTemplateException | IOException | PriceList.PriceListFullException | PriceList.PageNotAdded | PriceList.PriceListDuplicateException e) {
             throw new RuntimeException(e);
         }
     }
@@ -311,7 +311,7 @@ class DeliveryContractsTest extends WurmTradingTest {
     }
 
     @Test
-    void testContractPricing() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, PriceList.PageNotAdded {
+    void testContractPricing() throws PriceList.PriceListFullException, NoSuchTemplateException, IOException, PriceList.PageNotAdded, PriceList.PriceListDuplicateException {
         int dirt = 10;
         int sand = 5;
         insertItemsIntoContract(factory.createManyItems(ItemList.dirtPile, dirt));
