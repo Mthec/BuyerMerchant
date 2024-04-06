@@ -85,7 +85,7 @@ public abstract class AddItemToBuyerQuestion extends BuyerQuestionExtension {
         }
         if (wasSelected("filterme")) {
             String filterText = answers.getProperty("filtertext");
-            if (filterText == null || filterText.length() == 0) {
+            if (filterText == null || filterText.isEmpty()) {
                 this.filter = "*";
             } else {
                 this.filter = filterText;
@@ -111,7 +111,7 @@ public abstract class AddItemToBuyerQuestion extends BuyerQuestionExtension {
             switch (stage) {
                 case 0:
                     String tempId = answers.getProperty("templateId");
-                    if (tempId != null && tempId.length() > 0) {
+                    if (tempId != null && !tempId.isEmpty()) {
                         ItemTemplate template = getTemplate(Integer.parseInt(tempId));
                         if (template == null) {
                             responder.getCommunicator().sendNormalServerMessage("You decide not to add anything.");
@@ -126,7 +126,7 @@ public abstract class AddItemToBuyerQuestion extends BuyerQuestionExtension {
                 case 1:
                 case 2:
                     String materialString = answers.getProperty("material");
-                    if (materialString != null && materialString.length() > 0) {
+                    if (materialString != null && !materialString.isEmpty()) {
                         try {
                             material = getMaterialFromListIndex(Integer.parseInt(materialString));
                             stage = 3;
@@ -285,7 +285,7 @@ public abstract class AddItemToBuyerQuestion extends BuyerQuestionExtension {
         String defaultMaterialString = Item.getMaterialString(itemTemplate.getMaterial());
         int id = 0;
 
-        if (materialsList.size() == 0) {
+        if (materialsList.isEmpty()) {
             if (!defaultMaterialString.equals("unknown")) {
                 materialsList.add(defaultMaterialString);
                 buf.append(defaultMaterialString);

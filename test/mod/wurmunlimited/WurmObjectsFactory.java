@@ -67,7 +67,7 @@ public class WurmObjectsFactory {
         FakeShop shop = FakeShop.createFakeShop();
         shops.put(null, shop);
         when(economy.getKingsShop()).thenAnswer(i -> shops.get(null));
-        doAnswer((Answer<Void>) i -> {
+        doAnswer((Answer<Void>)i -> {
             Item coin = i.getArgument(0);
 
             coin.setTradeWindow(null);

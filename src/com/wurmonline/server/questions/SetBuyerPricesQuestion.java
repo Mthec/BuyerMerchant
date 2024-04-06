@@ -125,7 +125,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
             stringId = Integer.toString(id);
 
         String val = answers.getProperty(stringId + "weight");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 weight = WeightString.toInt(val);
                 if (weight < 0)
@@ -138,7 +138,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
             }
         }
         val = answers.getProperty(stringId + "q");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 ql = Float.parseFloat(val);
                 if (ql > 100 || ql < 0)
@@ -150,7 +150,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
         }
 
         val = answers.getProperty(stringId + "g");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 price = Integer.parseInt(val) * MonetaryConstants.COIN_GOLD;
             } catch (NumberFormatException var21) {
@@ -160,7 +160,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
         }
 
         val = answers.getProperty(stringId + "s");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 price += Integer.parseInt(val) * MonetaryConstants.COIN_SILVER;
             } catch (NumberFormatException var20) {
@@ -170,7 +170,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
         }
 
         val = answers.getProperty(stringId + "c");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 price += Integer.parseInt(val) * MonetaryConstants.COIN_COPPER;
             } catch (NumberFormatException var19) {
@@ -180,7 +180,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
         }
 
         val = answers.getProperty(stringId + "i");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 price += Integer.parseInt(val);
             } catch (NumberFormatException var18) {
@@ -198,7 +198,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
         }
 
         val = answers.getProperty(stringId + "r");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 remainingToPurchase = Integer.parseInt(val);
                 if (remainingToPurchase < 0)
@@ -210,7 +210,7 @@ public class SetBuyerPricesQuestion extends BuyerQuestionExtension {
         }
 
         val = answers.getProperty(stringId + "p");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 minimumPurchase = Integer.parseInt(val);
                 if (minimumPurchase < 1)

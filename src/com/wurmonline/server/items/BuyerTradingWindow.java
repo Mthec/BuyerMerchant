@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 
 public class BuyerTradingWindow extends TradingWindow {
     private static final Logger logger = Logger.getLogger(BuyerTradingWindow.class.getName());
-    private static final Map<String, Logger> loggers = new HashMap();
+    private static final Map<String, Logger> loggers = new HashMap<>();
     private final Creature windowowner;
     private final Creature watcher;
     private final boolean offer;
@@ -45,7 +45,7 @@ public class BuyerTradingWindow extends TradingWindow {
     }
 
     public static void stopLoggers() {
-        Iterator var0 = loggers.values().iterator();
+        Iterator<Logger> var0 = loggers.values().iterator();
 
         while (true) {
             Logger logger;
@@ -57,11 +57,7 @@ public class BuyerTradingWindow extends TradingWindow {
                 logger = (Logger) var0.next();
             } while (logger == null);
 
-            Handler[] var2 = logger.getHandlers();
-            int var3 = var2.length;
-
-            for (int var4 = 0; var4 < var3; ++var4) {
-                Handler h = var2[var4];
+            for (Handler h : logger.getHandlers()) {
                 h.close();
             }
         }
@@ -69,7 +65,7 @@ public class BuyerTradingWindow extends TradingWindow {
 
     private static Logger getLogger(long wurmid) {
         String name = "trader" + wurmid;
-        Logger personalLogger = (Logger) loggers.get(name);
+        Logger personalLogger = loggers.get(name);
         if (personalLogger == null) {
             personalLogger = Logger.getLogger(name);
             personalLogger.setUseParentHandlers(false);
@@ -97,8 +93,7 @@ public class BuyerTradingWindow extends TradingWindow {
     public boolean mayMoveItemToWindow(Item item, Creature creature, long window) {
         if (window == 3L && this.windowId == 1L) {
             Shop shop = this.windowowner.getShop();
-            if (shop != null && shop.getOwnerId() == creature.getWurmId())
-                return true;
+            return shop != null && shop.getOwnerId() == creature.getWurmId();
         }
         return false;
     }
@@ -143,17 +138,12 @@ public class BuyerTradingWindow extends TradingWindow {
 
     @Override
     public Item[] getItems() {
-        return this.items != null ? (Item[]) this.items.toArray(new Item[this.items.size()]) : new Item[0];
+        return this.items != null ? this.items.toArray(new Item[0]) : new Item[0];
     }
 
     private void removeExistingContainedItems(Item item) {
         if (item.isHollow()) {
-            Item[] itemarr = item.getItemsAsArray();
-            Item[] var3 = itemarr;
-            int var4 = itemarr.length;
-
-            for (int var5 = 0; var5 < var4; ++var5) {
-                Item lElement = var3[var5];
+            for (Item lElement : item.getItemsAsArray()) {
                 this.removeExistingContainedItems(lElement);
                 if (lElement.getTradeWindow() == this) {
                     this.removeFromTrade(lElement, false);
@@ -169,25 +159,19 @@ public class BuyerTradingWindow extends TradingWindow {
         if (this.items == null) {
             return new Item[0];
         } else {
-            Set<Item> toRet = new HashSet();
-            Iterator var2 = this.items.iterator();
+            Set<Item> toRet = new HashSet<>();
 
-            while (var2.hasNext()) {
-                Item item = (Item) var2.next();
+            for (Item item : this.items) {
                 toRet.add(item);
-                Item[] toAdd = item.getAllItems(false);
-                Item[] var5 = toAdd;
-                int var6 = toAdd.length;
 
-                for (int var7 = 0; var7 < var6; ++var7) {
-                    Item lElement = var5[var7];
+                for (Item lElement : item.getAllItems(false)) {
                     if (lElement.tradeWindow == this) {
                         toRet.add(lElement);
                     }
                 }
             }
 
-            return (Item[]) toRet.toArray(new Item[toRet.size()]);
+            return toRet.toArray(new Item[0]);
         }
     }
 
@@ -201,11 +185,11 @@ public class BuyerTradingWindow extends TradingWindow {
 
     // Personal Note - Add items to window.  e.g. initial buyer buying list dump or player adding from own inventory.
     // Idea for actual code would be creating both BuyerTradingWindow and TradingWindow in BuyerTrade,
-    // the latter for players so they don't need to ever reach this code.
+    // the latter for players, so they don't need to ever reach this code.
     @Override
     public void addItem(Item item) {
         if (this.items == null) {
-            this.items = new HashSet();
+            this.items = new HashSet<>();
         }
 
         if (item.tradeWindow == null) {
@@ -214,8 +198,7 @@ public class BuyerTradingWindow extends TradingWindow {
 
             try {
                 parent = item.getParent();
-            } catch (NoSuchItemException var4) {
-                ;
+            } catch (NoSuchItemException ignored) {
             }
 
             this.items.add(item);
@@ -331,10 +314,8 @@ public class BuyerTradingWindow extends TradingWindow {
             } else {
                 if (this.items != null) {
                     int nums = 0;
-                    Iterator var3 = this.items.iterator();
 
-                    while (var3.hasNext()) {
-                        Item item = (Item) var3.next();
+                    for (Item item : this.items) {
                         if (!inventory.testInsertItem(item)) {
                             return false;
                         }
@@ -343,7 +324,7 @@ public class BuyerTradingWindow extends TradingWindow {
                             ++nums;
                         }
 
-                        if (!item.canBeDropped(false) && ((Player) this.watcher).isGuest()) {
+                        if (!item.canBeDropped(false) && this.watcher.isGuest()) {
                             this.windowowner.getCommunicator().sendAlertServerMessage("Guests cannot receive the item " + item.getName() + ".");
                             this.watcher.getCommunicator().sendAlertServerMessage("Guests cannot receive the item " + item.getName() + ".");
                             return false;
@@ -368,7 +349,7 @@ public class BuyerTradingWindow extends TradingWindow {
         int toReturn = 0;
         Item item;
         if (this.items != null) {
-            for (Iterator var2 = this.items.iterator(); var2.hasNext(); toReturn += item.getFullWeight()) {
+            for (Iterator<Item> var2 = this.items.iterator(); var2.hasNext(); toReturn += item.getFullWeight()) {
                 item = (Item) var2.next();
             }
         }
@@ -384,22 +365,14 @@ public class BuyerTradingWindow extends TradingWindow {
             return false;
         } else {
             if (this.items != null) {
-                Iterator var1 = this.items.iterator();
-
-                while (var1.hasNext()) {
-                    Item tit = (Item) var1.next();
+                for (Item tit : items) {
                     if ((this.windowowner instanceof Player || !tit.isCoin()) && tit.getOwnerId() != this.windowowner.getWurmId()) {
                         this.windowowner.getCommunicator().sendAlertServerMessage(tit.getName() + " is not owned by you. Trade aborted.");
                         this.watcher.getCommunicator().sendAlertServerMessage(tit.getName() + " is not owned by " + this.windowowner.getName() + ". Trade aborted.");
                         return false;
                     }
 
-                    Item[] allItems = tit.getAllItems(false);
-                    Item[] var4 = allItems;
-                    int var5 = allItems.length;
-
-                    for (int var6 = 0; var6 < var5; ++var6) {
-                        Item lAllItem = var4[var6];
+                    for (Item lAllItem : tit.getAllItems(false)) {
                         if ((this.windowowner instanceof Player || !lAllItem.isCoin()) && lAllItem.getOwnerId() != this.windowowner.getWurmId()) {
                             this.windowowner.getCommunicator().sendAlertServerMessage(lAllItem.getName() + " is not owned by you. Trade aborted.");
                             this.watcher.getCommunicator().sendAlertServerMessage(lAllItem.getName() + " is not owned by " + this.windowowner.getName() + ". Trade aborted.");
@@ -429,8 +402,7 @@ public class BuyerTradingWindow extends TradingWindow {
             }
 
             if (this.items != null) {
-                for (Item lIt : (Item[]) this.items.toArray(new Item[this.items.size()])) {
-                    Item item = lIt;
+                for (Item lIt : this.items.toArray(new Item[0])) {
                     this.removeExistingContainedItems(lIt);
                     this.removeFromTrade(lIt, false);
                     boolean coin = lIt.isCoin();
@@ -520,7 +492,7 @@ public class BuyerTradingWindow extends TradingWindow {
                 if (this.windowowner.isNpcTrader()) {
                     if (this.watcher.getWurmId() == shop.getOwnerId()) {
                         if (diff != 0) {
-                            logger.info(this.watcher.getName() + " - Paying out " + String.valueOf(Math.abs(diff)) + " to owner.  Current shop value - " + String.valueOf(shop.getMoney()));
+                            logger.info(this.watcher.getName() + " - Paying out " + Math.abs(diff) + " to owner.  Current shop value - " + shop.getMoney());
                             shop.setMoney(shop.getMoney() + (long)diff);
                             logger.info(this.watcher.getName() + " - My shop is now at " + shop.getMoney());
                         }
@@ -535,14 +507,14 @@ public class BuyerTradingWindow extends TradingWindow {
                                 if (item.isCoin())
                                     coins.add(item);
                             }
-                            coins.sort((i1, i2) -> Integer.compare(economy.getValueFor(i1.getTemplateId()), economy.getValueFor(i2.getTemplateId())));
-                            logger.finer("All coins " + coins.stream().map(c -> Integer.toString(economy.getValueFor(c.getTemplateId()))).collect(Collectors.joining(",")));
+                            coins.sort(Comparator.comparingInt(i -> Economy.getValueFor(i.getTemplateId())));
+                            logger.finer("All coins " + coins.stream().map(c -> Integer.toString(Economy.getValueFor(c.getTemplateId()))).collect(Collectors.joining(",")));
 
                             long moneyRequired = totalPrice;
                             try {
-                                while (moneyRequired > 0 && coins.size() > 0) {
+                                while (moneyRequired > 0 && !coins.isEmpty()) {
                                     Item coin = coins.remove(0);
-                                    moneyRequired -= economy.getValueFor(coin.getTemplateId());
+                                    moneyRequired -= Economy.getValueFor(coin.getTemplateId());
                                     ownInventory.removeItem(coin);
                                     economy.returnCoin(coin, "BuyerShop");
                                 }
@@ -551,7 +523,7 @@ public class BuyerTradingWindow extends TradingWindow {
                                 e.printStackTrace();
                             }
 
-                            logger.finer("Coins left - " + coins.stream().map(c -> Integer.toString(economy.getValueFor(c.getTemplateId()))).collect(Collectors.joining(",")));
+                            logger.finer("Coins left - " + coins.stream().map(c -> Integer.toString(Economy.getValueFor(c.getTemplateId()))).collect(Collectors.joining(",")));
 
                             if (moneyRequired < 0) {
                                 logger.finer("Reinserting " + Math.abs(moneyRequired) + " coins.");
@@ -569,7 +541,7 @@ public class BuyerTradingWindow extends TradingWindow {
 
                             shop.addMoneySpent(totalPrice);
 
-                            logger.info(this.windowowner.getName() + " - Paying out " + String.valueOf(moneyLost) + " to " + this.watcher.getName() + ".  Current shop value - " + String.valueOf(shop.getMoney()));
+                            logger.info(this.windowowner.getName() + " - Paying out " + moneyLost + " to " + this.watcher.getName() + ".  Current shop value - " + shop.getMoney());
                             shop.setMoney(shop.getMoney() - totalPrice);
                             logger.info(this.windowowner.getName() + " - My shop is now at " + shop.getMoney());
 
@@ -578,7 +550,7 @@ public class BuyerTradingWindow extends TradingWindow {
                     }
                 } else if (this.windowowner.getWurmId() == shop.getOwnerId()) {
                     if (diff != 0) {
-                        logger.info(this.windowowner.getName() + " - My owner just gave me " + String.valueOf(diff));
+                        logger.info(this.windowowner.getName() + " - My owner just gave me " + diff);
                         shop.setMoney(shop.getMoney() + (long)diff);
                         logger.info(this.windowowner.getName() + " - My shop is now at " + shop.getMoney());
                     }
@@ -595,12 +567,7 @@ public class BuyerTradingWindow extends TradingWindow {
     @Override
     void endTrade() {
         if (this.items != null) {
-            Item[] its = (Item[]) this.items.toArray(new Item[this.items.size()]);
-            Item[] var2 = its;
-            int var3 = its.length;
-
-            for (int var4 = 0; var4 < var3; ++var4) {
-                Item lIt = var2[var4];
+            for (Item lIt : items.toArray(new Item[0])) {
                 this.removeExistingContainedItems(lIt);
                 this.items.remove(lIt);
                 this.removeFromTrade(lIt, true);

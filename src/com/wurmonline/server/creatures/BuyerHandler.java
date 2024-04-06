@@ -372,7 +372,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                     Set<MinimumSet> invalidSets = new HashSet<>();
 
                     // Filter out items that don't meet the requirement and remove MinimumSets from all counts.
-                    while (entries.size() > 0) {
+                    while (!entries.isEmpty()) {
                         PriceList.Entry entry = entries.get(0);
                         MinimumRequired minimumRequired = minimumRequiredMap.get(entry);
                         minimumRequired.removeInvalidSets(invalidSets);
@@ -399,7 +399,7 @@ public class BuyerHandler extends TradeHandler implements MiscConstants, ItemTyp
                     invalidSets = new HashSet<>();
                     int itemCount = size;
 
-                    while (confirmed.size() > 0) {
+                    while (!confirmed.isEmpty()) {
                         PriceList.Entry entry = confirmed.get(0);
                         MinimumRequired minimumRequired = minimumRequiredMap.get(entry);
                         minimumRequired.removeInvalidSets(invalidSets);

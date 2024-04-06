@@ -128,7 +128,7 @@ public class BuyerManagementQuestion extends BuyerQuestionExtension implements T
                 sex = 1;
             }
 
-            if (idName != null && idName.length() > 0) {
+            if (idName != null && !idName.isEmpty()) {
                 if (idName.length() < 3 || idName.length() > 20 || containsIllegalCharacters(idName)) {
                     if (sex == 0) {
                         idName = generateGuardMaleName();

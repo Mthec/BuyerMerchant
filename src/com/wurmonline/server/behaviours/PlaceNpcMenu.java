@@ -36,7 +36,7 @@ public class PlaceNpcMenu implements BehaviourProvider {
     static void addNpcAction(NpcMenuEntry entry) {
         short newActionId = (short)ModActions.getNextActionId();
         npcs.put(newActionId, entry);
-        if (actionEntries.size() == 0)
+        if (actionEntries.isEmpty())
             actionEntries.add(null);
         actionEntries.set(0, new ActionEntry((short)-npcs.size(),
                 "Place Npc",

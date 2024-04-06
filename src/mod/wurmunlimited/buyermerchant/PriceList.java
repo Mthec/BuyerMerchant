@@ -391,7 +391,7 @@ public class PriceList implements Iterable<PriceList.Entry> {
 
         List<Item> pages = new ArrayList<>(priceList.getItems());
 
-        if (pages.size() == 0)
+        if (pages.isEmpty())
             return;
 
         pageCount = pages.size();

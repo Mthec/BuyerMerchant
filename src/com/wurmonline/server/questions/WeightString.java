@@ -1,13 +1,14 @@
 package com.wurmonline.server.questions;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 class WeightString {
     private static final BigDecimal mod = new BigDecimal(1000);
 
     static String toString(int weight) {
-        BigDecimal bd = new BigDecimal(weight).setScale(3, BigDecimal.ROUND_UNNECESSARY);
-        bd = bd.divide(mod, BigDecimal.ROUND_UNNECESSARY);
+        BigDecimal bd = new BigDecimal(weight).setScale(3, RoundingMode.UNNECESSARY);
+        bd = bd.divide(mod, RoundingMode.UNNECESSARY);
         return bd.stripTrailingZeros().toPlainString();
     }
 

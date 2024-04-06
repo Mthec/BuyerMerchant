@@ -125,7 +125,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         if (val != null && val.equals("true"))
             destroyBoughtItems = true;
         val = properties.getProperty("max_items");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 maxItems = Integer.parseInt(val);
             } catch (NumberFormatException e) {
@@ -137,7 +137,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         if (val != null && val.equals("true"))
             applyMaxToMerchants = true;
         val = properties.getProperty("turn_to_player_max_power");
-        if (val != null && val.length() > 0) {
+        if (val != null && !val.isEmpty()) {
             try {
                 maximumPowerTurn = Integer.parseInt(val);
                 if (maximumPowerTurn < 0)
@@ -423,7 +423,7 @@ public class BuyerMerchant implements WurmServerMod, Configurable, PreInitable, 
         try {
             method.invoke(o, args);
 
-            if (contracts.size() > 0) {
+            if (!contracts.isEmpty()) {
                 //noinspection SpellCheckingInspection
                 Field windowOwner = TradingWindow.class.getDeclaredField("windowowner");
                 windowOwner.setAccessible(true);
